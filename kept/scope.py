@@ -49,8 +49,9 @@ def review(m: dict) -> dict | None:
         return None
     rate = hourly_rate()
     # two independent reads; money is only asked for when both agree it isn't covered
-    first, r = _judge(m, name, agreement, 0.2)
-    second, _ = _judge(m, name, agreement, 0.7)
+    from .parallel import pmap
+    # the two independent readings run side by side
+    (first, r), (second, _) = pmap(lambda t: _judge(m, name, agreement, t), [0.2, 0.7])
     if first is None:
         return {"requests": [], "proposal": None}
     items = _reconcile(first, second or [])
