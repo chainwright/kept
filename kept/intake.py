@@ -93,7 +93,11 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
         " ".join([web.get("kind", ""), web.get("business", "")] + [f["text"] for f in web.get("facts", [])])))
     if verified_biz and job in ("full_kitchen", "question", "other", "countertop", "fronts"):
         job = "commercial"
-    out = {"job": job, "what": d.get("what", "") or "", "price_objection": bool(d.get("price_objection")),
+    # the words themselves count too: a model that misses "more than we can afford" mustn't lose the payment plan
+    objection = bool(d.get("price_objection")) or bool(re.search(
+        r"too (much|expensive|pricey)|can'?t afford|cannot afford|can'?t pay|more than we (expected|can)|over (our|my) budget|"
+        r"дорого|не потянем|нет таких денег", m["body"], re.I))
+    out = {"job": job, "what": d.get("what", "") or "", "price_objection": objection,
            "verified_business": verified_biz}
     if picked:
         out["booked"] = schedule.book(picked, name, addr, out["what"] or picked.get("for", "measuring visit"))

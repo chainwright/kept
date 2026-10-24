@@ -39,7 +39,7 @@ def run_once() -> dict:
     snapshot.restore()
     from kept import store
     audit_start = len(store.read_audit(100000))  # the recorded morning's own calls aren't this run's cost
-    c, t0 = {}, time.time()
+    c, t0, log = {}, time.time(), {}
     jo = dict(name="Jo Rivera", email="jo@riverahome.example")
 
     r = tryit.handle("new", "Our old kitchen", "Hi Alex, we just bought a house and the kitchen is from the 90s "
@@ -62,6 +62,7 @@ def run_once() -> dict:
                      "house and can't pay that much at once.", **jo)
     pp = (r.get("plan") or {}).get("payment_plan")
     b = body_of(r)
+    log["objection"] = {"plan": r.get("plan"), "reply": b, "held": r.get("held_back")}
     c["payment_plan_offered"] = bool(pp) and bool(b) and (f"${pp['monthly']:,}" in b or f"${pp['monthly']}" in b)
     if (r.get("reply") or {}).get("approval"):
         approvals.decide(r["reply"]["approval"]["id"], True)
@@ -100,7 +101,8 @@ def run_once() -> dict:
     calls = [a for a in store.read_audit(100000)[audit_start:] if a["kind"] == "llm"]
     usd = sum(a["usd"] for a in calls)
     c["nothing_sent_without_yes"] = all(a["status"] in ("pending", "done", "replaced", "rejected") for a in approvals.recent(1000))
-    return {"checks": c, "usd": round(usd, 4), "seconds": round(time.time() - t0, 1)}
+    return {"checks": c, "usd": round(usd, 4), "seconds": round(time.time() - t0, 1),
+            "log": {k: v for k, v in log.items() if not c.get("payment_plan_offered")}}
 
 
 def main():
