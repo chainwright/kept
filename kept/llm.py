@@ -143,7 +143,8 @@ class Router:
                    if r.get("kind") == "llm" and r.get("ts", "").startswith(today))
 
     def ask(self, task: str, messages: list[dict], *, purpose: str, max_tokens: int = 800,
-            temperature: float = 0.2, json_mode: bool = False, tier: str | None = None) -> Reply:
+            temperature: float = 0.2, json_mode: bool = False, tier: str | None = None,
+            _retry: bool = False) -> Reply:
         tier = tier or ROUTES[task]
         t = TIERS[tier]
         if self.spent_today() >= settings.daily_budget_usd:
@@ -165,6 +166,15 @@ class Router:
                      reasoning=reasoning[:1500] if task == "judge" else None)
         if finish == "length" and not text.strip():
             raise ValueError(f"{tier} ran out of tokens before answering ({pout} used)")
+        if json_mode and not _retry:
+            try:
+                parse_json(text)
+            except Exception as e:
+                # eval run 2: Ultra's overload decision came back as broken JSON once in a few runs;
+                # one more try is cheaper than losing the decision. The bad reply stays in the audit.
+                append_audit("llm_retry", task=task, tier=tier, purpose=purpose, error=str(e)[:200])
+                return self.ask(task, messages, purpose=purpose, max_tokens=max_tokens, temperature=temperature,
+                                json_mode=True, tier=tier, _retry=True)
         return Reply(text, model, tier, pin, pout, usd, ms, reasoning, finish)
 
 

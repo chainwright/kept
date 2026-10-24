@@ -116,3 +116,19 @@ def test_parse_json_accepts_python_style_dicts_safely():
     import pytest as _p
     with _p.raises(Exception):
         parse_json("{'a': __import__('os')}")
+
+
+def test_broken_json_is_retried_once(fake):
+    replies = iter(['{"move": 1e}', '{"move": "x"}'])
+    fb = fake([("pick", lambda p: next(replies))])
+    r = router.ask("judge", [{"role": "user", "content": "pick one"}], purpose="t", json_mode=True)
+    assert r.json() == {"move": "x"} and len(fb.calls) == 2
+    assert any(a["kind"] == "llm_retry" for a in store.read_audit(50))
+
+
+def test_broken_json_twice_is_returned_for_the_caller_to_abstain(fake):
+    fb = fake([("pick", "{'move': 1e}")])
+    r = router.ask("judge", [{"role": "user", "content": "pick one"}], purpose="t", json_mode=True)
+    assert len(fb.calls) == 2
+    with pytest.raises(Exception):
+        r.json()
