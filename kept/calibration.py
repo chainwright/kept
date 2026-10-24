@@ -46,7 +46,7 @@ def _d(s: str | None) -> date | None:
 def slip_days(row: dict) -> int | None:
     """Days late (positive) or early (negative) for a promise closed as done."""
     due, closed = _d(row.get("due")), _d(row.get("closed"))
-    if row.get("status") != "done" or not due or not closed:
+    if row.get("status") != "done" or not due or not closed or row.get("direction", "i_owe") != "i_owe":
         return None
     return (closed - due).days
 

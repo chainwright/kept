@@ -103,3 +103,16 @@ def test_budget_stops_calls(fake, monkeypatch):
     monkeypatch.setattr(settings, "daily_budget_usd", 0.0)
     with pytest.raises(BudgetExceeded):
         router.ask("classify", [{"role": "user", "content": "x"}], purpose="t")
+
+
+def test_one_line_email_signed_by_owner_is_not_a_wrong_greeting():
+    from kept.validators import honest_email
+    assert honest_email("Hi Priya, any news on invoice #118? Thanks, Alex", recipient_first="Priya", owner_first="Alex")
+    assert not honest_email("Hi Alex, any news?", recipient_first="Priya", owner_first="Alex")
+
+
+def test_parse_json_accepts_python_style_dicts_safely():
+    assert parse_json("{'rules': [{'rule': 'x', 'ok': True}]}") == {"rules": [{"rule": "x", "ok": True}]}
+    import pytest as _p
+    with _p.raises(Exception):
+        parse_json("{'a': __import__('os')}")

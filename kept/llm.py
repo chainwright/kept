@@ -61,7 +61,16 @@ def parse_json(text: str) -> Any:
     start = min([i for i in (text.find("{"), text.find("[")) if i >= 0], default=-1)
     if start < 0:
         raise ValueError("no JSON object in model reply")
-    return json.JSONDecoder().raw_decode(text[start:])[0]
+    try:
+        return json.JSONDecoder().raw_decode(text[start:])[0]
+    except json.JSONDecodeError:
+        # some replies come back as a Python-style dict ({'a': True}); parse that safely, never eval
+        import ast
+        end = max(text.rfind("}"), text.rfind("]")) + 1
+        val = ast.literal_eval(text[start:end])
+        if not isinstance(val, (dict, list)):
+            raise
+        return val
 
 
 class NebiusBackend:

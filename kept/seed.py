@@ -36,6 +36,10 @@ def inbox() -> list[dict]:
          "subject": "Q3 receipts",
          "body": f"Hi Alex, friendly reminder: please send me your Q3 receipts before {_d(1)} so I can "
                  "file on time. A zip or a shared folder is fine.\n\nSam"},
+        {"id": "demo:7", "from": "Priya Shah <priya@shahdental.example>", "date": _d(-6),
+         "subject": "Re: invoice #118",
+         "body": f"Hi Alex, thanks for the reminder and sorry for the delay! Our office manager is back on "
+                 f"Monday. We'll pay invoice #118 ($850) by {_d(-2)} at the latest.\n\nPriya"},
         {"id": "demo:6", "from": "Jordan Kim <jordan@kimyoga.example>", "date": _d(0),
          "subject": "Launch call + contact form",
          "body": f"Hey Alex! Can we push our launch call to {_d(2)}? Something came up on my side. "
@@ -55,6 +59,44 @@ Prefers short, friendly emails. Signs as "Alex". Works 9:00-17:00, no meetings o
 """
 
 
+def _last_friday(weeks_back: int) -> date:
+    d = date.today() - timedelta(weeks=weeks_back)
+    return d - timedelta(days=(d.weekday() - 4) % 7)
+
+
+def history() -> list[dict]:
+    """Eight weeks of closed promises. The pattern in it is real enough to learn from:
+    quotes for new leads, promised for Friday, keep landing on Monday or Tuesday."""
+    rows, n = [], 0
+
+    def closed(text, who, due, late, note):
+        nonlocal n
+        n += 1
+        done = due + timedelta(days=late)
+        rows.append({"id": f"h{n:03d}", "text": text, "who": who, "due": due.isoformat(), "source": "",
+                     "origin": "inbox", "contact": "", "direction": "i_owe", "status": "done",
+                     "created": f"{(due - timedelta(days=4)).isoformat()}T09:00:00+00:00",
+                     "closed": f"{done.isoformat()}T16:30:00+00:00", "note": note, "history": []})
+
+    leads = [("Send Hannah the quote for a clinic site", "Hannah Weiss", 8, 3),
+             ("Send Omar rates and a timeline", "Omar Haddad", 7, 2),
+             ("Send Lucia a quote for the shop redesign", "Lucia Ferri", 5, 0),
+             ("Send Ben the estimate for a booking page", "Ben Carter", 4, 3),
+             ("Send Aisha a quote for the gym site", "Aisha Bello", 2, 2),
+             ("Send Tom rates for a 3-page site", "Tom Novak", 1, 4)]
+    for text, who, wk, late in leads:
+        closed(text, who, _last_friday(wk), late, "Sent the quote" + (" late, apologised" if late else ""))
+    for wk in (8, 6, 4, 3, 1):
+        closed(f"Fix a layout bug on the Kim Yoga site (week {wk})", "Jordan Kim",
+               _last_friday(wk) - timedelta(days=2), 0, "Fixed and checked on mobile")
+    for wk, text in ((7, "Send Maria the new menu photos"), (5, "Share the bakery logo files with Maria"),
+                     (3, "Send Maria the holiday banner"), (2, "Update the bakery opening hours")):
+        closed(text, "Maria Lopez", _last_friday(wk) - timedelta(days=1), 0, "Done the same day")
+    closed("Reply to Sam about the Q2 receipts", "Sam Okafor", _last_friday(6) - timedelta(days=3), 1,
+           "Replied a day late")
+    return rows
+
+
 def seed(force: bool = False) -> None:
     d = data_dir()
     if (d / "inbox.json").exists() and not force:
@@ -66,7 +108,7 @@ def seed(force: bool = False) -> None:
     (d / "inbox.json").write_text(json.dumps(inbox(), indent=1))
     (d / "notes.md").write_text(NOTES)
     y = (date.today() - timedelta(days=1)).isoformat()
-    write_json("ledger.json", [
+    write_json("ledger.json", history() + [
         {"id": "a1c0de01", "text": "Send Jordan the new homepage photos", "who": "Jordan Kim", "due": y,
          "source": "", "origin": "owner", "status": "done", "created": f"{_d(-4)}T16:00:00+00:00",
          "closed": f"{y}T17:40:00+00:00", "note": "Shared the folder with 12 photos; Jordan replied thanks",

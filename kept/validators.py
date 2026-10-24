@@ -145,7 +145,9 @@ def honest_email(text: str, *, recipient_first: str, owner_first: str, today: da
     today = today or date.today()
     v = Verdict(True)
     first_line = text.strip().splitlines()[0] if text.strip() else ""
-    if owner_first and re.search(rf"\b{re.escape(owner_first)}\b", first_line, re.I) and \
+    # the greeting is the opening clause ("Hi Maria,"), not a one-line email's sign-off ("Thanks, Alex")
+    greeting = re.split(r"[,!:\u2014\-]", first_line, maxsplit=1)[0][:40]
+    if owner_first and re.search(rf"\b{re.escape(owner_first)}\b", greeting, re.I) and \
             owner_first.lower() != recipient_first.lower():
         v.add(f"the greeting addresses {owner_first}, the sender, instead of {recipient_first}")
     if recipient_first and recipient_first.lower() not in text.lower():
@@ -154,3 +156,35 @@ def honest_email(text: str, *, recipient_first: str, owner_first: str, today: da
     if past:
         v.add(f"the draft mentions {past[0].isoformat()}, which has already passed")
     return v
+
+
+_WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+
+def resolve_when(words: str, today: date) -> date | None:
+    """Turn 'by Friday', 'tomorrow', 'end of the week', 'next week', 'Oct 30' into a date.
+    Models are unreliable at calendar arithmetic (live run: 'Friday' -> a Tuesday), so code does it."""
+    w = (words or "").lower()
+    if not w.strip():
+        return None
+    if "today" in w or "tonight" in w or "end of day" in w or "eod" in w:
+        return today
+    if "tomorrow" in w:
+        return today + timedelta(days=1)
+    nxt = "next week" in w or ("next" in w and any(d in w for d in _WEEKDAYS))
+    for i, name in enumerate(_WEEKDAYS):
+        if re.search(rf"\b{name}\b", w):
+            ahead = (i - today.weekday()) % 7 or 7
+            d = today + timedelta(days=ahead)
+            if "next" in w and ahead < 7 and today.weekday() < i:
+                d += timedelta(days=7)  # "next Friday" said on a Tuesday means the Friday after this one
+            return d
+    if "end of the week" in w or "end of week" in w or "this week" in w:
+        return today + timedelta(days=(4 - today.weekday()) % 7)
+    if nxt:  # "next week": the Friday of next week, the latest day it can still mean
+        return today + timedelta(days=(7 - today.weekday())) + timedelta(days=4)
+    hits = dates_in(w, today)
+    if hits:
+        d = hits[0]
+        return d if d >= today - timedelta(days=60) else d.replace(year=d.year + 1)
+    return None

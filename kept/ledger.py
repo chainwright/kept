@@ -14,6 +14,7 @@ from .store import append_audit, journal, now_iso, read_json, write_json
 
 FILE = "ledger.json"
 RESOLUTIONS = ("done", "dropped", "handed_off")
+DIRECTIONS = ("i_owe", "owed_to_me")
 
 
 class LedgerError(ValueError):
@@ -37,17 +38,20 @@ def get(item_id: str) -> dict:
 
 
 def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
-        origin: str = "owner", contact: str = "") -> dict:
+        origin: str = "owner", contact: str = "", direction: str = "i_owe") -> dict:
+    """direction: 'i_owe' (the owner promised) or 'owed_to_me' (someone promised the owner)."""
     text = text.strip()
     if not text:
         raise LedgerError("a commitment needs words")
+    if direction not in DIRECTIONS:
+        raise LedgerError(f"direction must be one of {DIRECTIONS}")
     rows = _all()
     # the same promise mentioned twice is still one promise
     for r in rows:
         if r["status"] == "open" and r["text"].lower() == text.lower() and r.get("who") == who:
             return r
     row = {"id": uuid.uuid4().hex[:8], "text": text, "who": who, "due": due, "source": source,
-           "origin": origin, "contact": contact, "status": "open", "created": now_iso(), "history": []}
+           "origin": origin, "contact": contact, "direction": direction, "status": "open", "created": now_iso(), "history": []}
     rows.append(row)
     write_json(FILE, rows)
     append_audit("ledger_add", id=row["id"], text=text, who=who, due=due, origin=origin)
@@ -96,7 +100,11 @@ def days_overdue(row: dict, today: date | None = None) -> int:
     return max(0, (today - d).days)
 
 
-def open_sorted(today: date | None = None) -> list[dict[str, Any]]:
-    """Overdue first, then by due date, then oldest."""
-    rows = items("open")
+def direction(row: dict) -> str:
+    return row.get("direction") or "i_owe"
+
+
+def open_sorted(today: date | None = None, which: str | None = None) -> list[dict[str, Any]]:
+    """Overdue first, then by due date, then oldest. which: 'i_owe', 'owed_to_me' or None for both."""
+    rows = [r for r in items("open") if which is None or direction(r) == which]
     return sorted(rows, key=lambda r: (-days_overdue(r, today), r.get("due") or "9999", r["created"]))

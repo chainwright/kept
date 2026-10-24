@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, ledger, memory_qa
+from . import agent, approvals, calibration, learn, ledger, memory_qa, precheck
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, router
 from .store import read_audit, read_json
@@ -19,7 +19,8 @@ from .tools import mail, notify  # noqa: F401  (registers actions)
 
 WEB = ROOT / "web"
 JOBS = {"triage": agent.triage_inbox, "follow_ups": agent.follow_ups, "watch": agent.watch_topics,
-        "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day}
+        "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day,
+        "learn": learn.propose_rules}
 _busy = threading.Lock()
 
 
@@ -84,6 +85,7 @@ def state():
         "routes": ROUTES,
         "activity": [a for a in audit if a["kind"] not in ("llm",)][-40:][::-1],
         "busy": _busy.locked(),
+        "calibration": calibration.as_json(),
     }
 
 
@@ -101,12 +103,14 @@ class NewItem(BaseModel):
     text: str
     who: str = ""
     due: str | None = None
+    direction: str = "i_owe"
 
 
 @app.post("/api/ledger")
 def add_item(item: NewItem):
     try:
-        return ledger.add(item.text, who=item.who, due=item.due or None, origin="owner")
+        return ledger.add(item.text, who=item.who, due=item.due or None, origin="owner",
+                          direction=item.direction)
     except ledger.LedgerError as e:
         raise HTTPException(400, str(e))
 
@@ -138,6 +142,16 @@ def run(job: str):
 
 class Question(BaseModel):
     question: str
+
+
+class Draft(BaseModel):
+    text: str
+    to: str = ""
+
+
+@app.post("/api/precheck")
+def before_you_send(d: Draft):
+    return precheck.check(d.text, d.to)
 
 
 @app.post("/api/ask")

@@ -95,34 +95,39 @@ def triage_inbox() -> dict:
 
 
 def _extract_commitments(m: dict) -> list[dict]:
-    """Promises the OWNER made (or was asked to make) in this thread, each with proof."""
+    """Promises in this thread, in both directions, each with the words that prove it."""
     out = []
+    owner, (name, addr) = read_notes_owner(), sender(m)
     try:
         data = router.ask("extract", _msgs(
-            f"This email was sent TO the business owner, {read_notes_owner()}, BY {sender(m)[0]}. "
-            f"List things {read_notes_owner()} promised or must do for {sender(m)[0]}. Write each as a short "
-            f"instruction to {read_notes_owner()}, naming the person (e.g. 'Send Maria the revised quote'). "
+            f"This email was sent TO the business owner, {owner}, BY {name}. Find two kinds of promise:\n"
+            f"- mine: things {owner} promised or must do for {name}. Write each as a short instruction to "
+            f"{owner}, naming the person (e.g. 'Send Maria the revised quote').\n"
+            f"- theirs: things {name} promised to do for {owner} (send files, pay an invoice, give feedback). "
+            f"Write each as what {name} owes (e.g. 'Priya pays invoice #118').\n"
             "For each, copy the exact words from the email that show it. Reply JSON: "
-            '{"items": [{"text": "short instruction", "due": "YYYY-MM-DD or null", '
-            '"quote": "exact words from the email"}]}. '
-            f"Today is {date.today().isoformat()} ({date.today():%A}). If there are none, return an empty list.\n\n"
+            '{"mine": [{"text": "...", "due": "YYYY-MM-DD or null", "quote": "exact words"}], '
+            '"theirs": [{"text": "...", "due": "YYYY-MM-DD or null", "quote": "exact words"}]}. '
+            f"Today is {date.today().isoformat()} ({date.today():%A}). Empty lists are fine.\n\n"
             f"From: {m['from']}\nSubject: {m['subject']}\n\n{m['body'][:4000]}", "extract"),
-            purpose=f"extract {m['id']}", json_mode=True, max_tokens=500).json()
+            purpose=f"extract {m['id']}", json_mode=True, max_tokens=600).json()
     except Exception as e:
         _abstain("extract", m["subject"], Verdict(False, [f"model reply unusable: {e}"]))
         return out
-    for it in (data.get("items") or [])[:5]:
-        v = shape(it, {"text": str, "quote": str})
-        v.merge(grounded([{"source": m["id"], "quote": it.get("quote", "")}],
-                         {m["id"]: m["subject"] + "\n" + m["body"]}))
-        v.merge(plausible_due(it.get("due")))
-        if not v:
-            _abstain("extract", it.get("text", m["subject"]), v, it)
-            continue
-        name, addr = sender(m)
-        text = it["text"].strip()
-        out.append(ledger.add(text[:1].upper() + text[1:], who=name, contact=addr, due=it.get("due"),
-                              source=m["id"], origin="inbox"))
+    batches = [("i_owe", data.get("mine") or data.get("items") or []), ("owed_to_me", data.get("theirs") or [])]
+    for direction, items in batches:
+        for it in items[:5]:
+            v = shape(it, {"text": str, "quote": str})
+            if v:
+                v.merge(grounded([{"source": m["id"], "quote": it.get("quote", "")}],
+                                 {m["id"]: m["subject"] + "\n" + m["body"]}))
+                v.merge(plausible_due(it.get("due")))
+            if not v:
+                _abstain("extract", it.get("text", m["subject"]) if isinstance(it, dict) else m["subject"], v, it)
+                continue
+            text = it["text"].strip()
+            out.append(ledger.add(text[:1].upper() + text[1:], who=name, contact=addr, due=it.get("due"),
+                                  source=m["id"], origin="inbox", direction=direction))
     return out
 
 
@@ -137,15 +142,21 @@ def follow_ups(limit: int = 3) -> list[dict]:
             break
         if any(a.get("ledger_id") == row["id"] for a in approvals.pending()):
             continue
+        theirs = ledger.direction(row) == "owed_to_me"
+        overdue = ledger.days_overdue(row, today)
         due_soon = row.get("due") and row["due"][:10] <= today.isoformat()
         src = mails.get(row.get("source", ""))
-        if not (due_soon and src):
+        # our own promises: act when due; theirs: only nudge once they are actually late
+        if not (src and (overdue if theirs else due_soon)):
             continue
         full, to = sender(src)
         name = full.split(" ")[0]
-        overdue = ledger.days_overdue(row, today)
-        status = (f"It is {overdue} day(s) late; apologise in one sentence and say it will arrive today."
-                  if overdue else "It is due today; say it will arrive today.")
+        if theirs:
+            status = (f"{full} promised this to {read_notes_owner()} and it is {overdue} day(s) late. Write a "
+                      "friendly two-line nudge asking when to expect it. No guilt, no threats, no new deadlines.")
+        else:
+            status = (f"It is {overdue} day(s) late; apologise in one sentence and say it will arrive today."
+                      if overdue else "It is due today; say it will arrive today.")
         r = router.ask("draft", _msgs(
             f"Today is {today.isoformat()} ({today:%A}). Write a short, warm email FROM {read_notes_owner()} "
             f"TO {full} about this: '{row['text']}'. {status} Greet {name} by first name, sign as "
@@ -171,7 +182,8 @@ def follow_ups(limit: int = 3) -> list[dict]:
         req = approvals.propose(
             "send_email", {"to": to, "subject": d["subject"], "body": d["body"]},
             summary=f"Email {to}: \"{d['subject']}\"",
-            why=f"You promised: {row['text']} (due {row.get('due')}).",
+            why=(f"{full} promised: {row['text']} (due {row.get('due')}); {overdue} day(s) late." if theirs
+                 else f"You promised: {row['text']} (due {row.get('due')})."),
             checks=["no template holes", f"greets {name}, not you", "no dates already passed", "length ok"],
             ledger_id=row["id"])
         ledger.touch(row["id"], f"drafted follow-up, waiting for approval {req['id']}")

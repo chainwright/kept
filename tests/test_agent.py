@@ -19,7 +19,7 @@ def test_triage_extracts_only_grounded_commitments(fake):
     _inbox([MAIL])
     fake([
         ("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "Maria waits for quote"}),
-        ("List things", {"items": [
+        ("Find two kinds", {"mine": [
             {"text": "Send Maria the revised quote", "who": "Maria Lopez", "due": (TODAY - timedelta(days=1)).isoformat(),
              "quote": "you'd send the revised quote by"},
             {"text": "Build her a logo", "who": "Maria", "due": None, "quote": "and you also promised a free logo"},
@@ -107,7 +107,7 @@ def test_memory_answer_is_verified_only_with_real_quotes(fake):
 def test_extracted_promise_is_owed_to_the_sender_not_the_owner(fake):
     _inbox([MAIL])
     fake([("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "x"}),
-          ("List things", {"items": [{"text": "send the revised quote", "who": "Alex", "due": None,
+          ("Find two kinds", {"mine": [{"text": "send the revised quote", "who": "Alex", "due": None,
                                       "quote": "you'd send the revised quote by"}]})])
     agent.triage_inbox()
     row = ledger.items("open")[0]
@@ -150,3 +150,19 @@ def test_overload_skips_promises_that_already_have_a_message_waiting(fake):
                                  "reason": "r", "subject": "s", "body": "Hi Client0, can we move it?"})])
     assert agent.weigh_overload() is None        # Ultra picked the busy one; code refuses it
     assert rows[0]["id"] not in fb.calls[-1][1]  # and it was never offered as a choice
+
+
+def test_promises_owed_to_the_owner_are_tracked_and_nudged_only_when_late(fake):
+    pay = {"id": "mail:9", "from": "Priya Shah <priya@studio.example>", "subject": "Invoice 118", "date": "",
+           "body": f"Hi Alex, sorry for the wait. We'll pay invoice #118 by {(TODAY - timedelta(days=3)).isoformat()}. Priya"}
+    _inbox([pay])
+    fake([("Classify this email", {"kind": "client", "needs_reply": False, "one_line": "payment promise"}),
+          ("Find two kinds", {"mine": [], "theirs": [{"text": "Priya pays invoice #118",
+                                                       "due": (TODAY - timedelta(days=3)).isoformat(),
+                                                       "quote": "We'll pay invoice #118 by"}]}),
+          ("Write a short, warm", {"subject": "Invoice #118", "body": "Hi Priya, just checking when invoice #118 might go through? Thanks, Alex"})])
+    agent.triage_inbox()
+    row = ledger.open_sorted(which="owed_to_me")[0]
+    assert row["who"] == "Priya Shah" and row["contact"] == "priya@studio.example"
+    asked = agent.follow_ups()
+    assert len(asked) == 1 and "Priya Shah promised" in asked[0]["why"]
