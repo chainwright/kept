@@ -13,7 +13,7 @@ def _world(monkeypatch, fake, ultra_steps, prospect_reply=None, pages=None):
     rules = [("Rank the candidates", {"steps": ultra_steps}),
              ("didn't go ahead", {"subject": "Still thinking about it?", "body": "Hi Hannah, I hope the clinic is doing well! Is the website project still on your mind? Happy to jump on a quick call. Alex"})]
     if prospect_reply:
-        rules.append(("plausibly need a website", prospect_reply))
+        rules.append(("plausibly need", prospect_reply))
     return fake(rules)
 
 

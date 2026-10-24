@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, calibration, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
+from . import agent, approvals, calibration, checkins, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, BudgetExceeded, router
 from .store import read_audit, read_json
@@ -21,7 +21,7 @@ WEB = ROOT / "web"
 JOBS = {"triage": agent.triage_inbox, "follow_ups": agent.follow_ups, "watch": agent.watch_topics,
         "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day,
         "learn": learn.propose_rules, "money": money.chase, "rescue": rescue.plan,
-        "offers": offers.propose, "growth": growth.moments}
+        "offers": offers.propose, "growth": growth.moments, "checkins": checkins.propose}
 _busy = threading.Lock()
 
 
@@ -111,6 +111,8 @@ def state():
         "offers_plan": read_json("offers_plan.json", None),
         "growth": read_json("growth_last.json", None),
         "media": read_json("media.json", {}),
+        "calendar": _upcoming(),
+        "checkins": read_json("checkins_last.json", None),
     }
 
 
@@ -151,6 +153,20 @@ def close_item(item_id: str, body: Close):
         return ledger.close(item_id, body.resolution, body.note)
     except ledger.LedgerError as e:
         raise HTTPException(400, str(e))
+
+
+def _upcoming():
+    from . import schedule
+    return schedule.upcoming(14)
+
+
+@app.get("/demo_media/{name}")
+def demo_photo(name: str):
+    """Sample photos a visitor can attach to their email in one click."""
+    p = (ROOT / "demo_media" / name).resolve()
+    if p.parent != (ROOT / "demo_media").resolve() or not p.exists():
+        raise HTTPException(404)
+    return FileResponse(p)
 
 
 def _snapshot_meta():
@@ -218,6 +234,7 @@ class Letter(BaseModel):
     body: str
     name: str = ""
     email: str = ""
+    image: str = ""  # optional photo as a data: URL
 
 
 @app.get("/api/people")
@@ -241,7 +258,7 @@ def write_to_alex(l: Letter):
     if not _busy.acquire(blocking=False):
         raise HTTPException(409, "Kept is already working on something")
     try:
-        return tryit.handle(l.who, l.subject, l.body, l.name, l.email)
+        return tryit.handle(l.who, l.subject, l.body, l.name, l.email, l.image)
     except BudgetExceeded as e:
         raise HTTPException(429, f"{e}. The demo has a small daily model budget; try again tomorrow.")
     except ValueError as e:

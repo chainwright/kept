@@ -22,6 +22,7 @@ ROUTES = {
     "plan": "super",        # what should today look like
     "draft": "super",       # write the follow-up a human will read
     "judge": "ultra",       # the one call where being wrong costs money or trust
+    "see": "vision",        # read a client's photo of their kitchen
 }
 
 
@@ -149,8 +150,9 @@ class Router:
         if not model:
             listed = getattr(self._backend(), "models", lambda: [])()
             hits = [m for m in listed if "nemotron" in m.lower() and t.model_hint in m.lower()]
-            # prefer the plain instruct model over vision / fine-tune variants
-            hits.sort(key=lambda m: (("vl" in m.lower()) or ("lora" in m.lower()), len(m)))
+            # prefer the plain instruct model over vision / fine-tune variants (except for the vision tier)
+            want_vl = "vl" in t.model_hint
+            hits.sort(key=lambda m: ((("vl" in m.lower()) != want_vl) or ("lora" in m.lower()), len(m)))
             model = hits[0] if hits else t.default_model
         self._resolved[tier] = model
         return model

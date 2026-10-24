@@ -278,6 +278,7 @@
     if (changed("inbox", [st.inbox, st.labels, st.open.map((r) => r.source)])) safe("inbox", () => renderInbox(st));
     if (changed("news", st.watch)) safe("news", () => renderNews(st));
     if (changed("growth", [st.offers_plan, st.growth, st.pending.map((a) => a.id)])) safe("growth", () => renderGrowth(st));
+    if (changed("calendar", st.calendar || [])) safe("calendar", () => renderCalendar(st));
     if (changed("people", [(st.inbox || []).length, st.pending.map((a) => a.id), (st.decided || []).map((a) => a.id)])) loadPeople();
     if (changed("media", [st.media, st.invoices.map((i) => i.client)])) safe("media", () => renderMedia(st));
     if (changed("models", [st.tiers, st.routes, st.calls, st.spend_today, st.budget])) safe("models", () => renderModels(st));
@@ -439,6 +440,12 @@
 
     let content = null;
     if (a.kind === "publish_post") content = postPreview(args);
+    else if (a.kind === "ad_plan") content = h("div", { class: "post" },
+      h("div", { class: "kind-row" }, chip("Ad plan", "chip-ask"), h("span", { class: "muted" }, `${usd(args.per_day)} a day · ${args.days} days · ${usd(args.total)} total`)),
+      h("p", { class: "post-text" }, h("strong", null, args.headline || ""), "\n", args.text || ""),
+      h("p", { class: "foot muted" }, `Where: ${args.places || ""}. Who: ${args.audience || ""}.`),
+      postPreview({ platform: "ad", text: "", images: args.images || [] }).querySelector(".pics"),
+      h("p", { class: "foot muted" }, "Kept never starts an ad. Yes saves the plan for you to set up."));
     else if (a.kind === "add_rule") content = h("div", { class: "rulecard" },
       h("div", { class: "kind-row" }, chip(`skill: ${args.skill || "?"}`, "chip-held")),
       h("p", { class: "rule" }, args.rule || ""),
@@ -510,6 +517,35 @@
   });
 
   function precheckResult(original, r) {
+    const ph = r.photo;
+    if (ph && ph.seen) steps.push(h("li", null, h("span", { class: "w-step" }, "What Kept sees in your photo (Nemotron Super VL)"),
+      ph.path ? h("img", { class: "w-seen-img", src: `media/${ph.path.replace(/^media\//, "")}`, alt: "Your photo" }) : null,
+      h("span", null, ph.seen.shows || ""),
+      (ph.seen.damage || []).length ? h("div", { class: "foot muted" }, "Damage: " + ph.seen.damage.join("; ")) : null,
+      ph.seen.style ? h("div", { class: "foot muted" }, "Style to match: " + ph.seen.style) : null,
+      (ph.seen.cant_see || []).length ? h("div", { class: "foot muted" }, "Can't tell from the photo: " + ph.seen.cant_see.join("; ")) : null));
+    else if (ph) steps.push(h("li", null, h("span", { class: "w-step" }, "Your photo"), h("span", { class: "muted" }, "Kept couldn't read the photo, so it didn't guess.")));
+    const pl = r.plan;
+    if (pl && pl.job && pl.job !== "unclear") {
+      const JOB = { small_repair: "Small repair", fronts: "New cabinet fronts", countertop: "New countertop", backsplash: "New backsplash",
+        full_kitchen: "Full kitchen", commercial: "Cafe or office kitchen", question: "A question", other: "Something else" };
+      let next = null;
+      if (pl.booked_label) next = h("span", null, chip("booked", "chip-ok"), ` Measuring visit ${pl.booked_label}. It's in Alex's calendar and the promise list.`);
+      else if (pl.job === "small_repair") next = h("span", null, `No visit needed to price it: ${pl.hours} h at Alex's rate = ${usd(pl.price)} plus hardware (code did the maths).`);
+      else if ((pl.slots || []).length) next = h("span", null, "Needs a measuring visit. Free times from Alex's calendar: ",
+        pl.slots.map((x) => x.label).join(" · "), pl.from_price ? `. Starts from ${usd(pl.from_price)} (Alex's price list).` : ".");
+      else if (pl.on_site) next = h("span", null, "Alex is already working at this kitchen and can measure there.");
+      if (pl.payment_plan) next = h("span", null, chip("payment plan", "chip-ask"),
+        ` On the ${usd(pl.payment_plan.total)} estimate: ${pl.payment_plan.pct}% up front (${usd(pl.payment_plan.deposit)}), then ${pl.payment_plan.months} × ${usd(pl.payment_plan.monthly)} a month, in the contract.`);
+      const est = pl.estimate && !pl.payment_plan ? pl.estimate : null;
+      steps.push(h("li", null, h("span", { class: "w-step" }, "What job, and the next step (Nemotron Super names it, code does the rest)"),
+        h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""), next ? h("div", null, next) : null,
+        est ? h("div", { class: "estimate" },
+          h("div", null, h("strong", null, `Preliminary estimate ${usd(est.low)} – ${usd(est.high)}`),
+            h("span", { class: "muted" }, ` · sizes from ${est.sizes_from}`)),
+          h("ul", { class: "plain" }, est.lines.map((l) => h("li", null, l.unit ? `${l.what}: ${l.qty} ${l.unit} × ${usd(l.price)} = ${usd(l.total)}` : `${l.what}: ${usd(l.total)}`))),
+          h("div", { class: "foot muted" }, "Prices from Alex's price guide; code did the maths. Exact price after the measuring visit.")) : null));
+    }
     const web = r.research;
     if (web) steps.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily search + extract, facts checked by code)"),
       (web.facts || []).length ? h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, f.text, " ",
@@ -1447,22 +1483,56 @@
   // ------------------------------------------------------------------ write to Alex (a visitor plays a client)
   let PEOPLE = [];
   const W_EXAMPLES = [
-    { label: "New lead asks for a price", who: "new", name: "Jo Rivera", email: "jo@happypaws.example",
-      subject: "Website for my dog grooming salon",
-      body: "Hi Alex, I just opened a dog grooming salon in SE Portland and need a simple site with online booking. What do you charge, and could you have something ready by Friday?\n\nThanks, Jo" },
+    { label: "Old kitchen, with a photo", who: "new", name: "Jo Rivera", email: "jo@riverahome.example", photo: "old-kitchen.jpg",
+      subject: "Our old kitchen",
+      body: "Hi Alex, we just bought a house and the kitchen is from the 90s (photo attached). We'd love it to look modern. What would you suggest, and roughly what would it cost?\n\nThanks, Jo" },
+    { label: "A broken hinge, with a photo", who: "new", name: "Sam Lee", email: "sam.lee@example.com", photo: "cabinet-repair.jpg",
+      subject: "Cabinet door under the sink",
+      body: "Hello, the cabinet door under our sink came off its hinge and the drawer below is loose. Could you fix it? We're in Sellwood. Photo attached.\n\nSam" },
     { label: "Maria wants extra work", who: "maria", subject: "Two more things",
-      body: "Hi Alex! Could you also add a gift card page before the holidays? And please send me the final menu PDF by Thursday so I can print it.\n\nMaria" },
+      body: "Hi Alex! While you're here, could you also tile the backsplash behind the stove? And the new pantry door doesn't close all the way.\n\nMaria" },
     { label: "Priya promises to pay", who: "priya", subject: "Re: invoice #118",
       body: "Hi Alex, so sorry again. Our office manager is back, we will pay invoice #118 next Wednesday.\n\nPriya" },
     { label: "Lucia is delighted", who: "lucia", subject: "Thank you!",
-      body: "Alex, since the new shop page went live our online orders doubled. Customers say it's so easy to use. Thank you!\n\nLucia" },
-    { label: "Ask what a booking page costs", who: "new", name: "", email: "", subject: "Online booking",
-      body: "Hi Alex, I run a small physio clinic and we already have a website. Could you add online booking to it? What would that cost, and when could you start?\n\nThanks" },
-    { label: "Jordan moves the launch call", who: "jordan", subject: "Launch call",
-      body: "Hi Alex, sorry, can we move our launch call to Thursday afternoon? And is the contact form fixed yet?\n\nJordan" },
+      body: "Alex, the staff kitchenette you built is the best thing in the shop. Everyone eats lunch there now. Thank you!\n\nLucia" },
+    { label: "Jordan moves the walkthrough", who: "jordan", subject: "Walkthrough",
+      body: "Hi Alex, sorry, can we move the final walkthrough to Thursday afternoon? And is the leak under the sink fixed yet?\n\nJordan" },
   ];
+  let PHOTO = "";   // data: URL of the photo attached to the email, if any
+  function setPhoto(dataUrl) {
+    PHOTO = dataUrl || "";
+    $("#w-thumb").hidden = !PHOTO; $("#w-photo-clear").hidden = !PHOTO;
+    if (PHOTO) $("#w-thumb").src = PHOTO; else { $("#w-thumb").removeAttribute("src"); $("#w-file").value = ""; }
+  }
+  // shrink big phone photos before sending: 1600 px is plenty for Nemotron VL
+  function shrink(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+  $("#w-file").addEventListener("change", async () => {
+    const f = $("#w-file").files[0];
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast("Use a JPEG, PNG or WebP photo.", "err"); $("#w-file").value = ""; return; }
+    const url = URL.createObjectURL(f);
+    try { setPhoto(await shrink(url)); } catch (e) { toast("Couldn't read that photo.", "err"); } finally { URL.revokeObjectURL(url); }
+  });
+  $("#w-photo-clear").addEventListener("click", () => setPhoto(""));
+  async function samplePhoto(name) {
+    try { setPhoto(await shrink(`demo_media/${name}`)); } catch (e) { toast("Couldn't load the sample photo.", "err"); }
+  }
   function applyExample(ex) {
     $("#w-who").value = ex.who; whoChanged();
+    if (ex.photo) samplePhoto(ex.photo); else setPhoto("");
     if (ex.who === "new") { $("#w-name").value = ex.name || ""; $("#w-email").value = ex.email || ""; }
     $("#w-subject").value = ex.subject; $("#w-body").value = ex.body;
     $("#write").scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
@@ -1480,7 +1550,7 @@
     const v = $("#w-who").value;
     const p = PEOPLE.find((x) => x.key === v || `new:${x.email}` === v);
     $("#w-new").hidden = v !== "new";
-    $("#w-about").textContent = v === "new" ? "Alex has never heard of you. Name your real business and city, and Kept looks you up on the web (Tavily) before drafting the reply."
+    $("#w-about").textContent = v === "new" ? "Alex has never heard of you. Kept adds you as a new contact. If you write for a real business, name it and the city: Kept looks it up on the web (Tavily)."
       : p ? `${p.about}.` : "";
   }
   $("#w-who").addEventListener("change", whoChanged);
@@ -1511,15 +1581,16 @@
     const out = $("#w-out"), btn = $("#w-btn");
     btn.disabled = true;
     const t0 = Date.now();
-    const line = h("span", null, "Kept is reading your email: sorting it, checking the agreement, finding promises, drafting Alex's reply…");
+    const line = h("span", null, PHOTO ? "Kept is reading your email and looking at your photo, working out the job and drafting Alex's reply…"
+      : "Kept is reading your email: sorting it, checking the agreement, finding promises, drafting Alex's reply…");
     const secs = h("span", { class: "muted" }, " 0s");
     fill(out, h("p", { class: "loading" }, h("span", { class: "spinner", "aria-hidden": "true" }), line, secs));
     const timer = setInterval(() => { secs.textContent = ` ${Math.round((Date.now() - t0) / 1000)}s`; }, 1000);
     try {
-      const r = await api("POST", "/api/demo/mail", { who, name, email, subject: $("#w-subject").value.trim(), body });
+      const r = await api("POST", "/api/demo/mail", { who, name, email, subject: $("#w-subject").value.trim(), body, image: PHOTO });
       fill(out, writeResult(r));
       announce("Kept handled your email.");
-      $("#w-body").value = "";
+      $("#w-body").value = ""; setPhoto("");
       if (who === "new") {
         await loadPeople();
         const opt = [...$("#w-who").options].find((o) => o.value === `new:${(r.mail.from.match(/<([^>]+)>/) || [])[1]}`);
@@ -1601,6 +1672,24 @@
         h("div", { class: "t-meta" }, { in: "They wrote", out: "Alex sent", draft: "Alex's draft, waiting for Yes", replaced: "Replaced draft", rejected: "Declined draft" }[m.dir] || m.dir,
           " · ", ago(m.ts), m.subject ? ` · ${m.subject}` : ""),
         h("div", { class: "t-body" }, m.body)))));
+  }
+
+  function renderCalendar(st) {
+    const evs = st.calendar || [];
+    const visits = evs.filter((e) => e.kind === "visit");
+    const sites = evs.filter((e) => e.kind === "site");
+    const rows = [];
+    const byDay = {};
+    for (const e of evs) (byDay[e.date] = byDay[e.date] || []).push(e);
+    for (const day of Object.keys(byDay).sort()) {
+      const es = byDay[day];
+      const site = es.find((e) => e.kind === "site");
+      for (const v of es.filter((e) => e.kind === "visit").sort((a, b) => String(a.time).localeCompare(String(b.time))))
+        rows.push(h("li", { class: `c-visit${v.booked && (Date.now() - new Date(v.booked)) < 3600e3 ? " c-new" : ""}` },
+          h("span", { class: "c-day" }, `${fmtDay(day)} · ${v.time}`), h("span", { class: "c-what" }, `Measuring visit: ${v.who}`, h("span", { class: "muted" }, ` — ${v.what || ""}`))));
+      if (site) rows.push(h("li", null, h("span", { class: "c-day" }, fmtDay(day)), h("span", { class: "muted" }, site.what)));
+    }
+    fill($("#cal-list"), rows.length ? rows : h("li", null, h("span", { class: "muted" }, "Nothing booked.")));
   }
 
   function renderClients() {

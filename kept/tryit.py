@@ -1,4 +1,4 @@
-"""Write to Alex: a visitor's own email, handled live.
+"""Write to Alex: a visitor's own email (and photo), handled live.
 
 The recorded morning shows one fixed week. This lets a judge send Alex a message of their own,
 from a client, a late payer or a stranger, and watch Kept handle just that email on the real
@@ -14,22 +14,22 @@ import uuid
 from datetime import date
 
 from . import approvals, ledger
-from .store import locked, now_iso, read_audit, read_json, write_json
+from .store import data_dir, locked, now_iso, read_audit, read_json, write_json
 
 # who a visitor can write as, and what Kept knows about each of them in the demo week
 PEOPLE = [
-    {"key": "maria", "name": "Maria Lopez", "email": "maria@sunrisebakery.example",
-     "about": "client, Sunrise Bakery site in progress, signed agreement"},
-    {"key": "jordan", "name": "Jordan Kim", "email": "jordan@kimyoga.example",
-     "about": "client, Kim Yoga site, signed agreement"},
+    {"key": "maria", "name": "Maria Lopez", "email": "maria@lopezhome.example",
+     "about": "homeowner; Alex is remodelling her kitchen right now under a signed agreement"},
+    {"key": "jordan", "name": "Jordan Kim", "email": "jordan@kimfamily.example",
+     "about": "homeowner; new cabinet fronts and countertop finished, 60-day fix guarantee"},
     {"key": "priya", "name": "Priya Shah", "email": "priya@shahdental.example",
-     "about": "client, usually pays about 12 days late; invoice #118 ($850) is overdue"},
+     "about": "dental office; usually pays about 12 days late; invoice #118 ($850) is overdue"},
     {"key": "lucia", "name": "Lucia Ferri", "email": "lucia@ferriboutique.example",
-     "about": "past client, paid early, boutique"},
+     "about": "boutique owner; Alex built her staff kitchenette, she paid early"},
     {"key": "noah", "name": "Noah Brooks", "email": "noah@brookscoffee.example",
-     "about": "client, Brooks Coffee site just launched"},
-    {"key": "dev", "name": "Dev Patel", "email": "dev@greenleaflandscaping.example",
-     "about": "lead, asked for rates"},
+     "about": "Brooks Coffee; Alex just rebuilt the back counter and shelves"},
+    {"key": "dev", "name": "Dev Patel", "email": "dev@patelfamily.example",
+     "about": "new lead; bought a 1950s house and wants the kitchen redone"},
 ]
 MAX_BODY = 2000
 
@@ -63,6 +63,23 @@ def client_base() -> list[dict]:
     return rows
 
 
+def _save_photo(mid: str, image: str):
+    """A data: URL from the browser, at most ~4 MB, jpeg/png/webp only."""
+    import base64
+    from pathlib import Path
+    m = re.match(r"data:image/(jpeg|jpg|png|webp);base64,(.+)$", image or "", re.S)
+    if not m:
+        raise ValueError("The photo must be a JPEG, PNG or WebP image")
+    raw = base64.b64decode(m.group(2))
+    if len(raw) > 4_500_000:
+        raise ValueError("That photo is too large; under 4 MB, please")
+    d = data_dir() / "media" / "inbox"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / f"{mid.replace(':', '-')}.{'jpg' if m.group(1) in ('jpeg', 'jpg') else m.group(1)}"
+    p.write_bytes(raw)
+    return Path(p)
+
+
 def _sender(key: str, name: str, email: str) -> tuple[str, str]:
     p = next((p for p in PEOPLE if p["key"] == key), None)
     if p:
@@ -74,7 +91,7 @@ def _sender(key: str, name: str, email: str) -> tuple[str, str]:
     return name, email
 
 
-def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -> dict:
+def handle(key: str, subject: str, body: str, name: str = "", email: str = "", image: str = "") -> dict:
     from . import growth
     from .agent import _triage_one
     from .reply import thread
@@ -97,14 +114,28 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
         inbox.append(m)
         write_json("inbox.json", inbox)
 
-    # a stranger gets looked up on the web (Tavily) while the email is being read
+    photo_path = _save_photo(m["id"], image) if image else None
+    if photo_path:
+        m["photo"] = str(photo_path.relative_to(data_dir()))
+        # the client's own photo is the "before" for this kitchen; Alex adds the "after" when the job is done
+        from .media import record
+        record(who, "before", photo_path, "photo the client sent")
+        with locked():
+            inbox = read_json("inbox.json", [])
+            for x in inbox:
+                if x["id"] == m["id"]:
+                    x["photo"] = m["photo"]
+            write_json("inbox.json", inbox)
+    # while the email is read: a stranger is looked up on the web (Tavily), a photo is looked at (Nemotron VL)
     from concurrent.futures import ThreadPoolExecutor
-    from . import research
+    from . import research, vision
     is_new = addr not in {p["email"] for p in PEOPLE}
-    with ThreadPoolExecutor(max_workers=2) as ex:
+    with ThreadPoolExecutor(max_workers=3) as ex:
         looked = ex.submit(research.look_up, who, addr, body) if is_new and not research.known(addr) else None
+        seen = ex.submit(vision.describe, photo_path, body) if photo_path else None
         one = _triage_one(m)
         found = looked.result() if looked else research.known(addr)
+        photo = seen.result() if seen else None
     with locked():
         seen = set(read_json("seen_mail.json", []))
         seen.add(m["id"])
@@ -118,11 +149,15 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
     if one["cls"] and one["cls"].get("kind") == "client":
         growth_out = growth.moments(only=[m])
     reply_out = None
+    plan = None
     label = one["cls"] or {}
     if label and label.get("kind") != "noise" and not (growth_out or {}).get("asks"):
         # a delighted client already gets the thank-you (with the review link) from growth
+        from .intake import assess
+        from .scope import contract_for
+        plan = assess(m, photo, has_contract=bool(contract_for(addr)))
         from .reply import draft_reply
-        reply_out = draft_reply(m, label, one["scope"], web=found)
+        reply_out = draft_reply(m, label, one["scope"], web=found, photo=photo, plan=plan)
 
     calls = [a for a in read_audit(100000)[audit_before:] if a.get("kind") == "llm"]
     new_approvals = [a for a in approvals.recent(10000) if a["id"] not in approvals_before]
@@ -136,6 +171,8 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
         "approvals": new_approvals,
         "growth": growth_out,
         "research": found,
+        "photo": {"path": m.get("photo"), "seen": photo} if photo_path else None,
+        "plan": plan,
         "reply": {k: v for k, v in (reply_out or {}).items() if k != "held"} if reply_out else None,
         "held_back": [{"job": h["job"], "subject": h["subject"], "problems": h["problems"]} for h in held],
         "waiting_already": [s.get("waiting") for s in skipped],

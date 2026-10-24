@@ -39,6 +39,9 @@ TIERS = {
                   "planning the day and drafting text that someone will read"),
     "ultra": Tier("ultra", "ultra", "nvidia/Nemotron-3-Ultra-550b-a55b", 1.00, 3.00,
                   "the one hard judgement call where a mistake costs real money"),
+    # the price of the VL model wasn't on the catalog page we could see; assumed equal to Super
+    "vision": Tier("vision", "super-vl", "nvidia/Nemotron-3.5-Super-VL", 0.30, 0.90,
+                   "looking at a photo a client sent: the room, the damage, what a visit must check", thinking=False),
 }
 
 

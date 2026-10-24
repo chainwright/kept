@@ -60,6 +60,7 @@
             <button role="menuitem" type="button" data-job="rescue"><strong>Plan a cash rescue</strong><span>Ultra ranks the fastest honest ways to close a gap</span></button>
             <button role="menuitem" type="button" data-job="offers"><strong>Consider seasonal offers</strong><span>Only when the moment and the person are right</span></button>
             <button role="menuitem" type="button" data-job="growth"><strong>Look for happy clients</strong><span>Ask for a review only at the right moment</span></button>
+            <button role="menuitem" type="button" data-job="checkins"><strong>Check in with past clients</strong><span>A month after a small job: how is it holding up?</span></button>
             <p class="menu-group" aria-hidden="true">Your day</p>
             <button role="menuitem" type="button" data-job="watch"><strong>Check the news</strong><span>Web search, only quoted facts survive</span></button>
             <button role="menuitem" type="button" data-job="brief"><strong>Write the brief</strong><span>Super writes today, rules add what's overdue</span></button>
@@ -89,23 +90,26 @@
           <span class="monogram" aria-hidden="true">AR</span>
           <div>
             <p class="meet-eyebrow">Meet the owner Kept works for</p>
-            <h2 id="h-meet">Alex Rivera, web designer in Portland, Oregon</h2>
-            <p>Works alone, building websites for local small businesses: cafes, bakeries, clinics, yoga studios, shops.
-              Kept is Alex's assistant. It reads Alex's email, keeps every promise in view, and looks after Alex's time and money.</p>
+            <h2 id="h-meet">Alex Rivera, kitchen contractor in Portland, Oregon</h2>
+            <p>Works alone with a van and a workshop: new kitchens, new cabinet fronts and countertops, small repairs.
+              Alex is on a job site all day and can't sit in the inbox. Kept is Alex's assistant: it reads the email,
+              keeps every promise in view, books measuring visits and looks after Alex's time and money.</p>
           </div>
         </div>
         <dl class="meet-services">
-          <dt>Website, 4 to 6 pages</dt><dd>from $2,400 · 3 to 4 weeks</dd>
-          <dt>Add-ons: ordering, booking, blog, gift cards</dt><dd>$85 an hour, after a scoping call</dd>
-          <dt>Care plan</dt><dd>$120 a month</dd>
-          <dt>Intro call</dt><dd>20 minutes, free</dd>
+          <dt>Full kitchen, out with the old</dt><dd>from $18,000 · 3 to 5 weeks</dd>
+          <dt>New cabinet fronts on the old boxes</dt><dd>from $4,500</dd>
+          <dt>New countertop · new backsplash</dt><dd>from $2,800 · from $1,200</dd>
+          <dt>Small repairs: handles, hinges, drawers</dt><dd>$85 an hour, 2-hour minimum</dd>
+          <dt>Measuring visit</dt><dd>free, before any real price</dd>
         </dl>
       </div>
       <div class="meet-try">
         <p class="meet-eyebrow">Be one of Alex's clients</p>
         <h2>Write to Alex. Kept answers live.</h2>
-        <p>Ask for a site for your business, ask what something costs, or play one of Alex's clients. Kept reads it on
-          NVIDIA Nemotron, checks it, and drafts Alex's reply for you to approve. Pick an idea:</p>
+        <p>Ask about your own kitchen and attach a photo, or play one of Alex's clients. Kept reads it on NVIDIA
+          Nemotron (and looks at the photo with Nemotron VL), works out the next step the way Alex works, and drafts
+          the reply for you to approve. Pick an idea:</p>
         <div class="meet-ideas" id="meet-ideas"></div>
         <a class="btn btn-primary" href="#write" id="meet-go">Write your own email</a>
       </div>
@@ -188,6 +192,14 @@
               <ul class="plain" id="decided-list"></ul>
             </details>
           </div>
+        </section>
+
+        <section class="card o-3" id="week" aria-labelledby="h-week" data-fold>
+          <div class="card-head">
+            <h2 id="h-week">Alex's calendar</h2>
+            <span class="meta">job sites and measuring visits</span>
+          </div>
+          <div class="card-body"><ul class="cal" id="cal-list"></ul></div>
         </section>
 
         <section class="card o-3" id="today" aria-labelledby="h-today" data-fold>
@@ -304,11 +316,11 @@
         <section class="card card-write o-0" id="write" aria-labelledby="h-write">
           <div class="card-head">
             <h2 id="h-write">Write to Alex</h2>
-            <span class="meta">live on Nemotron · ~10–40 s</span>
+            <span class="meta">live on Nemotron · ~15–45 s</span>
           </div>
           <div class="card-body">
-            <p class="lede">Be one of Alex's clients, or yourself as a new one. Kept reads your email the way it reads Alex's
-              real inbox, and drafts the reply Alex would send.</p>
+            <p class="lede">Be one of Alex's clients, or yourself as a new one. Kept reads your email (and your photo) the
+              way it reads Alex's real inbox, and drafts the reply Alex would send.</p>
             <form id="w-form" class="preform" autocomplete="off">
               <label class="field"><span>Write as</span>
                 <select id="w-who" name="who"></select>
@@ -322,6 +334,13 @@
               <label class="field"><span>Email</span>
                 <textarea id="w-body" rows="5" required maxlength="2000" placeholder="Hi Alex, …"></textarea>
               </label>
+              <div class="field w-photo"><span>Photo <span class="muted">(optional: your kitchen, a broken hinge…)</span></span>
+                <div class="w-photo-row">
+                  <input id="w-file" type="file" accept="image/jpeg,image/png,image/webp">
+                  <img id="w-thumb" alt="" hidden>
+                  <button type="button" class="btn btn-quiet btn-small" id="w-photo-clear" hidden>Remove</button>
+                </div>
+              </div>
               <div class="w-examples" id="w-examples" aria-label="Examples"></div>
               <div class="pre-actions">
                 <button class="btn btn-primary" type="submit" id="w-btn">Send to Alex</button>

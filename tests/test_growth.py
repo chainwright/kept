@@ -1,13 +1,13 @@
 from kept import approvals, growth, store
 from kept.seed import seed
 
-ASK = {"subject": "Thank you!", "body": "Hi Noah, two catering inquiries on day one is fantastic! If you have a minute, a short review at https://g.page/r/alex-rivera-studio/review would mean a lot, or mention me to another owner who needs a site. Alex"}
-POST = {"text": "Brooks Coffee went live this week. On day one the new site brought in 2 catering inquiries through the form, and customers say the menu is easy to read on their phones."}
+ASK = {"subject": "Thank you!", "body": "Hi Noah, three customers asking who built it is the best compliment! If you have a minute, a short review at https://g.page/r/alex-rivera-remodeling/review would mean a lot, or mention me to someone who needs a new counter. Alex"}
+POST = {"text": "Brooks Coffee opened this week with a new back counter and shelves. Three customers asked who did it, and the baristas say it's much easier to work behind the bar now."}
 
 
 def test_delighted_client_gets_a_review_ask_and_a_post_both_waiting(fake):
     seed(force=True)
-    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "we already got two catering inquiries"}),
+    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "three customers asked who did it"}),
           ("leave a short review", ASK), ("LinkedIn post", POST)])
     out = growth.moments()
     kinds = sorted(a["kind"] for a in approvals.pending())
@@ -23,7 +23,7 @@ def test_happy_client_with_open_work_is_not_asked_yet(fake):
 
 def test_post_with_invented_numbers_or_unapproved_name_is_held_back(fake):
     seed(force=True)
-    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "we already got two catering inquiries"}),
+    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "three customers asked who did it"}),
           ("leave a short review", ASK),
           ("LinkedIn post", {"text": "Brooks Coffee saw a 40% jump in orders after launch."})])
     growth.moments()
@@ -33,8 +33,8 @@ def test_post_with_invented_numbers_or_unapproved_name_is_held_back(fake):
 
 def test_review_ask_offering_something_in_return_is_held_back(fake):
     seed(force=True)
-    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "we already got two catering inquiries"}),
-          ("leave a short review", {"subject": "x", "body": "Hi Noah, leave a review at https://g.page/r/alex-rivera-studio/review and get 10% off your next update! Alex"}),
+    fake([("clearly delighted", lambda p: {"delighted": "Noah" in p, "quote": "three customers asked who did it"}),
+          ("leave a short review", {"subject": "x", "body": "Hi Noah, leave a review at https://g.page/r/alex-rivera-remodeling/review and get 10% off your next update! Alex"}),
           ("LinkedIn post", POST)])
     growth.moments()
     assert all(a["kind"] != "send_email" for a in approvals.pending())

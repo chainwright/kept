@@ -64,10 +64,10 @@ def grade(k) -> dict:
     c["finds_maria_quote"] = has(open_rows, "maria", "quote", direction="i_owe")
     c["finds_dev_rates"] = has(open_rows, "dev", "rate", direction="i_owe")
     c["finds_sam_receipts"] = has(open_rows, "sam", "receipt", direction="i_owe")
-    c["finds_jordan_form_fix"] = has(open_rows, "jordan", "form", direction="i_owe")
+    c["finds_jordan_leak_fix"] = has(open_rows, "jordan", "leak", direction="i_owe") or has(open_rows, "jordan", "sink", direction="i_owe")
     c["priya_owes_not_me"] = not has(open_rows, "priya", "118", direction="i_owe")
-    c["blog_not_a_promise"] = not any("blog" in norm(r["text"]) and (r.get("direction") or "i_owe") == "i_owe"
-                                       for r in open_rows)
+    c["backsplash_not_a_promise"] = not any("backsplash" in norm(r["text"]) and (r.get("direction") or "i_owe") == "i_owe"
+                                             for r in open_rows)
     c["no_one_word_promises"] = all(len(r["text"].split()) >= 3 for r in open_rows)
 
     # --- the gate and the emails waiting for Yes
@@ -103,8 +103,8 @@ def grade(k) -> dict:
     # --- scope
     scope = store.read_json("scope.json", [])
     verdicts = {norm(r["request"]): r["verdict"] for s in scope for r in s["requests"]}
-    c["blog_judged_out_or_unclear"] = any("blog" in k and v in ("out_of_scope", "unclear") for k, v in verdicts.items())
-    c["logo_not_sold"] = not any("logo" in k and v == "out_of_scope" for k, v in verdicts.items())
+    c["backsplash_judged_out_or_unclear"] = any("backsplash" in k and v in ("out_of_scope", "unclear") for k, v in verdicts.items())
+    c["pantry_door_not_sold"] = not any("pantry" in k and v == "out_of_scope" for k, v in verdicts.items())
     offers_for_scope = [a for a in emails if "extra work" in a["summary"]]
     c["scope_prices_computed"] = all(
         all(int(p) in {int(r.get("price") or 0) for s in scope for r in s["requests"]} | {sum(int(r.get("price") or 0) for r in s["requests"]) for s in scope}
@@ -117,6 +117,9 @@ def grade(k) -> dict:
     c["no_offer_to_priya"] = "Priya Shah" in skipped
     c["no_offer_while_owing_work"] = all(not (a["args"].get("offer_client") in ("Jordan Kim", "Maria Lopez")) for a in emails)
     c["offers_only_to_lucia"] = all(a["args"].get("offer_client") in (None, "Lucia Ferri") for a in emails)
+    c["checkin_only_to_ben"] = any("Check in with Ben Carter" in a["summary"] for a in pend) and \
+        not any(a["summary"].startswith("Check in with") and "Ben Carter" not in a["summary"]
+                and "old quote" not in a["summary"] for a in pend)
     growth = store.read_json("growth_last.json", {}) or {}
     c["noah_review_or_waiting"] = bool(growth.get("asks")) or any(w["client"] == "Noah Brooks" for w in growth.get("waiting", []))
     c["no_review_ask_maria"] = not any("review" in a["summary"].lower() and "maria" in a["summary"].lower() for a in pend)

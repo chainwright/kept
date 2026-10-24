@@ -77,7 +77,8 @@ def supersede(addr: str, newer: str) -> list[str]:
     return replaced
 
 
-def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None = None) -> dict:
+def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None = None,
+                photo: dict | None = None, plan: dict | None = None) -> dict:
     """Returns {"approval": ..., "held": ..., "dates": [...], "replaced": [...]}"""
     name, addr = sender(m)
     first = name.split(" ")[0]
@@ -98,18 +99,21 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     allowed |= {int(i["amount"]) for i in facts["unpaid_invoices"]}
     # published prices in Alex's notes ("from $2,400", "$120 a month") are Alex's own words too
     allowed |= {int(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", read_notes().split("## Offers")[0])}
+    from .intake import reply_rules
+    rules_text, plan_amounts, must = reply_rules(plan or {})
+    allowed |= plan_amounts
     convo = "\n\n".join(f"{'THEM' if t['dir'] == 'in' else owner.upper()} ({t['ts'][:10]}): {t['body'][:800]}"
                         for t in thread(addr)[-6:] if t["dir"] in ("in", "out") and t["id"] != m["id"])
     today = date.today()
-    r = router.ask("draft", _msgs(
-        f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs {business()}. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
+    prompt = (f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs {business()}. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
         "don't answer, say Alex will check and come back, or ask them a short question. Never invent a total "
         "price for a new project: use only the prices in Alex's services, and offer the free intro call or a "
         "written quote. If extra work "
         "is outside the agreement, say so kindly and give the price listed below. Don't agree to a deadline "
         "for new work that hasn't been scoped or priced yet: offer the call, a visit or the "
         "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
-        "Tuesday'). Greet them by first name, sign as Alex, under 140 words. "
+        "Tuesday'). Never name visit times or dates for a visit except ones given below. Don't promise to send a "
+        "written quote by a set day before the visit. Greet them by first name, sign as Alex, under 140 words. "
         'Reply JSON: {"subject": "...", "body": "..."}\n\n'
         f"ABOUT ALEX:\n{read_notes().split('## Offers')[0].strip()}\n\n"
         f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
@@ -117,37 +121,54 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         + (f"\nEARLIER MESSAGES:\n{convo}\n" if convo else "")
         + ("\nWHAT THE WEB SAYS ABOUT THEM (checked against the pages; mention at most one, only if it helps):\n"
            + "\n".join(f"- {f['text']}" for f in web["facts"]) + "\n" if web and web.get("facts") else "")
-        + f"\nTHEIR NEW EMAIL (subject: {m['subject']}):\n{m['body']}", "follow_up"),
-        purpose=f"reply to {m['id']}", json_mode=True, max_tokens=700)
-    try:
-        e = r.json()
-    except Exception as ex:
-        return {"held": _abstain("reply", m["subject"], Verdict(False, [f"model reply unusable: {ex}"]))}
-    v = shape(e, {"subject": str, "body": str})
-    dates = []
-    if v:
-        body = e["body"].strip()
-        v.merge(sendable_text(body, max_chars=1200))
-        v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
-        amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$\s?([\d,]+(?:\.\d\d)?)", body)}
-        if amounts - allowed:
-            v.add(f"the reply names amounts that aren't in Alex's records: {sorted(amounts - allowed)}")
+        + (f"\nTHEIR PHOTO, AS NEMOTRON VL SAW IT: {photo}\n" if photo else "")
+        + (f"\nHOW ALEX HANDLES THIS KIND OF JOB (follow it): {rules_text}\n" if rules_text else "")
+        + f"\nTHEIR NEW EMAIL (subject: {m['subject']}):\n{m['body']}")
+    tries, problems = 0, []
+    while True:
+        tries += 1
+        ask = prompt if not problems else (prompt + "\n\nYOUR LAST DRAFT FAILED ALEX'S CHECKS. Write it again and fix "
+                                           "exactly these: " + "; ".join(problems))
+        r = router.ask("draft", _msgs(ask, "follow_up"), purpose=f"reply to {m['id']}" + (" (second try)" if tries > 1 else ""),
+                       json_mode=True, max_tokens=700)
+        try:
+            e = r.json()
+        except Exception as ex:
+            return {"held": _abstain("reply", m["subject"], Verdict(False, [f"model reply unusable: {ex}"]))}
+        v = shape(e, {"subject": str, "body": str})
+        dates = []
         if v:
-            # every date Alex commits to goes through Before you send
-            from .validators import dates_in
-            given = {d.isoformat() for t in thread(addr) if t["dir"] == "out" for d in dates_in(t["body"], today)}
-            pc = precheck.check(body, name, already_promised=given)
-            for p in pc.get("promises", []):
-                if p.get("advice"):
-                    dates.append({"promise": p["text"], "said": p["when_words"], "usual": p["advice"]["why"],
-                                  "moved_to": p["advice"]["suggested"]})
-            if dates:
-                rw = pc.get("rewrite") or {}
-                if rw.get("ok") and rw.get("text"):
-                    body = rw["text"]
-                else:
-                    v.add("the reply promises a date Alex usually misses, and the safer wording couldn't be checked")
-        e["body"] = body
+            body = e["body"].strip()
+            v.merge(sendable_text(body, max_chars=1200))
+            v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
+            amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$\s?([\d,]+(?:\.\d\d)?)", body)}
+            if amounts - allowed:
+                v.add(f"the reply names amounts that aren't in Alex's records: {sorted(amounts - allowed)}")
+            for need in must:
+                options = need.split("|")
+                if not any(o.lower() in body.lower() for o in options):
+                    v.add(f"the reply leaves out what the next step needs: {' or '.join(options)}")
+            if v:
+                # every date Alex commits to goes through Before you send
+                from .validators import dates_in
+                given = {d.isoformat() for t in thread(addr) if t["dir"] == "out" for d in dates_in(t["body"], today)}
+                pc = precheck.check(body, name, already_promised=given)
+                for p in pc.get("promises", []):
+                    if p.get("advice"):
+                        dates.append({"promise": p["text"], "said": p["when_words"], "usual": p["advice"]["why"],
+                                      "moved_to": p["advice"]["suggested"]})
+                if dates:
+                    rw = pc.get("rewrite") or {}
+                    if rw.get("ok") and rw.get("text"):
+                        body = rw["text"]
+                    else:
+                        v.add("the reply promises a date Alex usually misses, and the safer wording couldn't be checked")
+            e["body"] = body
+        if v or tries >= 2:
+            break
+        # one second try with the checks' own words; the first failure stays in the record
+        _abstain("reply", m["subject"] + " (first draft)", v, e)
+        problems = v.problems
     if not v:
         return {"held": _abstain("reply", m["subject"], v, e)}
     replaced = supersede(addr, m["id"])

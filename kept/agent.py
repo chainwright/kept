@@ -471,7 +471,7 @@ def run_day() -> dict:
     """
     from concurrent.futures import ThreadPoolExecutor
 
-    from . import growth, money, offers, rescue
+    from . import checkins, growth, money, offers, rescue
     out: dict[str, Any] = {}
 
     def guarded(name, fn):
@@ -487,7 +487,8 @@ def run_day() -> dict:
     if isinstance(out["triage"], str) and out["triage"].startswith("stopped"):
         return out
     middle = [("follow_ups", follow_ups), ("money", money.chase), ("rescue", rescue.plan),
-              ("growth", growth.moments), ("offers", offers.propose), ("watch", watch_topics)]
+              ("growth", growth.moments), ("offers", offers.propose), ("checkins", checkins.propose),
+              ("watch", watch_topics)]
     with ThreadPoolExecutor(max_workers=len(middle)) as ex:
         futures = {name: ex.submit(guarded, name, fn) for name, fn in middle}
         for name, f in futures.items():

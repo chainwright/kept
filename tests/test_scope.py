@@ -64,12 +64,16 @@ def test_no_agreement_no_scope_check(fake):
 
 def test_two_reads_that_disagree_become_unclear_and_ask_for_nothing(fake):
     _setup()
+    import threading
     calls = {"n": 0}
+    lock = threading.Lock()  # the two reads run in parallel
 
     def judge(_):
-        calls["n"] += 1
+        with lock:
+            calls["n"] += 1
+            n = calls["n"]
         v = json.loads(json.dumps(VERDICT))
-        if calls["n"] == 2:   # the second read thinks the blog is covered
+        if n == 2:   # the other read thinks the blog is covered
             v["requests"][0]["verdict"] = "in_scope"
             v["requests"][0]["agreement_quote"] = "Four pages: Home, Menu, About, Contact."
         return v

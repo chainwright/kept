@@ -137,7 +137,8 @@ def _reconcile(first: list[dict], second: list[dict]) -> list[dict]:
                                                    str(it.get("email_quote", "")) + " " + str(it.get("request", ""))),
                    default=None)
         other = twin.get("verdict") if twin and _overlap(str(twin.get("email_quote", "")), str(it.get("email_quote", ""))) >= 2 else None
-        if it.get("verdict") == "out_of_scope" and other != "out_of_scope":
+        # either way round: one read saying "covered" and the other "extra" is not an answer
+        if other != it.get("verdict") and "out_of_scope" in (it.get("verdict"), other):
             it = {**it, "verdict": "unclear",
                   "reason": f"two independent reads disagreed ({it.get('verdict')} vs {other or 'not listed'}); your call"}
         out.append(it)

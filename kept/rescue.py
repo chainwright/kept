@@ -66,7 +66,7 @@ def candidates(today: date | None = None) -> list[dict]:
 
 
 def find_prospects(limit: int = 3) -> list[dict]:
-    """New local businesses that likely need a website, each backed by a page Kept fetched."""
+    """New local businesses that may need what the owner does, each backed by a page Kept fetched."""
     from .tools import search
 
     notes = read_notes()
@@ -157,9 +157,10 @@ def plan(today: date | None = None) -> dict | None:
     for c in chosen:  # two check-ins at most: a pile of approvals is its own kind of noise
         if c["type"] == "quoted but never hired" and len(drafts) < 2:
             drafts.append(_reengage(c))
+    ad = _ad_plan(gap, today)
     out = {"ts": now_iso(), "needed": True, "gap": gap, "steps": chosen, "prospects": prospects,
            "closes_gap_at": covered, "drafts": [d["id"] for d in drafts if d], "model": r.model,
-           "reasoning": r.reasoning[:3000]}
+           "reasoning": r.reasoning[:3000], "ad": ad["id"] if ad else None}
     write_json("rescue.json", out)
     journal(f"Rescue plan for a ${gap['gap']:.0f} gap on {gap['date']}: {len(chosen)} steps, "
             f"{len(prospects)} new prospects")
@@ -196,3 +197,78 @@ def _reengage(c: dict) -> dict | None:
     if req:
         notify.ask(req)
     return req
+
+
+def _ad_rules() -> dict | None:
+    from .agent import note
+    budget = note("Ad budget")
+    m_day, m_days = re.search(r"\$(\d+) a day", budget), re.search(r"at most (\d+) days", budget)
+    if not (m_day and m_days):
+        return None
+    return {"per_day": int(m_day.group(1)), "days": int(m_days.group(1)),
+            "places": note("Ad places"), "audience": note("Ad audience")}
+
+
+def _ad_plan(gap: dict, today: date) -> dict | None:
+    """When the month runs short: a small paid boost for the best before/after work, as a plan for Alex's Yes.
+    Budget and audience come from the owner's own rules; Kept never starts an ad itself."""
+    from . import media
+    from .growth import nameable
+    rules = _ad_rules()
+    if not rules:
+        return None
+    pairs = {c: p for c, p in (read_json("media.json", {}) or {}).items() if "before" in p and "after" in p}
+    if not pairs:
+        return None
+    slug, pics = next(iter(pairs.items()))
+    client = next((c for c in nameable() if media.slug(c) in slug or slug in media.slug(c)), None)
+    total = rules["per_day"] * rules["days"]
+    proj = typical_project()
+    r = router.ask("draft", _msgs(
+        f"{read_notes_owner()} runs {business()} and will be ${gap['gap']:.0f} short on {gap['date']} "
+        f"({gap['because']}). Write a short local ad for a before/after photo of finished work"
+        + (f" ({client})" if client else " (don't name the client)") + ": a headline under 8 words and two sentences "
+        "of text, plain and specific, inviting people to send a photo of their kitchen for a free estimate. Then one "
+        f"sentence for {read_notes_owner()} on why a small boost makes sense now. Use only these numbers: the gap "
+        f"${gap['gap']:.0f}, the budget ${rules['per_day']} a day for {rules['days']} days (${total}), a typical job "
+        f"about ${proj:,}. Reply JSON: " + '{"headline": "...", "text": "...", "why_now": "..."}'),
+        purpose="ad plan for a slow month", json_mode=True, max_tokens=400)
+    try:
+        d = r.json()
+    except Exception as e:
+        _abstain("ads", "ad plan", Verdict(False, [f"model reply unusable: {e}"]))
+        return None
+    v = shape(d, {"headline": str, "text": str, "why_now": str})
+    if v:
+        allowed = {int(round(gap["gap"])), rules["per_day"], total, proj}
+        said = " ".join([d["headline"], d["text"], d["why_now"]])
+        amounts = {int(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", said)}
+        if amounts - allowed:
+            v.add(f"numbers that aren't Alex's: {sorted(amounts - allowed)}")
+        if not client and any(c.lower() in said.lower() for c in [p for p in pairs]):
+            v.add("names a client who didn't agree to be named")
+    if not v:
+        _abstain("ads", "ad plan", v, d)
+        return None
+    req = approvals.propose(
+        "ad_plan", {"places": rules["places"], "audience": rules["audience"], "per_day": rules["per_day"],
+                    "days": rules["days"], "total": total, "headline": d["headline"], "text": d["text"],
+                    "images": [pics["before"]["path"], pics["after"]["path"]]},
+        summary=f"Boost a before/after post: ${rules['per_day']} a day for {rules['days']} days (${total})",
+        why=d["why_now"],
+        checks=[f"budget within your rule (${rules['per_day']}/day, {rules['days']} days)", "only when cash is short",
+                "numbers only from your records", "client named only if your notes allow it"],
+        reasoning=r.reasoning, model_label="Nemotron Super")
+    if req:
+        notify.ask(req)
+    return req
+
+
+@approvals.action("ad_plan", needs_approval=True)
+def ad_plan(args: dict) -> str:
+    """Kept doesn't run ads; a Yes saves the plan, ready to set up in the ad manager."""
+    from .store import data_dir
+    out = data_dir() / "outbox" / f"ad-plan-{now_iso().replace(':', '-')}.json"
+    out.write_text(json.dumps(args, indent=1, ensure_ascii=False))
+    return f"saved the ad plan to outbox/{out.name}; set it up in your ad manager"
+

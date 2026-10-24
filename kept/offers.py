@@ -77,6 +77,8 @@ def candidates(today: date) -> tuple[list[dict], list[dict]]:
     book, r = money.load(), rules()
     sent = read_json(FILE, [])
     inbox = read_json("inbox.json", [])
+    from .checkins import candidates as checkin_candidates
+    due_checkin = {c["client"] for c in checkin_candidates(today)[0]}
     eligible, skipped = [], []
     by_client: dict[str, list[dict]] = {}
     for inv in book["invoices"]:
@@ -96,7 +98,8 @@ def candidates(today: date) -> tuple[list[dict], list[dict]]:
                    "has a project in progress" if open_work else
                    "wrote to you this week; answer them before pitching anything" if wrote else
                    f"got an offer in the last {r['every_days']} days" if recent else
-                   "ordered recently" if (today - last).days < 45 else None)
+                   "ordered recently" if (today - last).days < 45 else
+                   "a friendly check-in comes before any offer" if client in due_checkin else None)
         info = {"client": client, "contact": contact, "kind": "past client", "industry": industry(contact + " " + client),
                 "last_order_days": (today - last).days, "habit": money.payment_habit(client, book)}
         (skipped if why_not else eligible).append({**info, "why_not": why_not} if why_not else info)

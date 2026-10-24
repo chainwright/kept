@@ -24,7 +24,7 @@ def test_reply_with_only_the_hourly_rate_waits_for_yes(fake):
 
 def test_reply_that_invents_a_project_price_is_held_back(fake):
     seed(force=True)
-    _fake(fake, "Hi Jo,\n\nA salon site would be $1,200 all in.\n\nAlex")
+    _fake(fake, "Hi Jo,\n\nA new kitchen would be $3,333 all in.\n\nAlex")
     r = tryit.handle(*LEAD, name="Jo Rivera", email="jo@example.com")
     assert not (r["reply"] or {}).get("approval")
     assert any("aren't in Alex's records" in p for h in r["held_back"] for p in h["problems"])
