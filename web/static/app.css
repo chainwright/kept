@@ -1036,3 +1036,10 @@ section[id], #write { scroll-margin-top: 150px; }
 .cal li.c-new { background: var(--ask-bg); }
 .estimate { margin-top: 6px; padding: 8px 10px; border: var(--bw) dashed var(--line-strong); font-size: 14px; }
 .estimate ul { margin: 4px 0; }
+
+[hidden] { display: none !important; }
+
+.write-wide { margin: 0 0 20px; }
+.write-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .write-grid { grid-template-columns: 1fr; } }
+.w-empty { border: var(--bw) dashed var(--line-strong); padding: 14px; margin: 0; }

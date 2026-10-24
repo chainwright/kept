@@ -113,7 +113,7 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         "for new work that hasn't been scoped or priced yet: offer the call, a visit or the "
         "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
         "Tuesday'). Never name visit times or dates for a visit except ones given below. Don't promise to send a "
-        "written quote by a set day before the visit. Greet them by first name, sign as Alex, under 140 words. "
+        "written quote by a set day before the visit. Greet them by first name, sign as Alex, under 140 words, plain text (no markdown). "
         'Reply JSON: {"subject": "...", "body": "..."}\n\n'
         f"ABOUT ALEX:\n{read_notes().split('## Offers')[0].strip()}\n\n"
         f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
@@ -138,7 +138,7 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         v = shape(e, {"subject": str, "body": str})
         dates = []
         if v:
-            body = e["body"].strip()
+            body = e["body"].replace("**", "").strip()  # an email is plain text
             v.merge(sendable_text(body, max_chars=1200))
             v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
             amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$\s?([\d,]+(?:\.\d\d)?)", body)}

@@ -517,42 +517,6 @@
   });
 
   function precheckResult(original, r) {
-    const ph = r.photo;
-    if (ph && ph.seen) steps.push(h("li", null, h("span", { class: "w-step" }, "What Kept sees in your photo (Nemotron Super VL)"),
-      ph.path ? h("img", { class: "w-seen-img", src: `media/${ph.path.replace(/^media\//, "")}`, alt: "Your photo" }) : null,
-      h("span", null, ph.seen.shows || ""),
-      (ph.seen.damage || []).length ? h("div", { class: "foot muted" }, "Damage: " + ph.seen.damage.join("; ")) : null,
-      ph.seen.style ? h("div", { class: "foot muted" }, "Style to match: " + ph.seen.style) : null,
-      (ph.seen.cant_see || []).length ? h("div", { class: "foot muted" }, "Can't tell from the photo: " + ph.seen.cant_see.join("; ")) : null));
-    else if (ph) steps.push(h("li", null, h("span", { class: "w-step" }, "Your photo"), h("span", { class: "muted" }, "Kept couldn't read the photo, so it didn't guess.")));
-    const pl = r.plan;
-    if (pl && pl.job && pl.job !== "unclear") {
-      const JOB = { small_repair: "Small repair", fronts: "New cabinet fronts", countertop: "New countertop", backsplash: "New backsplash",
-        full_kitchen: "Full kitchen", commercial: "Cafe or office kitchen", question: "A question", other: "Something else" };
-      let next = null;
-      if (pl.booked_label) next = h("span", null, chip("booked", "chip-ok"), ` Measuring visit ${pl.booked_label}. It's in Alex's calendar and the promise list.`);
-      else if (pl.job === "small_repair") next = h("span", null, `No visit needed to price it: ${pl.hours} h at Alex's rate = ${usd(pl.price)} plus hardware (code did the maths).`);
-      else if ((pl.slots || []).length) next = h("span", null, "Needs a measuring visit. Free times from Alex's calendar: ",
-        pl.slots.map((x) => x.label).join(" · "), pl.from_price ? `. Starts from ${usd(pl.from_price)} (Alex's price list).` : ".");
-      else if (pl.on_site) next = h("span", null, "Alex is already working at this kitchen and can measure there.");
-      if (pl.payment_plan) next = h("span", null, chip("payment plan", "chip-ask"),
-        ` On the ${usd(pl.payment_plan.total)} estimate: ${pl.payment_plan.pct}% up front (${usd(pl.payment_plan.deposit)}), then ${pl.payment_plan.months} × ${usd(pl.payment_plan.monthly)} a month, in the contract.`);
-      const est = pl.estimate && !pl.payment_plan ? pl.estimate : null;
-      steps.push(h("li", null, h("span", { class: "w-step" }, "What job, and the next step (Nemotron Super names it, code does the rest)"),
-        h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""), next ? h("div", null, next) : null,
-        est ? h("div", { class: "estimate" },
-          h("div", null, h("strong", null, `Preliminary estimate ${usd(est.low)} – ${usd(est.high)}`),
-            h("span", { class: "muted" }, ` · sizes from ${est.sizes_from}`)),
-          h("ul", { class: "plain" }, est.lines.map((l) => h("li", null, l.unit ? `${l.what}: ${l.qty} ${l.unit} × ${usd(l.price)} = ${usd(l.total)}` : `${l.what}: ${usd(l.total)}`))),
-          h("div", { class: "foot muted" }, "Prices from Alex's price guide; code did the maths. Exact price after the measuring visit.")) : null));
-    }
-    const web = r.research;
-    if (web) steps.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily search + extract, facts checked by code)"),
-      (web.facts || []).length ? h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, f.text, " ",
-        h("a", { href: f.url, target: "_blank", rel: "noopener" }, new URL(f.url).hostname.replace(/^www\./, "")),
-        h("div", { class: "foot muted" }, `"${f.quote}"`))))
-        : h("span", { class: "muted" }, web.note || "Nothing checked out, so nothing is shown."),
-      (web.searched || []).length ? h("div", { class: "foot muted" }, web.searched.join(" · ")) : null));
     const ps = r.promises || [];
     if (!ps.length) {
       return h("div", { class: "pre-result" }, h("p", { class: "empty" }, r.note || "No promises found in this draft. Nothing to warn you about."));
@@ -1608,15 +1572,51 @@
   function writeResult(r) {
     const steps = [];
     const lab = r.label || {};
-    steps.push(h("li", null, h("span", { class: "w-step" }, "1 · Sorted (Nemotron Nano)"),
+    steps.push(h("li", null, h("span", { class: "w-step" }, "Sorted (Nemotron Nano)"),
       r.label ? h("span", null, chip(lab.kind || "?", "chip-nano"), " ", lab.one_line || "") : h("span", null, "Couldn't sort it, so Kept held back.")));
     const sc = (r.scope && r.scope.requests) || [];
-    if (sc.length) steps.push(h("li", null, h("span", { class: "w-step" }, "2 · Checked against the signed agreement (Nemotron Ultra, read twice)"),
+    if (sc.length) steps.push(h("li", null, h("span", { class: "w-step" }, "Checked against the signed agreement (Nemotron Ultra, read twice)"),
       h("ul", { class: "plain" }, sc.map((x) => h("li", null, chip(x.verdict.replace(/_/g, " "), x.verdict === "out_of_scope" ? "chip-ask" : x.verdict === "in_scope" ? "chip-ok" : "chip-outline"),
         " ", x.request, x.price ? ` · ${usd(x.price)} at Alex's hourly rate (code did the maths)` : "",
         x.agreement_quote ? h("div", { class: "foot muted" }, `Agreement: "${x.agreement_quote}"`) : null)))));
+    const ph = r.photo;
+    if (ph && ph.seen) steps.push(h("li", null, h("span", { class: "w-step" }, "What Kept sees in your photo (Nemotron Super VL)"),
+      ph.path ? h("img", { class: "w-seen-img", src: `media/${ph.path.replace(/^media\//, "")}`, alt: "Your photo" }) : null,
+      h("span", null, ph.seen.shows || ""),
+      (ph.seen.damage || []).length ? h("div", { class: "foot muted" }, "Damage: " + ph.seen.damage.join("; ")) : null,
+      ph.seen.style ? h("div", { class: "foot muted" }, "Style to match: " + ph.seen.style) : null,
+      (ph.seen.cant_see || []).length ? h("div", { class: "foot muted" }, "Can't tell from the photo: " + ph.seen.cant_see.join("; ")) : null));
+    else if (ph) steps.push(h("li", null, h("span", { class: "w-step" }, "Your photo"), h("span", { class: "muted" }, "Kept couldn't read the photo, so it didn't guess.")));
+    const pl = r.plan;
+    if (pl && pl.job && pl.job !== "unclear") {
+      const JOB = { small_repair: "Small repair", fronts: "New cabinet fronts", countertop: "New countertop", backsplash: "New backsplash",
+        full_kitchen: "Full kitchen", commercial: "Cafe or office kitchen", question: "A question", other: "Something else" };
+      let next = null;
+      if (pl.booked_label) next = h("span", null, chip("booked", "chip-ok"), ` Measuring visit ${pl.booked_label}. It's in Alex's calendar and the promise list.`);
+      else if (pl.job === "small_repair") next = h("span", null, `No visit needed to price it: ${pl.hours} h at Alex's rate = ${usd(pl.price)} plus hardware (code did the maths).`);
+      else if ((pl.slots || []).length) next = h("span", null, "Needs a measuring visit. Free times from Alex's calendar: ",
+        pl.slots.map((x) => x.label).join(" · "), pl.from_price ? `. Starts from ${usd(pl.from_price)} (Alex's price list).` : ".");
+      else if (pl.on_site) next = h("span", null, "Alex is already working at this kitchen and can measure there.");
+      if (pl.payment_plan) next = h("span", null, chip("payment plan", "chip-ask"),
+        ` On the ${usd(pl.payment_plan.total)} estimate: ${pl.payment_plan.pct}% up front (${usd(pl.payment_plan.deposit)}), then ${pl.payment_plan.months} × ${usd(pl.payment_plan.monthly)} a month, in the contract.`);
+      const est = pl.estimate && !pl.payment_plan ? pl.estimate : null;
+      steps.push(h("li", null, h("span", { class: "w-step" }, "What job, and the next step (Nemotron Super names it, code does the rest)"),
+        h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""), next ? h("div", null, next) : null,
+        est ? h("div", { class: "estimate" },
+          h("div", null, h("strong", null, `Preliminary estimate ${usd(est.low)} – ${usd(est.high)}`),
+            h("span", { class: "muted" }, ` · sizes from ${est.sizes_from}`)),
+          h("ul", { class: "plain" }, est.lines.map((l) => h("li", null, l.unit ? `${l.what}: ${l.qty} ${l.unit} × ${usd(l.price)} = ${usd(l.total)}` : `${l.what}: ${usd(l.total)}`))),
+          h("div", { class: "foot muted" }, "Prices from Alex's price guide; code did the maths. Exact price after the measuring visit.")) : null));
+    }
+    const web = r.research;
+    if (web && (web.business || web.domain || (web.facts || []).length)) steps.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily search + extract, facts checked by code)"),
+      (web.facts || []).length ? h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, f.text, " ",
+        h("a", { href: f.url, target: "_blank", rel: "noopener" }, new URL(f.url).hostname.replace(/^www\./, "")),
+        h("div", { class: "foot muted" }, `"${f.quote}"`))))
+        : h("span", { class: "muted" }, web.note || "Nothing checked out, so nothing is shown."),
+      (web.searched || []).length ? h("div", { class: "foot muted" }, web.searched.join(" · ")) : null));
     const ps = r.promises || [];
-    steps.push(h("li", null, h("span", { class: "w-step" }, `${sc.length ? 3 : 2} · Promises in your email (Nemotron Super; code checks the quote)`),
+    steps.push(h("li", null, h("span", { class: "w-step" }, "Promises in your email (Nemotron Super; code checks the quote)"),
       ps.length ? h("ul", { class: "plain" }, ps.map((p) => h("li", null,
         chip(p.direction === "owed_to_me" ? "they owe Alex" : "Alex owes", p.direction === "owed_to_me" ? "chip-super" : "chip-due"), " ", p.text,
         p.due ? ` · due ${fmtShort(p.due)}` : "", p.already_known ? h("span", { class: "muted" }, " (already in the ledger; date updated)") : null,

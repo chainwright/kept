@@ -74,9 +74,16 @@ def health():
     return JSONResponse({"ok": True}, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 
+_BUILD = str(int(time.time()))
+
+
 @app.get("/")
 def index():
-    return FileResponse(WEB / "index.html")
+    """The page names its script and styles with this build's stamp, so a redeploy never meets a stale cache."""
+    from fastapi.responses import HTMLResponse
+    html = (WEB / "index.html").read_text()
+    html = html.replace('/static/app.js"', f'/static/app.js?v={_BUILD}"').replace('/static/app.css"', f'/static/app.css?v={_BUILD}"')
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/state")
