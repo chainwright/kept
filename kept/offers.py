@@ -25,7 +25,7 @@ from .agent import _abstain, _msgs, business, read_notes_owner
 from .llm import router
 from .store import journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
-from .validators import Verdict, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, honest_email, sendable_text, shape
 
 FILE = "offers.json"
 INDUSTRY_WORDS = {
@@ -196,7 +196,7 @@ def _draft(p: dict, d: dict, occ: dict, reasoning: str) -> dict | None:
         body = e["body"]
         v.merge(sendable_text(body, max_chars=900))
         v.merge(honest_email(body, recipient_first=first, owner_first=read_notes_owner().split(" ")[0]))
-        amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$([\d,]+(?:\.\d\d)?)", body)}
+        amounts = dollar_amounts(body)
         if price not in amounts:
             v.add(f"the email doesn't state the approved price ${price}")
         if amounts - {price}:

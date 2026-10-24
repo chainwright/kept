@@ -109,23 +109,18 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "", i
     audit_before = len(read_audit(100000))
     approvals_before = {a["id"] for a in approvals.recent(10000)}
     abstained_before = len(read_json("abstained.json", []))
+    # the photo is checked and saved before anything is written, so a bad file leaves no half-email behind
+    photo_path = _save_photo(m["id"], image) if image else None
+    if photo_path:
+        m["photo"] = str(photo_path.relative_to(data_dir()))
     with locked():
         inbox = read_json("inbox.json", [])
         inbox.append(m)
         write_json("inbox.json", inbox)
-
-    photo_path = _save_photo(m["id"], image) if image else None
     if photo_path:
-        m["photo"] = str(photo_path.relative_to(data_dir()))
         # the client's own photo is the "before" for this kitchen; Alex adds the "after" when the job is done
         from .media import record
         record(who, "before", photo_path, "photo the client sent")
-        with locked():
-            inbox = read_json("inbox.json", [])
-            for x in inbox:
-                if x["id"] == m["id"]:
-                    x["photo"] = m["photo"]
-            write_json("inbox.json", inbox)
     # while the email is read: a stranger is looked up on the web (Tavily), a photo is looked at (Nemotron VL)
     from concurrent.futures import ThreadPoolExecutor
     from . import research, vision

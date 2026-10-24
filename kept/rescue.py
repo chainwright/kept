@@ -22,7 +22,7 @@ from .agent import _abstain, _msgs, business, note, read_notes_owner
 from .llm import router
 from .store import journal, now_iso, read_json, read_notes, write_json
 from .tools import notify
-from .validators import Verdict, grounded, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, grounded, honest_email, sendable_text, shape
 
 DORMANT_DAYS = 21
 
@@ -242,7 +242,7 @@ def _ad_plan(gap: dict, today: date) -> dict | None:
     if v:
         allowed = {int(round(gap["gap"])), rules["per_day"], total, proj}
         said = " ".join([d["headline"], d["text"], d["why_now"]])
-        amounts = {int(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", said)}
+        amounts = dollar_amounts(said)
         if amounts - allowed:
             v.add(f"numbers that aren't Alex's: {sorted(amounts - allowed)}")
         if not client and any(c.lower() in said.lower() for c in [p for p in pairs]):

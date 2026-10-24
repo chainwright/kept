@@ -26,3 +26,13 @@ def test_new_contact_needs_a_real_looking_address():
     import pytest
     with pytest.raises(ValueError):
         tryit.handle("new", "hi", "Hello there, I need a website", name="Jo", email="not-an-address")
+
+
+def test_a_bad_photo_leaves_nothing_behind():
+    import json
+    seed(force=True)
+    before = len(json.loads((store.data_dir() / "inbox.json").read_text()))
+    import pytest
+    with pytest.raises(ValueError):
+        tryit.handle("maria", "photo", "Hello Alex, photo attached", image="data:text/html;base64,PGgxPg==")
+    assert len(json.loads((store.data_dir() / "inbox.json").read_text())) == before

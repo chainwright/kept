@@ -16,12 +16,28 @@ from .agent import _abstain, _msgs, business, read_notes_owner, sender
 from .llm import router
 from .store import locked, now_iso, read_json, read_notes
 from .tools import mail, notify
-from .validators import Verdict, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, honest_email, sendable_text, shape
 
 
 def _rate() -> int | None:
     m = re.search(r"hourly rate:\s*\$?\s*(\d+)", read_notes(), re.I)
     return int(m.group(1)) if m else None
+
+
+def _names_a_slot(body: str, slots: list[dict]) -> bool:
+    """An offered time is named if its weekday is there (English), or its day of the month and its
+    hour are (any language: "26 октября в 17:30")."""
+    from datetime import date as _date
+    low = body.lower()
+    for s in slots:
+        d = _date.fromisoformat(s["date"])
+        hh, mm = (int(x) for x in s["time"].split(":"))
+        h12 = hh - 12 if hh > 12 else hh
+        if f"{d:%A}".lower() in low:
+            return True
+        if re.search(rf"\b{d.day}\b", body) and (s["time"] in body or f"{h12}:{mm:02d}" in body):
+            return True
+    return False
 
 
 def thread(addr: str) -> list[dict]:
@@ -113,7 +129,8 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         "for new work that hasn't been scoped or priced yet: offer the call, a visit or the "
         "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
         "Tuesday'). Never name visit times or dates for a visit except ones given below. Don't promise to send a "
-        "written quote by a set day before the visit. Greet them by first name, sign as Alex, under 140 words, plain text (no markdown). "
+        "written quote by a set day before the visit. Write in the language of their email. Greet them by first name exactly as their email writes it ("
+        f"{first}), sign as Alex, under 140 words, plain text (no markdown). "
         'Reply JSON: {"subject": "...", "body": "..."}\n\n'
         f"ABOUT ALEX:\n{read_notes().split('## Offers')[0].strip()}\n\n"
         f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
@@ -141,10 +158,14 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
             body = e["body"].replace("**", "").strip()  # an email is plain text
             v.merge(sendable_text(body, max_chars=1200))
             v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
-            amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$\s?([\d,]+(?:\.\d\d)?)", body)}
+            amounts = dollar_amounts(body)
             if amounts - allowed:
                 v.add(f"the reply names amounts that aren't in Alex's records: {sorted(amounts - allowed)}")
             for need in must:
+                if need == "SLOTS":
+                    if not _names_a_slot(body, (plan or {}).get("slots") or []):
+                        v.add("the reply doesn't offer any of the visit times from Alex's calendar")
+                    continue
                 options = need.split("|")
                 if not any(o.lower() in body.lower() for o in options):
                     v.add(f"the reply leaves out what the next step needs: {' or '.join(options)}")

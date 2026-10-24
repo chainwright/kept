@@ -139,3 +139,18 @@ def test_same_invoice_promise_in_other_words_is_one_row_and_new_date_is_kept():
     b = ledger.add("Priya pays invoice #118", who="Priya Shah", due="2026-10-28", direction="owed_to_me")
     assert a["id"] == b["id"] and b["due"] == "2026-10-28"
     assert "promised again for 2026-10-28" in b["history"][-1]["event"]
+
+
+def test_dollar_amounts_any_language():
+    from kept.validators import dollar_amounts
+    assert dollar_amounts("от 4 500 $ до 5 400 $, ставка $85") == {4500, 5400, 85}
+    assert dollar_amounts("about $12,800. 12 doors, 2 hours") == {12800}
+    assert dollar_amounts("4500 USD") == {4500}
+
+
+def test_offered_time_named_in_any_language():
+    from kept.reply import _names_a_slot
+    slots = [{"date": "2026-10-26", "time": "17:30", "label": "Monday, Oct 26 at 5:30 pm"}]
+    assert _names_a_slot("Can I come on Monday at 5:30 pm?", slots)
+    assert _names_a_slot("Могу приехать 26 октября в 17:30.", slots)
+    assert not _names_a_slot("Any time next week works.", slots)

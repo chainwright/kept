@@ -18,7 +18,7 @@ from .agent import _abstain, _msgs, business, read_notes_owner
 from .llm import router
 from .store import journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
-from .validators import Verdict, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, honest_email, sendable_text, shape
 
 FILE = "checkins.json"
 CHECKIN_AFTER_DAYS = 30
@@ -88,7 +88,7 @@ def propose(today: date | None = None) -> dict:
             body = e["body"]
             v.merge(sendable_text(body, max_chars=800))
             v.merge(honest_email(body, recipient_first=first, owner_first=read_notes_owner().split(" ")[0]))
-            amounts = {int(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", body)}
+            amounts = dollar_amounts(body)
             if amounts - prices:
                 v.add(f"names prices that aren't on Alex's list: {sorted(amounts - prices)}")
             if re.search(r"\b(limited time|act now|hurry|last chance|discount|% off)\b", body, re.I):

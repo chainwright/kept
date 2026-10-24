@@ -22,7 +22,7 @@ def test_small_repair_is_priced_now_by_code_with_the_minimum(fake):
     plan = intake.assess(_m("A cabinet door hangs from one hinge, can you fix it?"))
     assert plan["price"] == 170 and plan["hours"] == 2 and len(plan["slots"]) == 3  # times for the repair, no measuring
     rules, allowed, must = intake.reply_rules(plan)
-    assert allowed == {170} and "$170" in must and "matched" in rules and "2-hour minimum" in rules
+    assert allowed == {170} and "170" in must and "SLOTS" in must and "matched" in rules and "2-hour minimum" in rules
 
 
 def test_new_fronts_need_a_visit_and_the_pick_is_booked_by_code(fake):

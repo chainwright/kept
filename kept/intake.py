@@ -129,6 +129,13 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False) -> di
     return out
 
 
+def _num_forms(n: int) -> str:
+    """'4,500|4 500|4500' and the no-break space variants: how the number may appear in any language."""
+    n = int(n)
+    forms = {f"{n:,}", str(n), f"{n:,}".replace(",", " "), f"{n:,}".replace(",", "\u00a0"), f"{n:,}".replace(",", "\u202f")}
+    return "|".join(sorted(forms))
+
+
 def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     """(instructions for the reply, amounts it may name, words it must contain; 'a|b' means either)."""
     job = plan.get("job")
@@ -137,13 +144,13 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     if plan.get("booked_label"):
         day = plan["booked_label"].split(",")[0]
         return (f"They picked a visit time: confirm it plainly ({plan['booked_label']}), and say what Alex will do "
-                "then. A measuring visit is free.", allowed, [day])
+                "then. A measuring visit is free.", allowed, [])
     if plan.get("price_objection"):
         pp = plan.get("payment_plan")
         if pp:
             allowed |= {pp["total"], pp["deposit"], pp["monthly"], plan["estimate"]["low"], plan["estimate"]["high"],
                         plan["estimate"]["mid"]}
-            must.append(f"${pp['monthly']:,}|${pp['monthly']}")
+            must.append(_num_forms(pp["monthly"]))
             return ("They say it's too much. Be kind and brief: say you understand, prices are up everywhere. Offer a "
                     f"personal payment plan written into the contract: {pp['pct']}% up front (${pp['deposit']:,}), then "
                     f"{pp['months']} equal monthly payments of ${pp['monthly']:,}, based on the estimate of about "
@@ -155,10 +162,10 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     slots = plan.get("slots") or []
     slot_text = "; ".join(s["label"] for s in slots)
     if slots:
-        must.append("|".join(s["label"].split(",")[0] for s in slots))  # any one of the offered days
+        must.append("SLOTS")  # any one of the offered times, in any language
     if job == "small_repair":
         allowed.add(plan["price"])
-        must.append(f"${plan['price']}")
+        must.append(_num_forms(plan["price"]))
         return (f"This is a small repair: no measuring visit is needed. Give the price now: ${plan['price']} "
                 f"({plan['hours']} hours at the hourly rate), plus hardware, and say plainly that small jobs have a "
                 "2-hour minimum because of the drive. Say the hardware will be standard parts matched as closely as "
@@ -174,7 +181,7 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
         est = plan.get("estimate")
         if est:
             allowed |= {est["low"], est["high"], est["mid"]} | {l["price"] for l in est["lines"]} | {l["total"] for l in est["lines"]}
-            must.append(f"${est['low']:,}|${est['low']}|${est['mid']:,}|${est['mid']}")
+            must.append(_num_forms(est["low"]) + "|" + _num_forms(est["mid"]))
             sizes = ", ".join(f"{v} {k.replace('_', ' ').replace('sqft', 'sq ft').replace('ft', 'ft')}" for k, v in est["used"].items())
             parts = "; ".join(f"{l['what']}: {l['qty']} {l['unit']} x ${l['price']:,}" if l["unit"] else f"{l['what']}: ${l['price']:,}"
                               for l in est["lines"])

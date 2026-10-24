@@ -189,3 +189,21 @@ def resolve_when(words: str, today: date) -> date | None:
         d = hits[0]
         return d if d >= today - timedelta(days=60) else d.replace(year=d.year + 1)
     return None
+
+
+_NUM = r"\d{1,3}(?:[ ,\u00a0\u202f]\d{3})+(?:\.\d\d)?|\d+(?:\.\d\d)?"
+_DOLLARS = re.compile(rf"\$\s?({_NUM})|({_NUM})\s?(?:\$|USD\b|dollars?\b|долл)", re.I)
+
+
+def dollar_amounts(text: str) -> set[int]:
+    """Every dollar figure in a text, written the way people write them in any language:
+    "$4,500", "$4 500", "4 500 $", "4500 USD". Used to make sure a draft names no price
+    that didn't come from the owner's records."""
+    out = set()
+    for a, b in _DOLLARS.findall(text or ""):
+        raw = re.sub(r"[ ,\u00a0\u202f]", "", a or b)
+        try:
+            out.add(int(round(float(raw))))
+        except ValueError:
+            pass
+    return out

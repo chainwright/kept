@@ -274,8 +274,9 @@ def write_to_alex(l: Letter):
     if not settings.demo:
         raise HTTPException(403, "only in demo mode")
     from . import tryit
-    if not _busy.acquire(blocking=False):
-        raise HTTPException(409, "Kept is already working on something")
+    # another visitor's email may be in progress: wait our turn rather than turn this one away
+    if not _busy.acquire(timeout=150):
+        raise HTTPException(409, "Kept is busy with other emails right now; try again in a minute")
     try:
         return tryit.handle(l.who, l.subject, l.body, l.name, l.email, l.image)
     except BudgetExceeded as e:
