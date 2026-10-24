@@ -166,3 +166,14 @@ def test_promises_owed_to_the_owner_are_tracked_and_nudged_only_when_late(fake):
     assert row["who"] == "Priya Shah" and row["contact"] == "priya@studio.example"
     asked = agent.follow_ups()
     assert len(asked) == 1 and "Priya Shah promised" in asked[0]["why"]
+
+
+def test_promise_copied_in_the_clients_voice_is_put_in_the_owners_ledger_voice(fake):
+    lead = {"id": "mail:5", "from": "Dev Patel <dev@x.example>", "subject": "Site", "date": "",
+            "body": "Could you send me your rates and a rough timeline by Friday?"}
+    _inbox([lead])
+    fake([("Classify this email", {"kind": "lead", "needs_reply": True, "one_line": "x"}),
+          ("Find two kinds", {"mine": [{"text": "send me your rates and a rough timeline", "due": None,
+                                        "quote": "send me your rates and a rough timeline"}], "theirs": []})])
+    agent.triage_inbox()
+    assert ledger.items("open")[0]["text"] == "Send Dev your rates and a rough timeline"

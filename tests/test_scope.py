@@ -60,3 +60,30 @@ def test_email_with_a_price_code_didnt_compute_is_held_back(fake):
 
 def test_no_agreement_no_scope_check(fake):
     assert scope.review({**MAIL, "from": "Stranger <who@nowhere.example>"}) is None
+
+
+def test_two_reads_that_disagree_become_unclear_and_ask_for_nothing(fake):
+    _setup()
+    calls = {"n": 0}
+
+    def judge(_):
+        calls["n"] += 1
+        v = json.loads(json.dumps(VERDICT))
+        if calls["n"] == 2:   # the second read thinks the blog is covered
+            v["requests"][0]["verdict"] = "in_scope"
+            v["requests"][0]["agreement_quote"] = "Four pages: Home, Menu, About, Contact."
+        return v
+    fake([("signed agreement", judge)])
+    res = scope.review(MAIL)
+    blog = [r for r in res["requests"] if r["request"] == "Add a blog page"][0]
+    assert blog["verdict"] == "unclear" and res["proposal"] is None
+
+
+def test_request_the_owner_already_promised_is_not_sold_again(fake):
+    _setup()
+    from kept import ledger
+    ledger.add("Send Maria a quote for the blog page", who="Maria Lopez", source="mail:8")
+    fake([("signed agreement", VERDICT)])
+    res = scope.review(MAIL)
+    blog = [r for r in res["requests"] if r["request"] == "Add a blog page"][0]
+    assert blog["verdict"] == "already_promised" and res["proposal"] is None

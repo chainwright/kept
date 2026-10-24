@@ -95,6 +95,32 @@ Not included: online booking or payments, a members area.
 }
 
 
+def money_book() -> dict:
+    """Balance, invoices and bills. Priya pays about 12 days late, and at that pace the
+    studio rent on the 1st doesn't clear: the cash guard should notice and say why."""
+    return {
+        "balance": 1240.0, "as_of": _d(0),
+        "invoices": [
+            {"number": "109", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 600,
+             "issued": _d(-84), "due": _d(-70), "paid_on": _d(-58)},
+            {"number": "113", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 700,
+             "issued": _d(-53), "due": _d(-39), "paid_on": _d(-26)},
+            {"number": "115", "client": "Jordan Kim", "contact": "jordan@kimyoga.example", "amount": 1800,
+             "issued": _d(-60), "due": _d(-46), "paid_on": _d(-46)},
+            {"number": "118", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 850,
+             "issued": _d(-16), "due": _d(-2), "paid_on": None},
+            {"number": "121", "client": "Maria Lopez", "contact": "maria@sunrisebakery.example", "amount": 1200,
+             "issued": _d(-4), "due": _d(17), "paid_on": None},
+        ],
+        "bills": [
+            {"payee": "Hosting (HostingCo)", "amount": 36, "due": _d(2), "recurring": "monthly"},
+            {"payee": "Business insurance", "amount": 420, "due": _d(6)},
+            {"payee": "Studio rent", "amount": 900, "due": _d(8), "recurring": "monthly"},
+            {"payee": "Design software", "amount": 54, "due": _d(12), "recurring": "monthly"},
+        ],
+    }
+
+
 def _last_friday(weeks_back: int) -> date:
     d = date.today() - timedelta(weeks=weeks_back)
     return d - timedelta(days=(d.weekday() - 4) % 7)
@@ -143,6 +169,7 @@ def seed(force: bool = False) -> None:
         d = data_dir()
     (d / "inbox.json").write_text(json.dumps(inbox(), indent=1))
     (d / "notes.md").write_text(NOTES)
+    write_json("money.json", money_book())
     (d / "contracts").mkdir(exist_ok=True)
     for addr, text in CONTRACTS.items():
         (d / "contracts" / f"{addr}.md").write_text(text)

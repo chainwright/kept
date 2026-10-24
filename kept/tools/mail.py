@@ -53,6 +53,14 @@ def inbox(limit: int = 20) -> list[dict]:
 @action("send_email", needs_approval=True)
 def send_email(args: dict) -> str:
     to, subject, body = args["to"], args["subject"], args["body"]
+    result = _deliver(to, subject, body)
+    if args.get("invoice"):  # a payment reminder: remember which step of the ladder went out
+        from ..money import mark_reminded
+        mark_reminded(args["invoice"], args.get("step", ""))
+    return result
+
+
+def _deliver(to: str, subject: str, body: str) -> str:
     if settings.demo or not settings.smtp_host:
         out = data_dir() / "outbox" / f"{now_iso().replace(':', '-')}_{to.split('@')[0]}.json"
         out.write_text(json.dumps({"to": to, "subject": subject, "body": body, "ts": now_iso(),

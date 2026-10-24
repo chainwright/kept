@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, calibration, learn, ledger, memory_qa, precheck
+from . import agent, approvals, calibration, learn, ledger, memory_qa, money, precheck, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, router
 from .store import read_audit, read_json
@@ -20,7 +20,7 @@ from .tools import mail, notify  # noqa: F401  (registers actions)
 WEB = ROOT / "web"
 JOBS = {"triage": agent.triage_inbox, "follow_ups": agent.follow_ups, "watch": agent.watch_topics,
         "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day,
-        "learn": learn.propose_rules}
+        "learn": learn.propose_rules, "money": money.chase}
 _busy = threading.Lock()
 
 
@@ -86,6 +86,10 @@ def state():
         "activity": [a for a in audit if a["kind"] not in ("llm",)][-40:][::-1],
         "busy": _busy.locked(),
         "calibration": calibration.as_json(),
+        "cash": money.forecast(30),
+        "invoices": money.load()["invoices"],
+        "habits": {c: money.payment_habit(c) for c in {i["client"] for i in money.load()["invoices"]}},
+        "scope": read_json("scope.json", [])[-10:][::-1],
     }
 
 

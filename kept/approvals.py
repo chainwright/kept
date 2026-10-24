@@ -53,8 +53,9 @@ def get(aid: str) -> dict:
 
 
 def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] | None = None,
-            ledger_id: str | None = None, reasoning: str = "", model_label: str = "") -> dict:
-    """Queue an action. Returns the request; nothing has happened yet."""
+            ledger_id: str | None = None, reasoning: str = "", model_label: str = "") -> dict | None:
+    """Queue an action. Returns the request (nothing has happened yet), or None if another
+    message to the same person is already waiting for the owner."""
     if kind not in _ACTIONS:
         raise GateError(f"unknown action '{kind}'")
     rows = _all()
@@ -62,6 +63,15 @@ def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] 
     for a in rows:
         if a["status"] == "pending" and a["kind"] == kind and a["args"] == args:
             return a
+    # one message to a person at a time: in a live run three different jobs queued three
+    # emails to the same client, and two of them contradicted each other
+    if kind == "send_email":
+        for a in rows:
+            if a["status"] == "pending" and a["kind"] == "send_email" and \
+                    a["args"].get("to", "").lower() == str(args.get("to", "")).lower():
+                append_audit("approval_skipped", action=kind, to=args.get("to"), waiting=a["id"])
+                journal(f"Held a second message to {args.get('to')}: '{a['summary']}' is still waiting for you")
+                return None
     req = {"id": uuid.uuid4().hex[:8], "kind": kind, "args": args, "summary": summary, "why": why,
            "checks": checks or [], "ledger_id": ledger_id, "reasoning": reasoning[:4000],
            "model_label": model_label, "status": "pending", "created": now_iso()}

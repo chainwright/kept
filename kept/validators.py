@@ -139,7 +139,8 @@ def dates_in(text: str, today: date) -> list[date]:
     return found
 
 
-def honest_email(text: str, *, recipient_first: str, owner_first: str, today: date | None = None) -> Verdict:
+def honest_email(text: str, *, recipient_first: str, owner_first: str, today: date | None = None,
+                 allowed_dates: set | None = None) -> Verdict:
     """Catches the mistakes we saw in live runs: greeting the owner instead of the client,
     and promising a date that has already passed."""
     today = today or date.today()
@@ -152,7 +153,7 @@ def honest_email(text: str, *, recipient_first: str, owner_first: str, today: da
         v.add(f"the greeting addresses {owner_first}, the sender, instead of {recipient_first}")
     if recipient_first and recipient_first.lower() not in text.lower():
         v.add(f"the draft never mentions '{recipient_first}'")
-    past = [d for d in dates_in(text, today) if d < today]
+    past = [d for d in dates_in(text, today) if d < today and d not in (allowed_dates or set())]
     if past:
         v.add(f"the draft mentions {past[0].isoformat()}, which has already passed")
     return v

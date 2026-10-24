@@ -8,6 +8,7 @@ Anything that reaches another person goes through the approval gate.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from typing import Any
 
@@ -131,6 +132,12 @@ def _extract_commitments(m: dict) -> list[dict]:
                 _abstain("extract", it.get("text", m["subject"]) if isinstance(it, dict) else m["subject"], v, it)
                 continue
             text = it["text"].strip()
+            if direction == "i_owe":
+                # the model sometimes copies the client's own words ("Send me your rates"); in the
+                # owner's ledger "me" is the client
+                first = name.split(" ")[0]
+                text = re.sub(r"\bme\b", first, text)
+                text = re.sub(r"\bmy\b", f"{first}'s", text, flags=re.I)
             out.append(ledger.add(text[:1].upper() + text[1:], who=name, contact=addr, due=it.get("due"),
                                   source=m["id"], origin="inbox", direction=direction))
     return out
@@ -191,6 +198,8 @@ def follow_ups(limit: int = 3) -> list[dict]:
                  else f"You promised: {row['text']} (due {row.get('due')})."),
             checks=["no template holes", f"greets {name}, not you", "no dates already passed", "length ok"],
             ledger_id=row["id"])
+        if not req:
+            continue
         ledger.touch(row["id"], f"drafted follow-up, waiting for approval {req['id']}")
         notify.ask(req)
         asked.append(req)
@@ -310,11 +319,21 @@ def weigh_overload() -> dict | None:
         why=d["reason"], checks=["picked from this week's promises", "new date is sane",
                                  "no template holes"], ledger_id=row["id"],
         reasoning=r.reasoning, model_label="Nemotron Ultra")
-    notify.ask(req)
+    if req:
+        notify.ask(req)
     return req
 
 
 # --------------------------------------------------------------------------- brief
+def _cash_line() -> dict | None:
+    from . import money
+    f = money.forecast(30)
+    if not f["short"]:
+        return {"ok": True, "lowest_balance": f["lowest"]}
+    return {"ok": False, "short_on": f["short"]["date"], "gap": f["short"]["gap"], "because": f["short"]["because"],
+            "would_fix": [x["what"] for x in f.get("fix", [])]}
+
+
 def morning_brief() -> dict:
     """Super writes the day; code makes sure nothing open is left out."""
     today = date.today()
@@ -326,6 +345,7 @@ def morning_brief() -> dict:
                   "overdue_days": ledger.days_overdue(r, today)} for r in open_rows[:15]],
         "waiting_for_your_yes": [{"id": a["id"], "summary": a["summary"]} for a in pend],
         "news": watch.get("claims", [])[:5],
+        "cash": _cash_line(),
         "yesterday": read_journal(2)[-3000:],
     }
     r = router.ask("plan", _msgs(
@@ -362,8 +382,9 @@ def morning_brief() -> dict:
 def run_day() -> dict:
     """The whole loop, as the scheduler runs it each morning."""
     out: dict[str, Any] = {}
-    for name, fn in [("triage", triage_inbox), ("follow_ups", follow_ups), ("watch", watch_topics),
-                     ("overload", weigh_overload), ("brief", morning_brief)]:
+    from . import money
+    for name, fn in [("triage", triage_inbox), ("follow_ups", follow_ups), ("money", money.chase),
+                     ("watch", watch_topics), ("overload", weigh_overload), ("brief", morning_brief)]:
         try:
             out[name] = fn()
         except BudgetExceeded as e:
