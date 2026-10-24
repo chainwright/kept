@@ -52,7 +52,37 @@ builder actually goes through. Times are from our notes on Oct 24, 2026.
   saved us an hour. The `/no_think` system prompt and `reasoning_effort: low` did not help.
 
 ## NVIDIA Nemotron
-_(to be filled in: where Nano was good enough, where Super was needed, what Ultra was worth)_
+
+**Nano (reasoning off)** was good enough wherever the job is narrow and code checks the answer:
+sorting mail into a handful of labels, and spotting the promise in a reply the owner is about to
+send. Pulling promises out of a whole email thread was another matter: in live runs the quality
+wasn't there, so we moved extraction to Super. Nano also shouldn't be trusted with dates:
+"by Friday" came back as a Tuesday once. Now code works out every date from the words.
+
+**Super** writes emails that sound like a person, and we use it for every draft and for the
+morning brief. Two quirks came up in live runs: now and then the JSON came back as a Python-style
+dict (single quotes, `True`), and sometimes it greeted the sender instead of the recipient. Both
+are caught in code now.
+
+**Ultra** was worth its price only for the rare decisions where a wrong call costs money or
+trust: what a signed contract covers, which deadline can move, whether an offer is a good idea at
+all. Its `reasoning_content` is the most useful thing it returns. We show it to the owner next to
+each proposal ("How Nemotron Ultra weighed it"). It still needs a short leash:
+- it once invented an email address for the person it wanted to write to;
+- asked to find patterns in a history of promises, it picked five convenient examples and reported
+  "5 of 5 late". We now make it describe the pattern and let code count every match;
+- in our first two evaluation runs (about 15 Ultra calls) one reply was invalid JSON and a
+  decision was lost; Kept now retries once.
+
+**Cost and speed.** A full morning for a one-person business is about 40-43 calls (14 Nano,
+19-21 Super, 7-8 Ultra) and costs $0.05-0.07. It takes 3-6 minutes end to end, which is fine for a job that runs before
+the owner wakes up.
+
 
 ## Would we build with it again?
-_(after the build)_
+
+Yes. Having three sizes of one model family behind one OpenAI-compatible endpoint meant routing by
+job was a one-line change, and the whole product costs a few cents a day to run. What we'd ask
+for: say in the quickstart that Nemotron 3 reasons by default, and put a "redeem a code" box in
+the console.
+
