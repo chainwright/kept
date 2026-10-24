@@ -1,46 +1,16 @@
 [
  {
-  "ts": "2026-10-24T14:58:18+00:00",
-  "mail": "demo:8",
-  "client": "Maria Lopez",
-  "subject": "Two small things",
-  "requests": [
-   {
-    "request": "Tile the backsplash behind the stove",
-    "email_quote": "could you also tile the backsplash behind the stove?",
-    "verdict": "out_of_scope",
-    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile",
-    "reason": "The agreement explicitly lists backsplash tile as not included and quoted separately.",
-    "hours_low": 4,
-    "hours_high": 8,
-    "price": 510
-   },
-   {
-    "request": "Fix the pantry door that doesn't close properly",
-    "email_quote": "the new pantry door doesn't close all the way, it bounces back open.",
-    "verdict": "in_scope",
-    "agreement_quote": "Adjusting cabinet doors and drawers so they close properly, for 30 days after install.",
-    "reason": "The agreement includes adjusting cabinet doors so they close properly for 30 days after install.",
-    "hours_low": 0,
-    "hours_high": 0,
-    "price": null
-   }
-  ],
-  "approval": "2e929130",
-  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
- },
- {
-  "ts": "2026-10-24T14:58:19+00:00",
+  "ts": "2026-10-24T16:22:31+00:00",
   "mail": "demo:6",
   "client": "Jordan Kim",
   "subject": "Walkthrough + dishwasher leak",
   "requests": [
    {
-    "request": "fix the leak under the new sink",
-    "email_quote": "last week you mentioned you'd fix the leak under the new sink this week. Is that still the plan? It still drips into the cabinet when the dishwasher runs.",
+    "request": "Fix the leak under the new sink that drips when the dishwasher runs",
+    "email_quote": "It still drips into the cabinet when the dishwasher runs.",
     "verdict": "in_scope",
     "agreement_quote": "Fixing leaks or defects in the delivered work for 60 days after completion.",
-    "reason": "The agreement covers fixing leaks in delivered work within 60 days, and the leak is under the new sink which is part of the delivered work.",
+    "reason": "The agreement covers fixing leaks in delivered work for 60 days after completion, and the leak is under the new sink installed as part of the project.",
     "hours_low": 0,
     "hours_high": 0,
     "price": null
@@ -50,7 +20,37 @@
   "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
  },
  {
-  "ts": "2026-10-24T14:58:23+00:00",
+  "ts": "2026-10-24T16:22:33+00:00",
+  "mail": "demo:8",
+  "client": "Maria Lopez",
+  "subject": "Two small things",
+  "requests": [
+   {
+    "request": "Tile the backsplash behind the stove",
+    "email_quote": "could you also tile the backsplash behind the stove?",
+    "verdict": "out_of_scope",
+    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile",
+    "reason": "The agreement explicitly lists backsplash tile as not included and to be quoted separately.",
+    "hours_low": 4,
+    "hours_high": 8,
+    "price": 510
+   },
+   {
+    "request": "Fix the new pantry door that doesn't close properly",
+    "email_quote": "the new pantry door doesn't close all the way, it bounces back open.",
+    "verdict": "unclear",
+    "agreement_quote": "Adjusting cabinet doors and drawers so they close properly, for 30 days after install.",
+    "reason": "The agreement covers adjusting cabinet doors and drawers, but does not explicitly mention pantry doors, leaving it unclear if this door is included.",
+    "hours_low": 0,
+    "hours_high": 0,
+    "price": null
+   }
+  ],
+  "approval": "6f3d6bad",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ {
+  "ts": "2026-10-24T16:22:34+00:00",
   "mail": "demo:1",
   "client": "Maria Lopez",
   "subject": "Re: kitchen remodel",

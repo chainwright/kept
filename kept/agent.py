@@ -501,6 +501,7 @@ def run_day() -> dict:
         futures = {name: ex.submit(guarded, name, fn) for name, fn in middle}
         for name, f in futures.items():
             out[name] = f.result()
-    for name, fn in [("overload", weigh_overload), ("brief", morning_brief)]:
+    from .reply import answer_new
+    for name, fn in [("answers", answer_new), ("overload", weigh_overload), ("brief", morning_brief)]:
         out[name] = guarded(name, fn)
     return out

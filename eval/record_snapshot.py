@@ -32,6 +32,7 @@ try:
 except Exception as e:  # the day is already paid for; keep it and say what failed
     rules = f"failed: {type(e).__name__}: {str(e)[:120]}"
 g = E.grade(None)
+g["checks"]["no_job_failed"] = not {k: v for k, v in out.items() if isinstance(v, str)}
 ok = sum(g["checks"].values())
 print(json.dumps({"passed": f"{ok}/{len(g['checks'])}", "failed": [k for k, v in g["checks"].items() if not v],
                   "usd": g["usd"], "errors": {k: v for k, v in out.items() if isinstance(v, str)},

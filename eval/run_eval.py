@@ -133,6 +133,7 @@ def grade(k) -> dict:
 
     calls = [a for a in store.read_audit(5000) if a["kind"] == "llm"]
     usd = sum(a["usd"] for a in calls)
+    c["new_lead_answered"] = any(a["args"].get("to") == "dev@patelfamily.example" for a in emails)
     c["cost_under_15_cents"] = usd < 0.15
     held = store.read_json("abstained.json", [])
     return {"checks": c, "usd": round(usd, 4), "calls": len(calls), "dishonest": dishonest,
@@ -165,8 +166,9 @@ def main():
             t0 = time.time()
             out = agent.run_day()
             g = grade(None)
-            g.update({"run": n + 1, "seconds": round(time.time() - t0, 1),
-                      "job_errors": {k: v for k, v in out.items() if isinstance(v, str)}})
+            errors = {k: v for k, v in out.items() if isinstance(v, str)}
+            g["checks"]["no_job_failed"] = not errors  # a crashed job must fail the run, not hide in a log
+            g.update({"run": n + 1, "seconds": round(time.time() - t0, 1), "job_errors": errors})
         except Exception as e:
             g = {"run": n + 1, "crash": f"{type(e).__name__}: {e}"}
         results.append(g)

@@ -1,5 +1,5 @@
 {
- "ts": "2026-10-24T14:58:35+00:00",
+ "ts": "2026-10-24T16:22:48+00:00",
  "topics": [
   "Lumber and cabinet prices in the Pacific Northwest",
   "Oregon contractor license and permit rules",
@@ -8,40 +8,34 @@
  "claims": [
   {
    "topic": "Lumber and cabinet prices in the Pacific Northwest",
-   "text": "Current Western Spruce-Pine-Fir lumber prices remain firm at $510.",
-   "url": "https://www.facebook.com/millerwoodtradepub/posts/mount-storm-forest-products-has-spent-more-than-40-years-building-a-reputation-f/1701699638632483",
-   "quote": "Current Western Spruce-Pine-Fir lumber prices remain firm at $510"
+   "text": "Several mills across the Pacific Northwest have announced temporary curtailments, pulling supply out of the market right as freight and transportation costs are also creeping higher.",
+   "url": "https://bldrsupply.com/framing-lumber-prices-are-rising-why-eastern-washington-builders-should-lock-in-now",
+   "quote": "Several mills across the Pacific Northwest have announced temporary curtailments, pulling supply out of the market right as freight and transportation costs are also creeping higher."
   },
   {
    "topic": "Lumber and cabinet prices in the Pacific Northwest",
-   "text": "After more than a year of steady declines, lumber prices are starting to tick back upward.",
-   "url": "https://bldrsupply.com/framing-lumber-prices-are-rising-why-eastern-washington-builders-should-lock-in-now",
-   "quote": "after more than a year of steady declines, lumber prices are starting to tick back upward."
+   "text": "Aspen White, 15 piece set, $4700.00.",
+   "url": "https://www.facebook.com/groups/257210470414960/posts/1100808226055176",
+   "quote": "Aspen White, 15 piece set, $4700.00."
   },
   {
    "topic": "Oregon contractor license and permit rules",
-   "text": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre-license exam.",
-   "url": "https://clients.oregonsbdc.org/workshop.aspx?ekey=150460037",
-   "quote": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre-license exam."
-  },
-  {
-   "topic": "Oregon contractor license and permit rules",
-   "text": "Oregon building permit search tool lets users type in a city or ZIP and see every building permit filed over the last 3 years, with the builder on each one and their phone and license number.",
-   "url": "https://www.facebook.com/groups/6876709232352255/posts/28952488114347717",
-   "quote": "Type in a city or ZIP and you'll see every building permit filed over the last 3 years, with the builder on each one and their phone and license number where"
+   "text": "If you submit a timely and complete renewal or reassignment application, your existing Oregon permit remains valid until the agency takes final action.",
+   "url": "https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=C7dUDVbjAN5YS3RwtfTLW7WgD0vs52Iv6uVHr9jaNyRVykWz92Us!1626920300?ruleVrsnRsn=340745",
+   "quote": "(b) If a timely and complete renewal or reassignment application has been submitted, the existing permit will remain in effect until final action has been taken"
   },
   {
    "topic": "Home renovation demand in Portland",
-   "text": "High demand for contractors and ongoing material is affecting renovation work in Portland.",
+   "text": "About 150 low‑income residents of Franklin Towers must relocate due to renovation.",
+   "url": "https://www.instagram.com/p/Deo8kj4CPcd",
+   "quote": "approximately 150 LOW-INCOME RESIDENTS are being told they must relocate."
+  },
+  {
+   "topic": "Home renovation demand in Portland",
+   "text": "High demand for contractors and ongoing material pressures are affecting Portland renovation markets.",
    "url": "https://www.facebook.com/newscentermaine/posts/residents-face-mixed-emotions-as-they-prepare-to-leave-their-home-for-renovation/1557982993026711",
    "quote": "High demand for contractors and ongoing material"
-  },
-  {
-   "topic": "Home renovation demand in Portland",
-   "text": "AI analysis identified $22.3 million of siding‑replacement opportunity in one Maine county, indicating strong market demand.",
-   "url": "https://www.naw.org/mdm/article/from-order-takers-to-demand-generators-building-materials-next-shift",
-   "quote": "making up $22.3 million in opportunity"
   }
  ],
- "dropped": 0
+ "dropped": 1
 }

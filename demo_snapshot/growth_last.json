@@ -1,16 +1,10 @@
 {
- "ts": "2026-10-24T14:58:36+00:00",
+ "ts": "2026-10-24T16:22:45+00:00",
  "asks": [
-  "5762ccf6"
+  "6c434c9b"
  ],
  "posts": [
-  "7d24bd29"
+  "6de4e3e1"
  ],
- "waiting": [
-  {
-   "client": "Maria Lopez",
-   "why": "the project isn't finished and paid yet",
-   "quote": "Thanks for coming by on Monday."
-  }
- ]
+ "waiting": []
 }

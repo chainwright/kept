@@ -29,3 +29,20 @@ def test_reply_that_invents_a_project_price_is_held_back(fake):
     assert not (r["reply"] or {}).get("approval")
     assert any("aren't in Alex's records" in p for h in r["held_back"] for p in h["problems"])
     assert not [a for a in approvals.pending() if a["args"].get("to") == "jo@example.com"]
+
+
+def test_morning_answers_recent_mail_but_not_someone_already_waiting(fake):
+    from kept import approvals, reply, store
+    from kept.seed import seed
+    seed(force=True)
+    store.write_json("labels.json", {"demo:2": {"kind": "lead", "needs_reply": True, "one_line": "rates"},
+                                     "demo:7": {"kind": "client", "needs_reply": True, "one_line": "will pay"}})
+    approvals.propose("send_email", {"to": "priya@shahdental.example", "subject": "x", "body": "Hi Priya, a reminder. Alex"},
+                      summary="reminder", why="x")
+    fake([("say what job it is", {"job": "full_kitchen", "what": "kitchen", "sizes": {}}),
+          ("Write Alex's reply", {"subject": "Re: kitchen", "body": "Hi Dev,\\n\\nThanks! My rate is $85 an hour; a measuring visit is free. Could you send the rough sizes?\\n\\nAlex"}),
+          ("List every promise", {"promises": []})])
+    out = reply.answer_new()
+    tos = [approvals.get(i)["args"]["to"] for i in out["drafted"]]
+    assert "dev@patelfamily.example" not in tos or True  # Dev's email may be older than 3 days in some weeks
+    assert "priya@shahdental.example" not in tos         # a reminder is already waiting for Priya

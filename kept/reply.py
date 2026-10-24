@@ -14,7 +14,7 @@ from datetime import date
 from . import approvals, ledger, money, precheck
 from .agent import _abstain, _msgs, business, read_notes_owner, sender
 from .llm import router
-from .store import locked, now_iso, read_json, read_notes
+from .store import journal, locked, now_iso, read_json, read_notes
 from .tools import mail, notify
 from .validators import Verdict, dollar_amounts, honest_email, sendable_text, shape
 
@@ -94,7 +94,7 @@ def supersede(addr: str, newer: str) -> list[str]:
 
 
 def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None = None,
-                photo: dict | None = None, plan: dict | None = None) -> dict:
+                photo: dict | None = None, plan: dict | None = None, supersede_old: bool = True) -> dict:
     """Returns {"approval": ..., "held": ..., "dates": [...], "replaced": [...]}"""
     name, addr = sender(m)
     first = name.split(" ")[0]
@@ -192,7 +192,7 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         problems = v.problems
     if not v:
         return {"held": _abstain("reply", m["subject"], v, e)}
-    replaced = supersede(addr, m["id"])
+    replaced = supersede(addr, m["id"]) if supersede_old else []
     subject = e["subject"] if e["subject"].lower().startswith("re:") else f"Re: {m['subject']}"
     checks = [f"greets {first}, signed by {owner.split(' ')[0]}", "every price comes from Alex's records",
               "no dates that have passed"]
@@ -207,3 +207,50 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     if req:
         notify.ask(req)
     return {"approval": req, "dates": dates, "replaced": replaced}
+
+
+ANSWER_WITHIN_DAYS = 3
+
+
+def answer_new(mail_ids: list[str] | None = None) -> dict:
+    """Draft a reply to every recent email from a client or a lead that asks for one, unless something
+    is already waiting for that person (a reminder, an offer, a review request: those come first).
+    Runs after the morning's other jobs, and after the hourly sort."""
+    from .intake import assess
+    from .parallel import pmap
+    from .research import known
+    from .scope import contract_for
+
+    labels = read_json("labels.json", {})
+    scopes = {s["mail"]: s for s in read_json("scope.json", [])}
+    waiting = {a["args"].get("to", "").lower() for a in approvals.pending() if a["kind"] == "send_email"}
+    today = date.today()
+    todo = []
+    for m in mail.inbox(200):
+        lab = labels.get(m["id"]) or {}
+        if mail_ids is not None and m["id"] not in mail_ids:
+            continue
+        if lab.get("kind") not in ("lead", "client") or not lab.get("needs_reply"):
+            continue
+        try:
+            if (today - date.fromisoformat(str(m.get("date"))[:10])).days > ANSWER_WITHIN_DAYS:
+                continue
+        except ValueError:
+            continue
+        addr = sender(m)[1]
+        if addr in waiting or any(t["dir"] == "out" and t["ts"] > (m.get("ts") or m["date"]) for t in thread(addr)):
+            continue
+        waiting.add(addr)
+        todo.append((m, lab))
+
+    def one(item):
+        m, lab = item
+        addr = sender(m)[1]
+        plan = assess(m, None, has_contract=bool(contract_for(addr)), web=known(addr))
+        return draft_reply(m, lab, scopes.get(m["id"]), web=known(addr), plan=plan, supersede_old=False)
+
+    done = pmap(one, todo)
+    drafted = [d["approval"]["id"] for d in done if d.get("approval")]
+    journal(f"Answered new mail: {len(drafted)} replies drafted, {len(todo) - len(drafted)} held back")
+    return {"considered": len(todo), "drafted": drafted}
+

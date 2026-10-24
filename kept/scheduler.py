@@ -26,7 +26,11 @@ def start() -> BackgroundScheduler:
         return _sched
     _sched = BackgroundScheduler(timezone=settings.timezone)
     _sched.add_job(_safe("day", agent.run_day), "cron", hour=7, minute=30, id="day")
-    _sched.add_job(_safe("triage", agent.triage_inbox), "cron", minute=5, id="triage")
+    def hourly():
+        from .reply import answer_new
+        report = agent.triage_inbox()
+        answer_new(list(report.get("labels", {}).keys()))
+    _sched.add_job(_safe("triage", hourly), "cron", minute=5, id="triage")
     from . import learn
     _sched.add_job(_safe("learn", learn.propose_rules), "cron", day_of_week="mon", hour=7, id="learn")
     _sched.start()

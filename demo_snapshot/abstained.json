@@ -1,20 +1,15 @@
 [
  {
-  "ts": "2026-10-24T14:58:32+00:00",
-  "job": "offers",
-  "subject": "Lucia Ferri",
+  "ts": "2026-10-24T16:22:48+00:00",
+  "job": "watch",
+  "subject": "The CCB Pre‑Exam Training is a two‑day course that covers Oregon Construction La",
   "problems": [
-   "book-by date 2026-09-01 isn't between today and the occasion"
+   "claim 1: the quoted words are not in source 'web:ad34a04e'"
   ],
   "payload": {
-   "client": "Lucia Ferri",
-   "make_offer": true,
-   "occasion_id": "holiday-season-2026",
-   "what": "Holiday season readiness package (kitchen refresh + priority scheduling)",
-   "price": 2500,
-   "discount_pct": 0,
-   "book_by": "2026-09-01",
-   "why": "Retail client's peak season; priority slot ensures completion before holiday rush."
+   "text": "The CCB Pre‑Exam Training is a two‑day course that covers Oregon Construction Law, employees, subcontractors, the Oregon Code, safety, environmental issues, building envelope, bids and estimates.",
+   "source": "web:ad34a04e",
+   "quote": "CCB Pre-Exam Training This 2-day course covers: Oregon Construction Law, Employees, Subcontractors; Oregon Code, Safety, Environmental Issues, Building Envelope; Bids & Estimates"
   }
  }
 ]
