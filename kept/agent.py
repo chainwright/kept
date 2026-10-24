@@ -84,13 +84,17 @@ def triage_inbox() -> dict:
             report["abstained"] += 1
             continue
         report["labels"][m["id"]] = cls
-        if cls["kind"] != "noise":
-            report["commitments"] += _extract_commitments(m, cls["kind"])
+        pending_decision = []
         if cls["kind"] == "client":
             from . import scope
             if scope.contract_for(sender(m)[1]):
-                res = scope.review(m)
-                report.setdefault("scope", []).append({"mail": m["id"], **(res or {})})
+                # scope first: extra work is a decision for the owner, not a promise they've made
+                res = scope.review(m) or {}
+                report.setdefault("scope", []).append({"mail": m["id"], **res})
+                pending_decision = [r["email_quote"] for r in res.get("requests", [])
+                                    if r["verdict"] in ("out_of_scope", "unclear")]
+        if cls["kind"] != "noise":
+            report["commitments"] += _extract_commitments(m, cls["kind"], skip=pending_decision)
         seen.add(m["id"])
     write_json("seen_mail.json", sorted(seen))
     labels = read_json("labels.json", {})
@@ -100,12 +104,17 @@ def triage_inbox() -> dict:
     return report
 
 
+def _shared_words(a: str, b: str) -> int:
+    w = lambda t: {x for x in re.findall(r"[a-z]{4,}", t.lower())} - {"could", "would", "page", "with", "your", "please"}
+    return len(w(a) & w(b))
+
+
 def _is_client(addr: str) -> bool:
     from . import money
     return any(i.get("contact", "").lower() == addr for i in money.load()["invoices"])
 
 
-def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
+def _extract_commitments(m: dict, kind: str = "", skip: list[str] | None = None) -> list[dict]:
     """Promises in this thread, in both directions, each with the words that prove it."""
     out = []
     owner, (name, addr) = read_notes_owner(), sender(m)
@@ -133,6 +142,10 @@ def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
     for direction, items in batches:
         for it in items[:5]:
             v = shape(it, {"text": str, "quote": str})
+            if v and skip and direction == "i_owe" and any(
+                    _shared_words(it.get("quote", "") + " " + it["text"], q) >= 2 for q in skip):
+                journal(f"Not adding '{it['text']}' as a promise: it's extra work waiting for your decision")
+                continue
             if v and len(it["text"].split()) < 3:
                 v.add(f"'{it['text']}' is too short to be a promise anyone could act on")
             if v:
@@ -150,7 +163,7 @@ def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
                 text = re.sub(r"\bme\b", first, text)
                 text = re.sub(r"\bmy\b", f"{first}'s", text, flags=re.I)
             out.append(ledger.add(text[:1].upper() + text[1:], who=name, contact=addr, due=it.get("due"),
-                                  source=m["id"], origin="inbox", direction=direction))
+                                  source=m["id"], origin="inbox", direction=direction, quote=it["quote"]))
     return out
 
 

@@ -54,7 +54,9 @@ def review(m: dict) -> dict | None:
     if first is None:
         return {"requests": [], "proposal": None}
     items = _reconcile(first, second or [])
-    promised = [x for x in ledger.items("open") if x.get("source") == m["id"] and ledger.direction(x) == "i_owe"]
+    # promises the owner made earlier in this client's threads (not the request we're judging now)
+    promised = [x for x in ledger.items("open") if (x.get("contact") or "").lower() == addr
+                and x.get("source") != m["id"] and ledger.direction(x) == "i_owe"]
     checked = []
     sources = {"agreement": agreement, "email": m["subject"] + "\n" + m["body"]}
     for it in items[:6]:
@@ -66,7 +68,7 @@ def review(m: dict) -> dict | None:
                 v.merge(grounded([{"source": "agreement", "quote": it["agreement_quote"]}], sources))
         if v and it["verdict"] == "out_of_scope":
             need = min(2, len(_words(it["request"]))) or 1  # short requests ("add a blog page") have one key word
-            already = next((x for x in promised if _overlap(it["request"], x["text"]) >= need), None)
+            already = next((x for x in promised if _overlap(it["request"], x["text"] + " " + x.get("quote", "")) >= need), None)
             if already:  # the owner already said yes to this in their own promise; don't sell it twice
                 it["verdict"], it["reason"] = "already_promised", f"already in your promises: '{already['text']}'"
         if v and it["verdict"] == "out_of_scope":

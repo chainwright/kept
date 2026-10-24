@@ -199,3 +199,23 @@ def test_client_promising_to_pay_is_owed_to_the_owner_even_if_sorted_as_a_bill(f
                                                        "quote": "We'll pay invoice #118 by Friday"}]})])
     agent.triage_inbox()
     assert ledger.direction(ledger.items("open")[0]) == "owed_to_me"
+
+
+def test_out_of_scope_request_is_a_decision_not_a_promise(fake):
+    d = store.data_dir() / "contracts"
+    d.mkdir(exist_ok=True)
+    (d / "maria@bakery.example.md").write_text("Included: four pages.\nNot included: a blog.\n")
+    (store.data_dir() / "notes.md").write_text("Hourly rate: $85\n")
+    m = {"id": "mail:8", "from": "Maria Lopez <maria@bakery.example>", "subject": "Blog", "date": "",
+         "body": "Could you add a small blog page for our seasonal specials? Maria"}
+    _inbox([m])
+    fake([("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "x"}),
+          ("signed agreement", {"requests": [{"request": "Add a blog page", "email_quote": "add a small blog page for our seasonal specials",
+                                              "verdict": "out_of_scope", "agreement_quote": "Not included: a blog.", "reason": "x",
+                                              "hours_low": 3, "hours_high": 5}]}),
+          ("Confirm the covered items", {"subject": "Blog", "body": "Hi Maria,\nThe blog page wasn't in our agreement; I can add it for $340. Shall I?\nAlex"}),
+          ("Find two kinds", {"mine": [{"text": "Add a small blog page for seasonal specials", "due": None,
+                                        "quote": "add a small blog page for our seasonal specials"}], "theirs": []})])
+    agent.triage_inbox()
+    assert ledger.items("open") == []                       # not a promise yet
+    assert any("$340" in a["summary"] for a in approvals.pending())   # but an offer waits for Yes

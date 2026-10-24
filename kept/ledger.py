@@ -38,7 +38,7 @@ def get(item_id: str) -> dict:
 
 
 def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
-        origin: str = "owner", contact: str = "", direction: str = "i_owe") -> dict:
+        origin: str = "owner", contact: str = "", direction: str = "i_owe", quote: str = "") -> dict:
     """direction: 'i_owe' (the owner promised) or 'owed_to_me' (someone promised the owner)."""
     text = text.strip()
     if not text:
@@ -51,7 +51,7 @@ def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
         if r["status"] == "open" and r["text"].lower() == text.lower() and r.get("who") == who:
             return r
     row = {"id": uuid.uuid4().hex[:8], "text": text, "who": who, "due": due, "source": source,
-           "origin": origin, "contact": contact, "direction": direction, "status": "open", "created": now_iso(), "history": []}
+           "origin": origin, "contact": contact, "direction": direction, "quote": quote, "status": "open", "created": now_iso(), "history": []}
     rows.append(row)
     write_json(FILE, rows)
     append_audit("ledger_add", id=row["id"], text=text, who=who, due=due, origin=origin)

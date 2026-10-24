@@ -82,7 +82,7 @@ def test_two_reads_that_disagree_become_unclear_and_ask_for_nothing(fake):
 def test_request_the_owner_already_promised_is_not_sold_again(fake):
     _setup()
     from kept import ledger
-    ledger.add("Send Maria a quote for the blog page", who="Maria Lopez", source="mail:8")
+    ledger.add("Send Maria a quote for the blog page", who="Maria Lopez", contact="maria@bakery.example", source="mail:1")
     fake([("signed agreement", VERDICT)])
     res = scope.review(MAIL)
     blog = [r for r in res["requests"] if r["request"] == "Add a blog page"][0]
