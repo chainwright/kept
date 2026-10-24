@@ -34,7 +34,10 @@ def test_rule_with_real_pattern_waits_for_yes_then_changes_the_skill(fake, skill
     assert "4 of these 5" in req["why"]
     assert "Learned from" not in (skills_dir / "follow_up.md").read_text()   # nothing changed yet
     approvals.decide(req["id"], True)
-    assert "add two working days" in (skills_dir / "follow_up.md").read_text()
+    from kept import store
+    mine = store.data_dir() / "skills" / "follow_up.md"
+    assert "add two working days" in mine.read_text()                          # the owner's copy has it
+    assert "Learned from" not in (skills_dir / "follow_up.md").read_text()      # the shipped skill is untouched
     assert "add two working days" in agent._msgs("x", "follow_up")[0]["content"]  # used from now on
 
 

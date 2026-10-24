@@ -22,7 +22,9 @@ def ask(question: str) -> dict:
     listing = "\n\n".join(f"[{k}]\n{v[:4000]}" for k, v in sources.items())
     r = router.ask("plan", [
         {"role": "system", "content": "You answer questions about the owner's own commitments using ONLY "
-                                      "the records given. If the records don't say, answer that you don't know."},
+                                      "the records given. If the records don't say, answer that you don't know. Ledger rows have a "
+                                      "status: keep what is still open apart from what is already done, and lead "
+                                      "with what is open."},
         {"role": "user", "content": f"Question: {question}\n\nRecords:\n{listing}\n\n"
                                     'Reply JSON: {"answer": "...", "evidence": [{"source": "<id in brackets>", '
                                     '"quote": "exact words from that record"}]}'}],

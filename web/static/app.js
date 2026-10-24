@@ -487,7 +487,7 @@
   }
 
   // --- before you send
-  const EXAMPLE = { to: "Maria Lopez", text: "Hi Maria,\n\nThanks for the call! I'll send the revised quote with the online ordering page by Friday, and the menu will show both sizes by tomorrow.\n\nAlex" };
+  const EXAMPLE = { to: "Maria Lopez", text: "Hi Maria,\n\nThanks for the call! I'll send the revised quote with the quartz countertop by Friday, and I'll fix the pantry door tomorrow.\n\nAlex" };
   $("#pre-example").addEventListener("click", () => {
     $("#pre-text").value = EXAMPLE.text;
     $("#pre-to").value = EXAMPLE.to;

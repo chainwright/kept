@@ -141,11 +141,15 @@ def propose_rules() -> list[dict]:
 @approvals.action("add_rule", needs_approval=True)
 def add_rule(args: dict) -> str:
     """Changing how Kept behaves is a decision, so it waits for a Yes like an email does."""
-    p = Path(SKILLS) / f"{args['skill']}.md"
-    text = p.read_text() if p.exists() else f"# Skill: {args['skill']}\n"
+    from .agent import skill_path
+    from .store import data_dir
+    src = skill_path(args["skill"])
+    text = src.read_text() if src.exists() else f"# Skill: {args['skill']}\n"
+    p = data_dir() / "skills" / f"{args['skill']}.md"   # the owner's copy; the shipped skill stays as it is
+    p.parent.mkdir(parents=True, exist_ok=True)
     if "## Learned from your history" not in text:
         text = text.rstrip() + "\n\n## Learned from your history\n"
     text = text.rstrip() + f"\n- {args['rule']} _(added {now_iso()[:10]}: {args['evidence']})_\n"
     p.write_text(text)
     journal(f"Learned a rule for {args['skill']}: {args['rule']}")
-    return f"added to skills/{args['skill']}.md"
+    return f"added to your copy of skills/{args['skill']}.md"

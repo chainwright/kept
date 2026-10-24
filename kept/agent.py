@@ -28,9 +28,17 @@ SYSTEM = ("You are Kept, an operator for a one-person business. You are careful 
 SKILLS = ROOT / "skills"
 
 
+def skill_path(name: str):
+    """The owner's own copy of a skill (with the rules Kept learned for them) lives with their data;
+    the shipped skill in skills/ is the starting point and is never written to."""
+    from .store import data_dir
+    mine = data_dir() / "skills" / f"{name}.md"
+    return mine if mine.exists() else SKILLS / f"{name}.md"
+
+
 def skill(name: str) -> str:
     """Skills are plain markdown the owner can edit; they travel with every prompt that uses them."""
-    p = SKILLS / f"{name}.md"
+    p = skill_path(name)
     return p.read_text().strip() if p.exists() else ""
 
 
