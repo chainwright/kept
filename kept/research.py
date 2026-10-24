@@ -70,7 +70,9 @@ def look_up(name: str, addr: str, body: str) -> dict:
         return _save(addr, out)
     # a page only counts if it names the business (or is their own site)
     key = business.lower()[:14]
+    out["pages_seen"] = len(pages)
     pages = [p for p in pages if (domain and domain in p["url"]) or (key and key in p["content"].lower())]
+    out["pages_used"] = [p["url"] for p in pages][:6]
     if not pages:
         out["note"] = f"Nothing on the web clearly about {business or domain}. Could be brand new, or not what it says."
         return _save(addr, out)
@@ -98,6 +100,7 @@ def look_up(name: str, addr: str, body: str) -> dict:
             v.merge(grounded([f], sources))
         if not v:
             _abstain("research", f.get("text", addr)[:60], v, f)
+            out.setdefault("dropped", []).append({"text": str(f.get("text", ""))[:160], "why": "; ".join(v.problems)[:200]})
             continue
         url = next(p["url"] for p in pages if p["id"] == f["source"])
         out["facts"].append({"text": f["text"], "quote": f["quote"], "url": url})

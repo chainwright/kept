@@ -159,8 +159,17 @@
       h("ul", { class: "plain" }, sc.map((x) => h("li", null, chip(x.verdict.replace(/_/g, " "), x.verdict === "out_of_scope" ? "chip-ask" : x.verdict === "in_scope" ? "chip-ok" : "chip-outline"), " ", x.request,
         x.price ? ` · ${usd(x.price)} at Alex's rate` : "")))));
     const web = r.research;
-    if (web && (web.facts || []).length) rows.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily)"),
-      h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, f.text, " ", h("a", { href: f.url, target: "_blank", rel: "noopener" }, "source"))))));
+    if (web && (web.business || web.domain)) {
+      const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
+      rows.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily Search + Extract, checked by code)"),
+        h("div", { class: "foot muted" }, (web.searched || []).join(" · "),
+          web.pages_seen !== undefined ? ` · ${web.pages_seen} pages found, ${(web.pages_used || []).length} name the business` : ""),
+        (web.facts || []).length ? h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, chip("kept", "chip-ok"), " ", f.text, " ",
+          h("a", { href: f.url, target: "_blank", rel: "noopener" }, host(f.url)), h("div", { class: "foot muted" }, `"${f.quote}"`))))
+          : h("span", { class: "muted" }, web.note || "Nothing checked out, so Kept isn't using anything from the web."),
+        (web.dropped || []).length ? h("ul", { class: "plain" }, web.dropped.map((d) => h("li", { class: "muted" }, chip("dropped", "chip-held"), " ", d.text, h("div", { class: "foot muted" }, d.why)))) : null,
+        r.plan && r.plan.verified_business ? h("div", null, chip("verified business", "chip-super"), " so Kept treats it as a commercial job: priced after a visit.") : null));
+    }
     const ps = r.promises || [];
     if (ps.length) rows.push(h("li", null, h("span", { class: "w-step" }, "Promises noted in Alex's ledger"),
       h("ul", { class: "plain" }, ps.map((p) => h("li", null, chip(p.direction === "owed_to_me" ? "they owe Alex" : "Alex owes", p.direction === "owed_to_me" ? "chip-super" : "chip-due"), " ", p.text)))));

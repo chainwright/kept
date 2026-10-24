@@ -8,6 +8,20 @@ Runs on **Nebius Token Factory** with **NVIDIA Nemotron 3** (Nano, Super and Ult
 
 ---
 
+## A personal AI, in the track's own words
+
+| Personal AI asks for | In Kept |
+|---|---|
+| always-on | sorts new mail every hour; runs the whole morning (promises, money, offers, the brief) before the owner is up |
+| private, data under your control | plain files on your own server; Token Factory with zero data retention; nothing leaves without your Yes |
+| persistent memory | the promise ledger (both ways), a daily journal, how late you and each client really are, the calendar |
+| reusable skills | `skills/*.md` rule sheets the owner can edit; rules Kept learns go into the owner's own copy after a Yes |
+| tools and information you choose | the inbox, the calendar, the money book, the price guide in `notes.md`, Tavily Search and Extract |
+| carries out tasks | drafts replies, prices jobs, books measuring visits, chases invoices, plans a cash rescue |
+
+**The model never decides a price, a date, or who gets an email.** The full list is in
+[CONSTITUTION.md](CONSTITUTION.md).
+
 ## Why this exists
 
 If you work alone, your business runs on promises. "I'll send the quote by Thursday." "Let me

@@ -50,7 +50,10 @@ def from_price(job: str) -> int | None:
     return None
 
 
-def assess(m: dict, photo: dict | None = None, has_contract: bool = False) -> dict:
+COMMERCIAL = re.compile(r"\b(cafe|café|coffee|restaurant|bakery|bar|clinic|dental|office|shop|store|boutique|salon|studio|gym)\b", re.I)
+
+
+def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: dict | None = None) -> dict:
     from . import estimate
 
     name, addr = sender(m)
@@ -85,7 +88,13 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False) -> di
     # the photo is evidence too: "what would you suggest?" next to a photo of a tired kitchen is a remodel enquiry
     if job in ("question", "other") and photo:
         job = {"full_kitchen": "full_kitchen", "refresh": "fronts", "small_repair": "small_repair"}.get(photo.get("scope"), job)
-    out = {"job": job, "what": d.get("what", "") or "", "price_objection": bool(d.get("price_objection"))}
+    # Tavily said who's writing: a verified cafe, clinic or shop is a commercial job, whatever the email calls it
+    verified_biz = bool(web and web.get("facts")) and bool(COMMERCIAL.search(
+        " ".join([web.get("kind", ""), web.get("business", "")] + [f["text"] for f in web.get("facts", [])])))
+    if verified_biz and job in ("full_kitchen", "question", "other", "countertop", "fronts"):
+        job = "commercial"
+    out = {"job": job, "what": d.get("what", "") or "", "price_objection": bool(d.get("price_objection")),
+           "verified_business": verified_biz}
     if picked:
         out["booked"] = schedule.book(picked, name, addr, out["what"] or picked.get("for", "measuring visit"))
         out["booked_label"] = picked["label"]
