@@ -100,6 +100,11 @@ def triage_inbox() -> dict:
     return report
 
 
+def _is_client(addr: str) -> bool:
+    from . import money
+    return any(i.get("contact", "").lower() == addr for i in money.load()["invoices"])
+
+
 def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
     """Promises in this thread, in both directions, each with the words that prove it."""
     out = []
@@ -121,7 +126,9 @@ def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
         _abstain("extract", m["subject"], Verdict(False, [f"model reply unusable: {e}"]))
         return out
     batches = [("i_owe", data.get("mine") or data.get("items") or []), ("owed_to_me", data.get("theirs") or [])]
-    if kind == "bill":  # a bill is always something the owner pays, whatever the model filed it under
+    if kind == "bill" and not _is_client(addr):
+        # a vendor's bill is always something the owner pays, whatever the model filed it under;
+        # a client writing about paying the owner is the opposite, so clients are excluded
         batches = [("i_owe", batches[0][1] + batches[1][1])]
     for direction, items in batches:
         for it in items[:5]:

@@ -187,3 +187,15 @@ def test_promise_copied_in_the_clients_voice_is_put_in_the_owners_ledger_voice(f
                                         "quote": "send me your rates and a rough timeline"}], "theirs": []})])
     agent.triage_inbox()
     assert ledger.items("open")[0]["text"] == "Send Dev your rates and a rough timeline"
+
+
+def test_client_promising_to_pay_is_owed_to_the_owner_even_if_sorted_as_a_bill(fake):
+    store.write_json("money.json", {"balance": 0, "invoices": [{"number": "118", "client": "Priya Shah",
+                     "contact": "priya@studio.example", "amount": 850, "issued": "2026-10-01", "due": "2026-10-22", "paid_on": None}], "bills": []})
+    _inbox([{"id": "mail:7", "from": "Priya Shah <priya@studio.example>", "subject": "Invoice 118", "date": "",
+             "body": "We'll pay invoice #118 by Friday at the latest. Priya"}])
+    fake([("Classify this email", {"kind": "bill", "needs_reply": False, "one_line": "x"}),
+          ("Find two kinds", {"mine": [], "theirs": [{"text": "Priya pays invoice #118", "due": None,
+                                                       "quote": "We'll pay invoice #118 by Friday"}]})])
+    agent.triage_inbox()
+    assert ledger.direction(ledger.items("open")[0]) == "owed_to_me"
