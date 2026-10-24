@@ -1,6 +1,18 @@
 {
- "ts": "2026-10-24T13:05:22+00:00",
+ "ts": "2026-10-24T14:58:26+00:00",
  "skipped": [
+  {
+   "client": "Ben Carter",
+   "contact": "ben@carterhome.example",
+   "kind": "past client",
+   "industry": "other",
+   "last_order_days": 45,
+   "habit": {
+    "paid": 1,
+    "typical_days_late": 0
+   },
+   "why_not": "a friendly check-in comes before any offer"
+  },
   {
    "client": "Priya Shah",
    "contact": "priya@shahdental.example",
@@ -15,9 +27,9 @@
   },
   {
    "client": "Jordan Kim",
-   "contact": "jordan@kimyoga.example",
+   "contact": "jordan@kimfamily.example",
    "kind": "past client",
-   "industry": "fitness",
+   "industry": "other",
    "last_order_days": 60,
    "habit": {
     "paid": 1,
@@ -39,9 +51,9 @@
   },
   {
    "client": "Maria Lopez",
-   "contact": "maria@sunrisebakery.example",
+   "contact": "maria@lopezhome.example",
    "kind": "past client",
-   "industry": "bakery",
+   "industry": "other",
    "last_order_days": 4,
    "habit": {
     "paid": 0,
@@ -50,9 +62,7 @@
    "why_not": "you still owe them work"
   }
  ],
- "offers": [
-  "991e86bf"
- ],
+ "offers": [],
  "considered": [
   "Lucia Ferri"
  ]

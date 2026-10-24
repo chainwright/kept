@@ -1,10 +1,10 @@
 {
- "ts": "2026-10-24T13:04:46+00:00",
+ "ts": "2026-10-24T14:58:59+00:00",
  "needed": true,
  "gap": {
   "date": "2026-11-01",
   "gap": 116.0,
-  "because": "Studio rent"
+  "because": "Workshop rent"
  },
  "steps": [
   {
@@ -14,122 +14,112 @@
    "amount": 850,
    "days_to_cash": 3,
    "detail": "due 2026-10-22, expected 2026-11-03 at this client's usual pace",
-   "action": "Follow up with Priya Shah for payment on invoice #118",
-   "why": "Overdue invoice, expected payment in 3 days, highest certainty"
+   "action": "Call Priya Shah to collect overdue invoice #118",
+   "why": "Overdue, highest amount, expected cash in 3 days covers the $116 gap before rent due"
   },
   {
-   "id": "offer:5292a478",
+   "id": "offer:2e929130",
    "type": "extra work waiting for your Yes",
-   "who": "maria@sunrisebakery.example",
-   "amount": 1490,
+   "who": "maria@lopezhome.example",
+   "amount": 510,
    "days_to_cash": 10,
-   "detail": "Offer Maria Lopez the extra work for $1490",
-   "action": "Accept Maria Lopez's extra work offer for $1490",
-   "why": "Extra work waiting on your yes, cash in 10 days, large amount"
+   "detail": "Offer Maria Lopez the extra work for $510",
+   "action": "Accept Maria Lopez's extra work offer for $510",
+   "why": "Work waiting on yes, cash in 10 days builds November cash flow"
   },
   {
-   "id": "lead:3c14ad9b",
+   "id": "lead:2913788d",
    "type": "open lead waiting on you",
    "who": "Dev Patel",
-   "amount": 1200,
+   "amount": 1125,
    "days_to_cash": 21,
    "detail": "Send Dev Patel the rates and a rough timeline",
-   "contact": "dev@greenleaflandscaping.example",
-   "action": "Send Dev Patel rates and a rough timeline",
-   "why": "Open lead waiting on you, potential $1200 in 21 days"
+   "contact": "dev@patelfamily.example",
+   "action": "Send Dev Patel rates and rough timeline",
+   "why": "Open lead waiting on you, 21 days to cash, solid next-month revenue"
   },
   {
    "id": "revive:h001",
    "type": "quoted but never hired",
    "who": "Hannah Weiss",
-   "amount": 1200,
+   "amount": 1125,
    "days_to_cash": 30,
-   "contact": "hannah@weissstudio.example",
-   "detail": "Send Hannah the quote for a clinic site (54 days ago)",
-   "action": "Send Hannah Weiss the quote for a clinic site",
-   "why": "Quoted but never hired, $1200 in 30 days if revived"
+   "contact": "hannah@weisshome.example",
+   "detail": "Send Hannah the estimate for a kitchen remodel (54 days ago)",
+   "action": "Send Hannah Weiss the kitchen remodel estimate",
+   "why": "Quoted 54 days ago, 30 days to cash, revives past opportunity"
   },
   {
    "id": "revive:h002",
    "type": "quoted but never hired",
    "who": "Omar Haddad",
-   "amount": 1200,
+   "amount": 1125,
    "days_to_cash": 30,
-   "contact": "omar@haddadstudio.example",
-   "detail": "Send Omar rates and a timeline (48 days ago)",
-   "action": "Send Omar Haddad rates and a timeline",
-   "why": "Quoted but never hired, $1200 in 30 days if revived"
-  },
-  {
-   "id": "revive:h004",
-   "type": "quoted but never hired",
-   "who": "Ben Carter",
-   "amount": 1200,
-   "days_to_cash": 30,
-   "contact": "ben@carterstudio.example",
-   "detail": "Send Ben the estimate for a booking page (26 days ago)",
-   "action": "Send Ben Carter the estimate for a booking page",
-   "why": "Quoted but never hired, $1200 in 30 days if revived"
+   "contact": "omar@haddadhome.example",
+   "detail": "Send Omar rates and a timeline for his kitchen (48 days ago)",
+   "action": "Send Omar Haddad rates and timeline for kitchen",
+   "why": "Quoted 48 days ago, 30 days to cash, revives past opportunity"
   },
   {
    "id": "prospect:0",
    "type": "new local business (lead card)",
-   "who": "Bossa",
-   "amount": 1200,
+   "who": "Sure Shot Burgers",
+   "amount": 1125,
    "days_to_cash": 45,
-   "detail": "Transitioning from a specialty coffee roaster to a brick‑and‑mortar cafe/cocktail bar, they need a website to showcase their menu, location, events, and Brazilian culture.",
-   "action": "Reach out to Bossa with a website proposal",
-   "why": "New local business lead, $1200 in 45 days"
+   "detail": "The article states they will soon become a sit‑down restaurant, indicating a need for a functional kitchen.",
+   "action": "Reach out to Sure Shot Burgers about kitchen needs",
+   "why": "New local business, 45 days to cash, long-term pipeline"
   },
   {
    "id": "prospect:1",
    "type": "new local business (lead card)",
-   "who": "Cosmopolis Coffee",
-   "amount": 1200,
+   "who": "Bossa",
+   "amount": 1125,
    "days_to_cash": 45,
-   "detail": "Opening a physical cafe in Irvington after operating as a roaster, they need a website for hours, online ordering, and to tell their cosmopolitan story.",
-   "action": "Reach out to Cosmopolis Coffee with a website proposal",
-   "why": "New local business lead, $1200 in 45 days"
+   "detail": "The piece notes Bossa will open a brick‑and‑mortar space that is part cafe, part cocktail bar, requiring a cafe counter and kitchenette.",
+   "action": "Contact Bossa about cafe counter and kitchenette",
+   "why": "New brick-and-mortar, 45 days to cash, long-term pipeline"
   },
   {
    "id": "prospect:2",
    "type": "new local business (lead card)",
-   "who": "Sure Shot Burgers",
-   "amount": 1200,
+   "who": "Alberta Donut Cafe",
+   "amount": 1125,
    "days_to_cash": 45,
-   "detail": "Moving from a pop‑up/cart concept to a sit‑down restaurant, they need a website for reservations, menu display, and location details.",
-   "action": "Reach out to Sure Shot Burgers with a website proposal",
-   "why": "New local business lead, $1200 in 45 days"
+   "detail": "The announcement says the cafe will open later this fall and the permit list shows extensive kitchen‑related work (plumbing, electrical, fire, mechanical) for a doughnut shop remodel.",
+   "action": "Contact Alberta Donut Cafe about doughnut shop remodel",
+   "why": "Permit shows kitchen work, 45 days to cash, long-term pipeline"
   }
  ],
  "prospects": [
   {
+   "business": "Sure Shot Burgers",
+   "why": "The article states they will soon become a sit‑down restaurant, indicating a need for a functional kitchen.",
+   "quote": "Sure Shot Burgers will soon be a sit-down restaurant.",
+   "opener": "Hi there, I’m Alex from Kept Kitchen Remodeling—I saw that Sure Shot Burgers is moving to a sit‑down format and would love to help you get the kitchen ready for service.",
+   "url": "https://pdx.eater.com/restaurant-news/107746/portland-oregon-biggest-new-restaurant-openings-spring-2026"
+  },
+  {
    "business": "Bossa",
-   "why": "Transitioning from a specialty coffee roaster to a brick‑and‑mortar cafe/cocktail bar, they need a website to showcase their menu, location, events, and Brazilian culture.",
+   "why": "The piece notes Bossa will open a brick‑and‑mortar space that is part cafe, part cocktail bar, requiring a cafe counter and kitchenette.",
    "quote": "Bossa, which started as a specialty coffee roaster and continues to be so, will open a brick and mortar—part cafe, part cocktail bar.",
-   "opener": "Hey Emanuelle and Tilion, I love your vision of bringing Brazilian warmth to NW Portland—let’s build a site that captures that vibe.",
+   "opener": "Hello, I’m Alex with Kept Kitchen Remodeling—I heard Bossa is opening a new cafe‑bar on NW 21st and Everett and can help outfit the counter and kitchenette you’ll need.",
    "url": "https://bridgetownbites.com/2026/08/26/bossa-a-brazilian-cafe-and-bar-will-open-in-nw-portland-oregon"
   },
   {
-   "business": "Cosmopolis Coffee",
-   "why": "Opening a physical cafe in Irvington after operating as a roaster, they need a website for hours, online ordering, and to tell their cosmopolitan story.",
-   "quote": "Cosmopolis Coffee, a small Portland roaster, is opening a cafe on NE Broadway on the south edge of the Irvington neighborhood.",
-   "opener": "Hi Conor, congrats on the new Irvington spot—let’s get your coffee story online so neighbors can find you easily.",
-   "url": "https://bridgetownbites.com/2026/09/09/cosmopolis-coffee-will-open-in-irvington-neighborhood-portland-oregon"
-  },
-  {
-   "business": "Sure Shot Burgers",
-   "why": "Moving from a pop‑up/cart concept to a sit‑down restaurant, they need a website for reservations, menu display, and location details.",
-   "quote": "Sure Shot Burgers will soon be a sit-down restaurant.",
-   "opener": "Hey Ron, excited to see Shot Burger become a sit‑down—let’s craft a site that makes booking a breeze.",
-   "url": "https://pdx.eater.com/restaurant-news/107746/portland-oregon-biggest-new-restaurant-openings-spring-2026"
+   "business": "Alberta Donut Cafe",
+   "why": "The announcement says the cafe will open later this fall and the permit list shows extensive kitchen‑related work (plumbing, electrical, fire, mechanical) for a doughnut shop remodel.",
+   "quote": "Alberta Donut Cafe will open in this location later this fall.",
+   "opener": "Hey there, I’m Alex from Kept Kitchen Remodeling—I noticed Alberta Donut Cafe is set to open this fall and would be happy to assist with the kitchen build‑out for your new donut shop.",
+   "url": "https://bridgetownbites.com/2026/09/08/alberta-donut-cafe-will-open-on-ne-alberta-street-in-portland-oregon"
   }
  ],
  "closes_gap_at": "invoice:118",
  "drafts": [
-  "3296a534",
-  "99553d91"
+  "90a994f6",
+  "a4b16351"
  ],
  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
- "reasoning": "We need to rank candidates by likelihood and speed to bring money, pick steps that close the gap first (i.e., cover $116 shortfall on 2026-11-01), then ones that build next month. Use only candidate ids given; don't invent amounts. Reply JSON with steps array, each step: id, action (one line), why (one line). We need to select steps that close the gap first. The gap is $116. The candidates have amounts: offer:5292a478 $1490 (10 days), invoice:118 $850 (3 days), lead:3c14ad9b $1200 (21 days), revive:h001 $1200 (30 days), revive:h002 $1200 (30 days), revive:h004 $1200 (30 days), prospects each $1200 (45 days). The fastest cash is invoice:118 (3 days) $850, then offer:5292a478 (10 days) $1490. Both would cover the $116 gap. But we need steps that close the gap first, then build next month. So first step: chase invoice:118 (overdue invoice) because it's fastest (3 days) and amount > gap. Second step: accept extra work offer:5292a478 (10 days) also fast and large. Then next month building: lead:3c14ad9b (21 days) and maybe revive ones (30 days) and prospects (45 days). But we need to rank by likelihood and speed. Likelihood: invoice is overdue, expected 2026-11-03 (3 days). Offer is extra work waiting for Yes, likely if Alex says yes. Lead is open lead waiting on you, need to send rates. Revives are quoted but never hired, less likely. Prospects are new leads, longer.\n\nThus steps order: 1) invoice:118, 2) offer:5292a478, 3) lead:3c14ad9b, 4) revive:h001, 5) revive:h002, 6) revive:h004, 7) prospect:0, 8) prospect:1, 9) prospect:2. But we only need steps that close gap first then build next month. Could include all but maybe just top few. The instruction: \"Rank the candidates below by how likely and how fast they bring money, and pick the steps that close the gap first, then the ones that build next month.\" So we should output steps in that order. Probably include all candidates but ordered. But \"pick the steps that close the gap first, then the ones that build next month.\" So we need to select steps that close gap (i.e., those that can bring money before 2026-11-01). The gap date is 2026-11-01. Today? Not given, but assume current date is around 2026-10-29? Actually invoice expected 2026-11-03 (3 days from 2026-10-31?). But gap is 2026-11-01, so invoice expected 2026-11-03 is after gap. But days_to_cash: 3 days. If today is 2026-10-29, 3 days is 2026-11-01. But detail says expected 2026-11-03 at this client's usual pace. So maybe not in time. Offer: 10 days, would be after gap. Lead: 21 days, after. Revives: 30 days. Prospects: 45 days. So none may close gap before 2026-11-01? But we must still rank by likelihood and speed. The gap is $116 short on 2026-11-01. So we need steps that bring money asap. The fastest is invoice (3 days) but expected 2026-11-03, after gap. Offer 10 days. So maybe we still prioritize invoice because it's most likely and fastest. Then offer. Then lead. Then revives. Then prospects.\n\nWe'll output steps for all candidates in that"
+ "reasoning": "We need to rank candidates by how likely and how fast they bring money, and pick steps that close the gap first (i.e., cover the $116 shortfall by 2026-11-01), then ones that build next month. Use only candidate ids given; don't invent amounts. Reply JSON with steps array, each with id, action, why.\n\nWe have a shortfall of $116 on 2026-11-01. Need to bring money before that date. Today's date? Not given, but we have days_to_cash for each candidate. We need to consider which can bring cash before 2026-11-01. The current date is presumably around late October 2026? The invoice:118 has days_to_cash 3, expected 2026-11-03, which is after the deadline (2026-11-01). But days_to_cash 3 from now? If today is 2026-10-29, then 3 days is 2026-11-01. But detail says expected 2026-11-03 at this client's usual pace. So maybe not in time.\n\nOffer:2e929130 has days_to_cash 10, amount 510. That would be after 10 days, likely after 2026-11-01 if today is 2026-10-22? Actually we don't know today. But we can assume we need to prioritize fastest and most likely.\n\nWe have overdue invoice:118 with amount 850, days_to_cash 3, but expected 2026-11-03. That's close but maybe after deadline. However, it's overdue, so likely to pay soon. Could be the fastest.\n\nLead:2913788d days_to_cash 21, too long.\n\nRevives: 30 days.\n\nProspects: 45 days.\n\nSo the only ones that could potentially bring money before 2026-11-01 are invoice:118 (3 days) and offer:2e929130 (10 days). But invoice expected 2026-11-03, which is 2 days after deadline. However, days_to_cash is 3, so if we act now, maybe get cash in 3 days, which could be by 2026-11-01 if today is 2026-10-29. But we don't know today. The problem says \"Alex will be $116 short on 2026-11-01 (Workshop rent). Rank the candidates below by how likely and how fast they bring money, and pick the steps that close the gap first, then the ones that build next month.\"\n\nWe need to produce steps that close the gap first (i.e., get at least $116 before 2026-11-01), then steps that build next month (i.e., future revenue). We must use only candidate ids given.\n\nWe should rank by likelihood and speed. The overdue invoice is likely to pay, but the expected date is after deadline. The extra work offer is waiting for Alex's yes, so if Alex says yes, they can do the work and get paid in 10 days. That might be after deadline. But maybe the work can be done quickly and payment upon completion? The detail: \"Offer Maria Lopez the extra work for $510\". Days_to_cash 10. So if Alex accepts today, cash in 10 days.\n\nWe need to decide which steps to include. The JSON should contain steps array with actions. Probably we need to include multiple steps: first, chase the overdue invoice (call Priya Shah), then accept the extra work offer, then maybe send lead to Dev Patel, etc. But we must only include steps that close the gap first, then ones that build next month. So we need to prioritize steps that can bring money before 2026-11-01. Which candidates can realistically",
+ "ad": "60a63a55"
 }

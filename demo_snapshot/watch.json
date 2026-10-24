@@ -1,40 +1,46 @@
 {
- "ts": "2026-10-24T13:06:31+00:00",
+ "ts": "2026-10-24T14:58:35+00:00",
  "topics": [
-  "Stripe fees for small businesses",
-  "Google search changes for local businesses",
-  "Squarespace and Wix pricing changes"
+  "Lumber and cabinet prices in the Pacific Northwest",
+  "Oregon contractor license and permit rules",
+  "Home renovation demand in Portland"
  ],
  "claims": [
   {
-   "topic": "Stripe fees for small businesses",
-   "text": "Businesses can move between dollars and OUSD without paying mint/burn fees.",
-   "url": "https://smallbiztrends.com/stripe-empowers-businesses-with-no-cost-open-usd-stablecoin-integration",
-   "quote": "businesses can freely transition between dollars and OUSD without incurring costly “mint” and “burn” fees typically associated with converting between fiat currencies and stablecoins"
+   "topic": "Lumber and cabinet prices in the Pacific Northwest",
+   "text": "Current Western Spruce-Pine-Fir lumber prices remain firm at $510.",
+   "url": "https://www.facebook.com/millerwoodtradepub/posts/mount-storm-forest-products-has-spent-more-than-40-years-building-a-reputation-f/1701699638632483",
+   "quote": "Current Western Spruce-Pine-Fir lumber prices remain firm at $510"
   },
   {
-   "topic": "Stripe fees for small businesses",
-   "text": "Open Standard charges a small, predictable transaction fee for OUSD use.",
-   "url": "https://smallbiztrends.com/stripe-empowers-businesses-with-no-cost-open-usd-stablecoin-integration",
-   "quote": "Open Standard imposes a small, predictable transaction fee"
+   "topic": "Lumber and cabinet prices in the Pacific Northwest",
+   "text": "After more than a year of steady declines, lumber prices are starting to tick back upward.",
+   "url": "https://bldrsupply.com/framing-lumber-prices-are-rising-why-eastern-washington-builders-should-lock-in-now",
+   "quote": "after more than a year of steady declines, lumber prices are starting to tick back upward."
   },
   {
-   "topic": "Google search changes for local businesses",
-   "text": "Google's AI can now call local businesses to check prices and availability on behalf of customers.",
-   "url": "https://www.linkedin.com/pulse/google-business-profile-2026-8-biggest-changes-what-do-michael-doyle-4vrkc",
-   "quote": "Google's AI can now call your business."
+   "topic": "Oregon contractor license and permit rules",
+   "text": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre-license exam.",
+   "url": "https://clients.oregonsbdc.org/workshop.aspx?ekey=150460037",
+   "quote": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre-license exam."
   },
   {
-   "topic": "Google search changes for local businesses",
-   "text": "When updating a Google Business Profile address, Google reviews the change before it goes live, usually within about 10 minutes, though some edits take up to 30 days, and a moved business must re‑verify.",
-   "url": "https://www.vendasta.com/blog/update-google-address",
-   "quote": "Google reviews the change before it goes live, usually within about 10 minutes, though some edits take up to 30 days, and a business that moves after verification has to verify the profile again."
+   "topic": "Oregon contractor license and permit rules",
+   "text": "Oregon building permit search tool lets users type in a city or ZIP and see every building permit filed over the last 3 years, with the builder on each one and their phone and license number.",
+   "url": "https://www.facebook.com/groups/6876709232352255/posts/28952488114347717",
+   "quote": "Type in a city or ZIP and you'll see every building permit filed over the last 3 years, with the builder on each one and their phone and license number where"
   },
   {
-   "topic": "Squarespace and Wix pricing changes",
-   "text": "Check the plan pages for current prices, because they change often.",
-   "url": "https://lairdpage.com/blog/wix-vs-squarespace",
-   "quote": "Check the plan pages for current prices, because they change often."
+   "topic": "Home renovation demand in Portland",
+   "text": "High demand for contractors and ongoing material is affecting renovation work in Portland.",
+   "url": "https://www.facebook.com/newscentermaine/posts/residents-face-mixed-emotions-as-they-prepare-to-leave-their-home-for-renovation/1557982993026711",
+   "quote": "High demand for contractors and ongoing material"
+  },
+  {
+   "topic": "Home renovation demand in Portland",
+   "text": "AI analysis identified $22.3 million of siding‑replacement opportunity in one Maine county, indicating strong market demand.",
+   "url": "https://www.naw.org/mdm/article/from-order-takers-to-demand-generators-building-materials-next-shift",
+   "quote": "making up $22.3 million in opportunity"
   }
  ],
  "dropped": 0

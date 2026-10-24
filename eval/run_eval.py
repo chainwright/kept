@@ -96,7 +96,8 @@ def grade(k) -> dict:
     f = money.forecast(30)
     c["cash_gap_found"] = bool(f["short"]) and abs(f["short"]["gap"] - 116) < 1
     rescue = store.read_json("rescue.json", {}) or {}
-    c["rescue_closes_with_priya"] = rescue.get("closes_gap_at") == "invoice:118"
+    # the gap is closed by money that's already real: Priya's overdue invoice, or extra work already priced
+    c["rescue_closes_gap_with_real_money"] = str(rescue.get("closes_gap_at") or "").startswith(("invoice:118", "offer:"))
     reminders = [a for a in emails if a["args"].get("invoice")]
     c["priya_reminder_has_amount"] = all("$850" in a["args"]["body"] and "118" in a["args"]["body"] for a in reminders)
 

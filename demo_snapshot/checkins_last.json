@@ -1,0 +1,47 @@
+{
+ "ts": "2026-10-24T14:58:26+00:00",
+ "asked": [
+  "7d7edf4e"
+ ],
+ "skipped": [
+  {
+   "client": "Lucia Ferri",
+   "contact": "lucia@ferriboutique.example",
+   "days_since": 118,
+   "work_done": [
+    "Send Lucia a quote for the staff kitchenette"
+   ],
+   "why_not": "a bigger past job: seasonal offers cover them"
+  },
+  {
+   "client": "Priya Shah",
+   "contact": "priya@shahdental.example",
+   "days_since": 26,
+   "work_done": [],
+   "why_not": "has unpaid work"
+  },
+  {
+   "client": "Jordan Kim",
+   "contact": "jordan@kimfamily.example",
+   "days_since": 46,
+   "work_done": [],
+   "why_not": "a bigger past job: seasonal offers cover them"
+  },
+  {
+   "client": "Noah Brooks",
+   "contact": "noah@brookscoffee.example",
+   "days_since": 2,
+   "work_done": [
+    "Finish the Brooks Coffee back counter"
+   ],
+   "why_not": "a bigger past job: seasonal offers cover them"
+  },
+  {
+   "client": "Maria Lopez",
+   "contact": "maria@lopezhome.example",
+   "days_since": null,
+   "work_done": [],
+   "why_not": "has unpaid work"
+  }
+ ]
+}

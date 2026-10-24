@@ -1,14 +1,14 @@
 {
  "noah-brooks": {
   "before": {
-   "path": "media/noah-brooks/before.png",
+   "path": "media/noah-brooks/before.jpg",
    "how": "screenshot of the site",
-   "ts": "2026-10-24T13:02:09+00:00"
+   "ts": "2026-10-24T14:58:11+00:00"
   },
   "after": {
-   "path": "media/noah-brooks/after.png",
+   "path": "media/noah-brooks/after.jpg",
    "how": "screenshot of the site",
-   "ts": "2026-10-24T13:02:09+00:00"
+   "ts": "2026-10-24T14:58:11+00:00"
   }
  }
 }

@@ -92,7 +92,9 @@ def propose_rules() -> list[dict]:
         "date (skill follow_up) or plans the day (skill brief). Code will count every promise that fits "
         "the pattern, so only propose a rule if most of them were late. A rule must make the date "
         "you GIVE match when the work really lands (later, or with a stated buffer), never an earlier day: "
-        f"by the numbers, these kinds of work land late: {json.dumps(late_kinds)}. Do not repeat existing rules.\n"
+        f"by the numbers, these kinds of work land late: {json.dumps(late_kinds)}. When the rule names the later "
+        "day, write it as 'the following Tuesday' (not just 'Tuesday'), so nobody reads it as earlier in the same "
+        "week. Do not repeat existing rules.\n"
         'Reply JSON: {"rules": [{"rule": "...", "skill": "follow_up|brief", "explain": "one sentence", '
         '"pattern": {"kind": "...", "due_weekday": "...", "who": "..."}}]}\n\n'
         f"Current skills:\n{json.dumps(current)}\n\nRecord:\n{table}"),

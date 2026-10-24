@@ -1,56 +1,46 @@
 [
  {
-  "ts": "2026-10-24T13:02:22+00:00",
-  "mail": "demo:1",
-  "client": "Maria Lopez",
-  "subject": "Re: website refresh",
-  "requests": [
-   {
-    "request": "online ordering page",
-    "email_quote": "You said you'd send the revised quote with the online ordering page by 2026-10-23",
-    "verdict": "out_of_scope",
-    "agreement_quote": "Not included (quoted separately if wanted): online ordering",
-    "reason": "The agreement explicitly lists online ordering as not included.",
-    "hours_low": 10,
-    "hours_high": 25,
-    "price": 1490
-   },
-   {
-    "request": "menu page show prices in both sizes",
-    "email_quote": "Also, could the menu page show prices in both sizes?",
-    "verdict": "unclear",
-    "agreement_quote": "Menu page with item names, descriptions and prices. Two rounds of revisions on the design (layout, colours, sizes of existing elements).",
-    "reason": "The agreement covers menu page with prices but does not specify product size variations; revisions are limited to design elements.",
-    "hours_low": 0,
-    "hours_high": 0,
-    "price": null
-   }
-  ],
-  "approval": "5292a478",
-  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
- },
- {
-  "ts": "2026-10-24T13:03:07+00:00",
+  "ts": "2026-10-24T14:58:18+00:00",
   "mail": "demo:8",
   "client": "Maria Lopez",
   "subject": "Two small things",
   "requests": [
    {
-    "request": "Add a blog page for seasonal specials",
-    "email_quote": "could you add a small blog page where we can post our seasonal specials?",
+    "request": "Tile the backsplash behind the stove",
+    "email_quote": "could you also tile the backsplash behind the stove?",
     "verdict": "out_of_scope",
-    "agreement_quote": "Not included (quoted separately if wanted): online ordering, a blog, new photography, logo redesign.",
-    "reason": "The agreement explicitly lists a blog as not included.",
+    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile",
+    "reason": "The agreement explicitly lists backsplash tile as not included and quoted separately.",
     "hours_low": 4,
     "hours_high": 8,
     "price": 510
    },
    {
-    "request": "Increase logo size on home page",
-    "email_quote": "could the logo be a bit bigger on the home page?",
+    "request": "Fix the pantry door that doesn't close properly",
+    "email_quote": "the new pantry door doesn't close all the way, it bounces back open.",
     "verdict": "in_scope",
-    "agreement_quote": "Two rounds of revisions on the design (layout, colours, sizes of existing elements).",
-    "reason": "The agreement includes revisions on sizes of existing elements, and the logo is an existing element.",
+    "agreement_quote": "Adjusting cabinet doors and drawers so they close properly, for 30 days after install.",
+    "reason": "The agreement includes adjusting cabinet doors so they close properly for 30 days after install.",
+    "hours_low": 0,
+    "hours_high": 0,
+    "price": null
+   }
+  ],
+  "approval": "2e929130",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ {
+  "ts": "2026-10-24T14:58:19+00:00",
+  "mail": "demo:6",
+  "client": "Jordan Kim",
+  "subject": "Walkthrough + dishwasher leak",
+  "requests": [
+   {
+    "request": "fix the leak under the new sink",
+    "email_quote": "last week you mentioned you'd fix the leak under the new sink this week. Is that still the plan? It still drips into the cabinet when the dishwasher runs.",
+    "verdict": "in_scope",
+    "agreement_quote": "Fixing leaks or defects in the delivered work for 60 days after completion.",
+    "reason": "The agreement covers fixing leaks in delivered work within 60 days, and the leak is under the new sink which is part of the delivered work.",
     "hours_low": 0,
     "hours_high": 0,
     "price": null
@@ -60,20 +50,20 @@
   "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
  },
  {
-  "ts": "2026-10-24T13:03:22+00:00",
-  "mail": "demo:6",
-  "client": "Jordan Kim",
-  "subject": "Launch call + contact form",
+  "ts": "2026-10-24T14:58:23+00:00",
+  "mail": "demo:1",
+  "client": "Maria Lopez",
+  "subject": "Re: kitchen remodel",
   "requests": [
    {
-    "request": "Fix contact form bug where form says 'sent' but email not received",
-    "email_quote": "last week you mentioned you'd fix the contact form bug this week. Is that still the plan? People told me the form says 'sent' but I never get the message.",
-    "verdict": "in_scope",
-    "agreement_quote": "Fixing any bugs in the delivered pages for 60 days after launch.",
-    "reason": "The contact form is a delivered page and bug fixes are included for 60 days post-launch.",
-    "hours_low": 0,
-    "hours_high": 0,
-    "price": null
+    "request": "Add an electrical outlet on the side of the kitchen island",
+    "email_quote": "could the island have an outlet on the side? We'd like to plug in the mixer there.",
+    "verdict": "out_of_scope",
+    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile, electrical work or new outlets, appliances, flooring, painting.",
+    "reason": "The agreement explicitly excludes electrical work and new outlets from the included work.",
+    "hours_low": 2,
+    "hours_high": 4,
+    "price": 255
    }
   ],
   "approval": null,

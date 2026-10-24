@@ -1,0 +1,56 @@
+{
+ "events": [
+  {
+   "id": "site02",
+   "date": "2026-10-26",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "site03",
+   "date": "2026-10-27",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "site04",
+   "date": "2026-10-28",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "site05",
+   "date": "2026-10-29",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "site06",
+   "date": "2026-10-30",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "site09",
+   "date": "2026-11-02",
+   "kind": "site",
+   "who": "Maria Lopez",
+   "what": "On site: Lopez kitchen (cabinets and island)"
+  },
+  {
+   "id": "visit01",
+   "date": "2026-10-26",
+   "time": "16:30",
+   "kind": "visit",
+   "who": "Hannah Weiss",
+   "contact": "hannah@weisshome.example",
+   "what": "Measure for new countertop"
+  }
+ ],
+ "offered": {}
+}

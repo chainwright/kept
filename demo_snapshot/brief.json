@@ -1,38 +1,38 @@
 {
- "headline": "Morning brief for 2026-10-24",
+ "headline": "Morning brief 2026-10-24",
  "lines": [
   {
-   "ref": "1fa34c15",
-   "text": "Send Maria the revised quote with the online ordering page (overdue, Maria Lopez waiting)"
+   "ref": "dcf7df03",
+   "text": "Send Maria the revised quote with the quartz countertop option (to Maria Lopez)"
   },
   {
    "ref": null,
-   "text": "Cash will be short by $116 on 2026-11-01"
+   "text": "Cash short on 2026-11-01 by $116."
   },
   {
-   "ref": "c0a7b143",
-   "text": "Priya Shah owes invoice #118 (overdue 2 days)"
+   "ref": "17677446",
+   "text": "Priya pays invoice #118"
   },
   {
    "ref": null,
-   "text": "7 messages wait for your Yes"
+   "text": "9 messages wait for your Yes."
   }
  ],
  "plan": [
   {
-   "ref": "1fa34c15",
-   "text": "Send Maria the revised quote with the online ordering page"
+   "ref": "dcf7df03",
+   "text": "Send Maria the revised quote with the quartz countertop option"
   },
   {
-   "ref": "dd04b6e7",
+   "ref": "4a61f8c0",
    "text": "Send Sam Okafor the Q3 receipts"
   },
   {
-   "ref": "d94f0858",
-   "text": "Fix the contact form bug"
+   "ref": "d79d995e",
+   "text": "Pay Billing invoice #4412"
   }
  ],
  "date": "2026-10-24",
  "model": "nvidia/nemotron-3-super-120b-a12b",
- "ts": "2026-10-24T13:07:02+00:00"
+ "ts": "2026-10-24T14:59:15+00:00"
 }

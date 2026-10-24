@@ -12,6 +12,15 @@
    "paid_on": "2026-06-28"
   },
   {
+   "number": "107",
+   "client": "Ben Carter",
+   "contact": "ben@carterhome.example",
+   "amount": 255,
+   "issued": "2026-09-09",
+   "due": "2026-09-23",
+   "paid_on": "2026-09-14"
+  },
+  {
    "number": "109",
    "client": "Priya Shah",
    "contact": "priya@shahdental.example",
@@ -32,8 +41,8 @@
   {
    "number": "115",
    "client": "Jordan Kim",
-   "contact": "jordan@kimyoga.example",
-   "amount": 1800,
+   "contact": "jordan@kimfamily.example",
+   "amount": 3800,
    "issued": "2026-08-25",
    "due": "2026-09-08",
    "paid_on": "2026-09-08"
@@ -59,8 +68,8 @@
   {
    "number": "121",
    "client": "Maria Lopez",
-   "contact": "maria@sunrisebakery.example",
-   "amount": 1200,
+   "contact": "maria@lopezhome.example",
+   "amount": 6467,
    "issued": "2026-10-20",
    "due": "2026-11-10",
    "paid_on": null
@@ -68,24 +77,23 @@
  ],
  "bills": [
   {
-   "payee": "Hosting (HostingCo)",
+   "payee": "Tile saw rental (BuildRent)",
    "amount": 36,
-   "due": "2026-10-26",
-   "recurring": "monthly"
+   "due": "2026-10-26"
   },
   {
-   "payee": "Business insurance",
+   "payee": "Van insurance",
    "amount": 420,
    "due": "2026-10-30"
   },
   {
-   "payee": "Studio rent",
+   "payee": "Workshop rent",
    "amount": 900,
    "due": "2026-11-01",
    "recurring": "monthly"
   },
   {
-   "payee": "Design software",
+   "payee": "Estimating software",
    "amount": 54,
    "due": "2026-11-05",
    "recurring": "monthly"
