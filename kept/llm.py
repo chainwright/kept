@@ -17,7 +17,8 @@ from .store import append_audit, now, read_audit
 # what kind of work goes to which size of model, and why
 ROUTES = {
     "classify": "nano",     # is this email a lead, a bill, or noise?
-    "extract": "nano",      # pull the promise and the date out of a message
+    "extract": "super",     # pull promises out of a thread: Nano without reasoning mixed up who owes whom
+    "spot": "nano",         # find promises in a short draft the owner is about to send
     "plan": "super",        # what should today look like
     "draft": "super",       # write the follow-up a human will read
     "judge": "ultra",       # the one call where being wrong costs money or trust

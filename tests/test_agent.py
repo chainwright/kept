@@ -153,19 +153,29 @@ def test_overload_skips_promises_that_already_have_a_message_waiting(fake):
 
 
 def test_promises_owed_to_the_owner_are_tracked_and_nudged_only_when_late(fake):
-    pay = {"id": "mail:9", "from": "Priya Shah <priya@studio.example>", "subject": "Invoice 118", "date": "",
-           "body": f"Hi Alex, sorry for the wait. We'll pay invoice #118 by {(TODAY - timedelta(days=3)).isoformat()}. Priya"}
-    _inbox([pay])
-    fake([("Classify this email", {"kind": "client", "needs_reply": False, "one_line": "payment promise"}),
-          ("Find two kinds", {"mine": [], "theirs": [{"text": "Priya pays invoice #118",
+    files = {"id": "mail:9", "from": "Priya Shah <priya@studio.example>", "subject": "Photos", "date": "",
+             "body": f"Hi Alex, sorry! I'll send you the new clinic photos by {(TODAY - timedelta(days=3)).isoformat()}. Priya"}
+    _inbox([files])
+    fake([("Classify this email", {"kind": "client", "needs_reply": False, "one_line": "photos promise"}),
+          ("Find two kinds", {"mine": [], "theirs": [{"text": "Priya sends the new clinic photos",
                                                        "due": (TODAY - timedelta(days=3)).isoformat(),
-                                                       "quote": "We'll pay invoice #118 by"}]}),
-          ("Write a short, warm", {"subject": "Invoice #118", "body": "Hi Priya, just checking when invoice #118 might go through? Thanks, Alex"})])
+                                                       "quote": "I'll send you the new clinic photos by"}]}),
+          ("Write a short, warm", {"subject": "Clinic photos", "body": "Hi Priya, just checking when the clinic photos might come through? Thanks, Alex"})])
     agent.triage_inbox()
     row = ledger.open_sorted(which="owed_to_me")[0]
     assert row["who"] == "Priya Shah" and row["contact"] == "priya@studio.example"
     asked = agent.follow_ups()
     assert len(asked) == 1 and "Priya Shah promised" in asked[0]["why"]
+
+
+def test_unpaid_invoice_is_left_to_the_cash_guard(fake):
+    pay = {"id": "mail:9", "from": "Priya Shah <priya@studio.example>", "subject": "Invoice 118", "date": "",
+           "body": f"We'll pay invoice #118 by {(TODAY - timedelta(days=3)).isoformat()}. Priya"}
+    _inbox([pay])
+    ledger.add("Priya pays invoice #118", who="Priya Shah", contact="priya@studio.example",
+               due=(TODAY - timedelta(days=3)).isoformat(), source="mail:9", direction="owed_to_me")
+    fake([])
+    assert agent.follow_ups() == []
 
 
 def test_promise_copied_in_the_clients_voice_is_put_in_the_owners_ledger_voice(fake):

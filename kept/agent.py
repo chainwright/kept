@@ -85,7 +85,7 @@ def triage_inbox() -> dict:
             continue
         report["labels"][m["id"]] = cls
         if cls["kind"] != "noise":
-            report["commitments"] += _extract_commitments(m)
+            report["commitments"] += _extract_commitments(m, cls["kind"])
         if cls["kind"] == "client":
             from . import scope
             if scope.contract_for(sender(m)[1]):
@@ -100,7 +100,7 @@ def triage_inbox() -> dict:
     return report
 
 
-def _extract_commitments(m: dict) -> list[dict]:
+def _extract_commitments(m: dict, kind: str = "") -> list[dict]:
     """Promises in this thread, in both directions, each with the words that prove it."""
     out = []
     owner, (name, addr) = read_notes_owner(), sender(m)
@@ -121,9 +121,13 @@ def _extract_commitments(m: dict) -> list[dict]:
         _abstain("extract", m["subject"], Verdict(False, [f"model reply unusable: {e}"]))
         return out
     batches = [("i_owe", data.get("mine") or data.get("items") or []), ("owed_to_me", data.get("theirs") or [])]
+    if kind == "bill":  # a bill is always something the owner pays, whatever the model filed it under
+        batches = [("i_owe", batches[0][1] + batches[1][1])]
     for direction, items in batches:
         for it in items[:5]:
             v = shape(it, {"text": str, "quote": str})
+            if v and len(it["text"].split()) < 3:
+                v.add(f"'{it['text']}' is too short to be a promise anyone could act on")
             if v:
                 v.merge(grounded([{"source": m["id"], "quote": it.get("quote", "")}],
                                  {m["id"]: m["subject"] + "\n" + m["body"]}))
@@ -155,6 +159,8 @@ def follow_ups(limit: int = 3) -> list[dict]:
         if any(a.get("ledger_id") == row["id"] for a in approvals.pending()):
             continue
         theirs = ledger.direction(row) == "owed_to_me"
+        if theirs and re.search(r"invoice\s*#?\d+", row["text"], re.I):
+            continue  # unpaid invoices get the cash guard's ladder, with amount and number
         overdue = ledger.days_overdue(row, today)
         due_soon = row.get("due") and row["due"][:10] <= today.isoformat()
         src = mails.get(row.get("source", ""))

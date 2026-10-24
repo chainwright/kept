@@ -20,7 +20,7 @@ import json
 import re
 from datetime import date, datetime, timedelta
 
-from . import approvals, money
+from . import approvals, ledger, money
 from .agent import _abstain, _msgs, read_notes_owner
 from .llm import router
 from .store import journal, now_iso, read_json, read_notes, write_json
@@ -87,7 +87,9 @@ def candidates(today: date) -> tuple[list[dict], list[dict]]:
         last = max(datetime.fromisoformat(i["issued"]).date() for i in invs)
         recent = [o for o in sent if o["client"] == client and
                   (today - datetime.fromisoformat(o["ts"][:10]).date()).days < r["every_days"]]
+        owed = [x for x in ledger.open_sorted(today, which="i_owe") if (x.get("contact") or "").lower() == contact.lower()]
         why_not = ("owes an overdue invoice" if overdue else
+                   "you still owe them work" if owed else
                    "has a project in progress" if open_work else
                    f"got an offer in the last {r['every_days']} days" if recent else
                    "ordered recently" if (today - last).days < 45 else None)

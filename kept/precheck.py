@@ -27,7 +27,7 @@ def check(draft: str, to_name: str = "") -> dict:
     draft = draft.strip()[:4000]
     if not draft:
         return {"promises": [], "note": "Nothing to check."}
-    r = router.ask("extract", _msgs(
+    r = router.ask("spot", _msgs(
         f"{owner} is about to send this message{(' to ' + to_name) if to_name else ''}. List every promise "
         f"{owner} makes in it (things they say they will do, with or without a date). For each give a short "
         "description, the due date as YYYY-MM-DD if a day is named or implied (resolve 'Friday', 'tomorrow', "

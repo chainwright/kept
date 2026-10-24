@@ -153,7 +153,10 @@ def plan(today: date | None = None) -> dict | None:
             running += c["amount"]
             if covered is None and running >= gap["gap"]:
                 covered = c["id"]
-    drafts = [_reengage(c) for c in chosen if c["type"] == "quoted but never hired"][:2]
+    drafts = []
+    for c in chosen:  # two check-ins at most: a pile of approvals is its own kind of noise
+        if c["type"] == "quoted but never hired" and len(drafts) < 2:
+            drafts.append(_reengage(c))
     out = {"ts": now_iso(), "needed": True, "gap": gap, "steps": chosen, "prospects": prospects,
            "closes_gap_at": covered, "drafts": [d["id"] for d in drafts if d], "model": r.model,
            "reasoning": r.reasoning[:3000]}
