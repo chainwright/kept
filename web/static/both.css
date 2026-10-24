@@ -24,3 +24,19 @@ body.both { min-height: 100vh; }
 .thread li.t-pending { margin-left: 18px; border-style: dashed; color: var(--ink-2); font-size: 14px; }
 .b-dash { white-space: nowrap; }
 .b-sub { margin: -4px 0 0; color: var(--ink-2); font-size: 15px; }
+/* talking to Kept: Alex's hands are busy */
+.v-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#v-mic { display: inline-flex; align-items: center; gap: 8px; }
+.v-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: .55; }
+#v-mic.is-listening { background: var(--risk); border-color: var(--risk); }
+#v-mic.is-listening .v-dot { opacity: 1; animation: v-pulse 1s ease-in-out infinite; }
+@keyframes v-pulse { 50% { transform: scale(1.5); opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { #v-mic.is-listening .v-dot { animation: none; } }
+.v-type { display: flex; gap: 8px; margin-top: 10px; }
+.v-type input { flex: 1; min-width: 0; font: inherit; padding: 6px 10px; border: var(--bw) solid var(--line-strong); border-radius: 2px; background: var(--bg); color: var(--ink); }
+.v-log { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.v-log:empty { display: none; }
+.v-log li { padding: 7px 10px; border: var(--bw) solid var(--line); border-radius: 2px; font-size: 15px; line-height: 1.4; }
+.v-log .v-alex { margin-right: 18%; background: var(--bg); }
+.v-log .v-kept { margin-left: 8%; background: var(--ask-bg); border-color: var(--ask-line); }
+.v-log .v-who { display: block; font: 600 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 2px; }

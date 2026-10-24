@@ -223,6 +223,23 @@ def before_you_send(d: Draft):
     return precheck.check(d.text, d.to)
 
 
+class Spoken(BaseModel):
+    said: str
+    pending_id: str | None = None
+
+
+@app.post("/api/voice")
+def voice_turn(v: Spoken):
+    """One spoken turn. The browser does speech-to-text and reads the answer aloud."""
+    from . import voice
+    try:
+        return voice.handle(v.said, v.pending_id)
+    except approvals.GateError as e:
+        raise HTTPException(409, str(e))
+    except BudgetExceeded as e:
+        raise HTTPException(429, f"{e}. The demo has a small daily model budget; try again tomorrow.")
+
+
 @app.post("/api/ask")
 def ask(q: Question):
     return memory_qa.ask(q.question[:500])

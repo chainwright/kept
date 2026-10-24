@@ -80,7 +80,7 @@
     <section class="b-side b-alex" aria-labelledby="h-alex">
       <p class="b-eyebrow">2 · Alex's side, with Kept</p>
       <h1 id="h-alex" class="b-h">Alex is on a job site. Kept handles the email.</h1>
-      <p class="b-sub">This is what Alex sees on the phone: what Kept understood and worked out, and the reply waiting for Alex's Yes.</p>
+      <p class="b-sub">This is what Alex sees on the phone: what Kept understood and worked out, and the reply waiting for Alex's Yes. Hands full? Alex can hear it and say Yes out loud.</p>
       <div id="alex-out" aria-live="polite">
         <div class="b-card b-wait">
           <p>When your message arrives, this is what Alex sees: what Kept understood (the photo, the job, a price
@@ -88,6 +88,23 @@
             waiting for Alex's <strong>Yes</strong>.</p>
           <p class="muted">Press Yes here, as Alex, and the reply appears on the client's side.</p>
         </div>
+      </div>
+      <div class="b-card b-voice" id="voice">
+        <p class="b-label">Hands busy? Talk to Kept</p>
+        <div class="v-row">
+          <button class="btn btn-primary" type="button" id="v-mic" aria-describedby="v-note"><span class="v-dot" aria-hidden="true"></span><span id="v-mic-label">Talk</span></button>
+          <button class="btn btn-quiet btn-small" type="button" data-say="What's waiting for my yes?">What's waiting?</button>
+          <button class="btn btn-quiet btn-small" type="button" data-say="What's my plan for today?">My day</button>
+          <button class="btn btn-quiet btn-small" type="button" data-say="Who owes me money?">Who owes me?</button>
+        </div>
+        <form class="v-type" id="v-form" autocomplete="off">
+          <label class="sr-only" for="v-text">Or type what you'd say</label>
+          <input id="v-text" maxlength="400" placeholder="…or type it: “yes, send it”">
+          <button class="btn btn-quiet btn-small" type="submit">Say</button>
+        </form>
+        <ol class="v-log" id="v-log" aria-live="polite"></ol>
+        <p class="foot muted" id="v-note">Your browser turns speech into text and reads Kept's answers aloud. Whether you said
+          <strong>Yes</strong> is decided by code from your words, never by a model; anything unclear sends nothing.</p>
       </div>
       <div class="b-card">
         <p class="b-label">Alex's calendar</p>

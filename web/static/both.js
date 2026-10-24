@@ -191,20 +191,86 @@
   }
   function decide(a) {
     const status = h("span", { class: "muted" }, "Nothing is sent until Alex decides.");
+    const shown = (verdict, how = "") => {
+      yes.disabled = no.disabled = listen.disabled = true;
+      fill(status, verdict === "yes" ? stamp("APPROVED", "approved") : stamp("DECLINED", "declined"),
+        verdict === "yes" ? `  Sent${how}. Look left: the client has Alex's reply. Write back to keep going.` : "  Not sent.");
+      loadClientThread(); loadCalendar();
+      if (verdict === "yes" && window.innerWidth < 960) setTimeout(() => $("#client-thread").scrollIntoView({ behavior: "smooth", block: "center" }), 600);
+    };
     const go = async (verdict) => {
       yes.disabled = no.disabled = true;
-      try {
-        await api("POST", `/api/approvals/${encodeURIComponent(a.id)}/${verdict}`);
-        fill(status, verdict === "yes" ? stamp("APPROVED", "approved") : stamp("DECLINED", "declined"),
-          verdict === "yes" ? "  Sent. Look left: the client has Alex's reply. Write back to keep going." : "  Not sent.");
-        loadClientThread(); loadCalendar();
-        if (verdict === "yes" && window.innerWidth < 960) setTimeout(() => $("#client-thread").scrollIntoView({ behavior: "smooth", block: "center" }), 600);
-      } catch (e) { toast(e.message, "err"); yes.disabled = no.disabled = false; }
+      try { await api("POST", `/api/approvals/${encodeURIComponent(a.id)}/${verdict}`); shown(verdict); }
+      catch (e) { toast(e.message, "err"); yes.disabled = no.disabled = false; }
     };
+    VOICE.pending = a.id;
+    VOICE.onYes[a.id] = () => shown("yes", " by voice");
     const no = h("button", { class: "btn btn-quiet btn-small", type: "button", onclick: () => go("no") }, "No");
     const yes = h("button", { class: "btn btn-primary btn-small", type: "button", onclick: () => go("yes") }, "Yes, send");
-    return h("div", { class: "decide" }, no, yes, status);
+    const listen = h("button", { class: "btn btn-quiet btn-small", type: "button", title: "Kept reads the draft aloud and listens for your answer",
+      onclick: () => turn("read it to me", { listenAfter: true }) }, "Read it to me");
+    return h("div", { class: "decide" }, no, yes, listen, status);
   }
+
+  // ------------------------------------------------------------------ talking to Kept (hands busy)
+  // The browser does speech-to-text and text-to-speech; Kept's server decides what the words mean.
+  // Whether Alex said Yes is read by code from the words (kept/voice.py), never by a model.
+  const VOICE = { pending: null, onYes: {}, busy: false };
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function vlog(who, text) {
+    $("#v-log").append(h("li", { class: who === "Alex" ? "v-alex" : "v-kept" }, h("span", { class: "v-who" }, who === "Alex" ? "Alex said" : "Kept"), text));
+    const items = $("#v-log").children; while (items.length > 4) items[0].remove();
+  }
+  function speak(text) {
+    return new Promise((done) => {
+      if (!("speechSynthesis" in window) || !text) return done();
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US"; u.rate = 1.03;
+      const v = speechSynthesis.getVoices().filter((x) => /^en(-|_)US/i.test(x.lang));
+      u.voice = v.find((x) => /natural|google|samantha|aria|jenny/i.test(x.name)) || v[0] || null;
+      u.onend = u.onerror = () => done();
+      speechSynthesis.speak(u);
+    });
+  }
+  function hear() {
+    return new Promise((done, fail) => {
+      if (!SR) return fail(new Error("Speech input needs Chrome, Edge or Safari. You can type what you'd say instead."));
+      const r = new SR(); let got = "";
+      r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 1;
+      r.onresult = (e) => { got = e.results[0][0].transcript; };
+      r.onerror = (e) => fail(new Error(e.error === "not-allowed" ? "The microphone is blocked for this page. You can type what you'd say instead." : e.error === "no-speech" ? "I didn't hear anything." : `Speech input: ${e.error}`));
+      r.onend = () => done(got);
+      micState(true); r.start();
+    }).finally(() => micState(false));
+  }
+  function micState(on) { $("#v-mic").classList.toggle("is-listening", on); $("#v-mic-label").textContent = on ? "Listening…" : "Talk"; }
+  async function turn(said, { listenAfter = false } = {}) {
+    if (!said || VOICE.busy) return;
+    VOICE.busy = true;
+    if (said !== "read it to me") vlog("Alex", said);
+    let r;
+    try { r = await api("POST", "/api/voice", { said, pending_id: VOICE.pending }); }
+    catch (e) { VOICE.busy = false; toast(e.message, "err"); return; }
+    if (r.pending_id) VOICE.pending = r.pending_id;
+    if (r.decided === "yes") { const id = VOICE.pending; VOICE.pending = null; (VOICE.onYes[id] || (() => { loadClientThread(); loadCalendar(); }))(); }
+    vlog("Kept", r.say);
+    await speak(r.say);
+    VOICE.busy = false;
+    // Kept asked something ("Shall I send it?"): listen for the answer once, hands-free
+    if ((listenAfter || /\?$/.test(r.say)) && r.pending_id && SR) {
+      try { const ans = await hear(); if (ans) await turn(ans); } catch (e) { vlog("Kept", e.message); }
+    }
+  }
+  $("#v-mic").addEventListener("click", async () => {
+    if (VOICE.busy) return;
+    speechSynthesis && speechSynthesis.cancel && speechSynthesis.cancel();
+    try { const said = await hear(); if (said) await turn(said); } catch (e) { toast(e.message, "err"); $("#v-text").focus(); }
+  });
+  document.querySelectorAll("#voice [data-say]").forEach((b) => b.addEventListener("click", () => turn(b.dataset.say)));
+  $("#v-form").addEventListener("submit", (ev) => { ev.preventDefault(); const t = $("#v-text").value.trim(); $("#v-text").value = ""; turn(t); });
+  if (!SR) $("#v-mic").title = "Speech input needs Chrome, Edge or Safari; typing works everywhere";
+  window.keptSay = (t) => turn(t);  // lets a recording or a test feed the same turn a microphone would
 
   async function loadCalendar() {
     try {
