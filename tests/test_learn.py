@@ -73,3 +73,11 @@ def test_rule_that_promises_earlier_for_late_work_is_held_back(fake, skills_dir)
 def test_pattern_values_are_normalised():
     hist = [{"id": "1", "kind": "quote", "due_weekday": "Friday", "who": "A", "days_late": 2}]
     assert len(learn.matching({"kind": "Quote", "due_weekday": "Fridays"}, hist)) == 1
+
+
+def test_following_weekday_is_later_not_earlier():
+    from kept.learn import moves_earlier
+    pat = {"due_weekday": "Friday"}
+    assert not moves_earlier("When a quote is due Friday, name the following Wednesday", pat)
+    assert not moves_earlier("Promise next Tuesday instead of Friday", pat)
+    assert moves_earlier("Promise Wednesday instead of Friday", pat)

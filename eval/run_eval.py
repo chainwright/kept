@@ -116,6 +116,7 @@ def grade(k) -> dict:
     skipped = {s["client"]: s["why_not"] for s in plan.get("skipped", [])}
     c["no_offer_to_priya"] = "Priya Shah" in skipped
     c["no_offer_while_owing_work"] = all(not (a["args"].get("offer_client") in ("Jordan Kim", "Maria Lopez")) for a in emails)
+    c["offers_only_to_lucia"] = all(a["args"].get("offer_client") in (None, "Lucia Ferri") for a in emails)
     growth = store.read_json("growth_last.json", {}) or {}
     c["noah_review_or_waiting"] = bool(growth.get("asks")) or any(w["client"] == "Noah Brooks" for w in growth.get("waiting", []))
     c["no_review_ask_maria"] = not any("review" in a["summary"].lower() and "maria" in a["summary"].lower() for a in pend)

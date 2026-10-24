@@ -238,3 +238,10 @@ def test_promise_to_quote_for_extra_work_is_still_a_promise(fake):
                                         "quote": "send the revised quote with the online ordering page"}], "theirs": []})])
     agent.triage_inbox()
     assert [r["text"] for r in ledger.items("open")] == ["Send Maria the revised quote with the online ordering page"]
+
+
+def test_promise_the_client_reminds_you_of_is_never_skipped_by_scope():
+    from kept.agent import _owner_already_said
+    assert _owner_already_said("last week you mentioned you'd fix the contact form bug this week")
+    assert _owner_already_said("You said you would send the files")
+    assert not _owner_already_said("could you add a small blog page")

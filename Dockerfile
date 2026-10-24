@@ -6,6 +6,7 @@ COPY kept kept
 COPY web web
 COPY skills skills
 COPY demo_media demo_media
+COPY demo_snapshot demo_snapshot
 ENV KEPT_DATA_DIR=/tmp/kept-data KEPT_DEMO=1 KEPT_DAILY_BUDGET_USD=0.40 PYTHONUNBUFFERED=1
 EXPOSE 8000
 # hosts like Render pass the port in $PORT; locally it defaults to 8000

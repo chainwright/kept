@@ -92,7 +92,8 @@ def triage_inbox() -> dict:
                 res = scope.review(m) or {}
                 report.setdefault("scope", []).append({"mail": m["id"], **res})
                 pending_decision = [r["email_quote"] for r in res.get("requests", [])
-                                    if r["verdict"] in ("out_of_scope", "unclear")]
+                                    if r["verdict"] in ("out_of_scope", "unclear")
+                                    and not _owner_already_said(r.get("email_quote", ""))]
         if cls["kind"] != "noise":
             report["commitments"] += _extract_commitments(m, cls["kind"], skip=pending_decision)
         seen.add(m["id"])
@@ -102,6 +103,13 @@ def triage_inbox() -> dict:
     write_json("labels.json", labels)
     journal(f"Triaged {report['new']} new emails, found {len(report['commitments'])} commitments")
     return report
+
+
+def _owner_already_said(quote: str) -> bool:
+    """'you mentioned you'd fix the form' is a promise already made, whatever the contract says.
+    Eval run: the scope check called it 'unclear', the promise was skipped, and a discount offer
+    then went to the client still waiting for the fix."""
+    return bool(re.search(r"\byou(?:'d|'ll| would| will| said| mentioned| promised| told me| agreed)\b", quote or "", re.I))
 
 
 def _shared_words(a: str, b: str) -> int:
@@ -143,7 +151,7 @@ def _extract_commitments(m: dict, kind: str = "", skip: list[str] | None = None)
         for it in items[:5]:
             v = shape(it, {"text": str, "quote": str})
             quoting = re.search(r"\b(quote|estimate|proposal|rates|pricing|price)\b", it["text"], re.I)
-            if v and skip and direction == "i_owe" and not quoting and any(
+            if v and skip and direction == "i_owe" and not quoting and not _owner_already_said(it.get("quote", "")) and any(
                     _shared_words(it.get("quote", "") + " " + it["text"], q) >= 2 for q in skip):
                 # "build the online ordering page" waits for a decision; "send the quote for it" is a promise
                 journal(f"Not adding '{it['text']}' as a promise: it's extra work waiting for your decision")

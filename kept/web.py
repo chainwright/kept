@@ -40,13 +40,22 @@ def _telegram_loop() -> None:
         time.sleep(3)
 
 
+def data_dir_has_state() -> bool:
+    from .store import data_dir
+    return (data_dir() / "inbox.json").exists()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from .scheduler import start
     from .seed import seed
 
     if settings.demo:
-        seed()
+        from . import snapshot
+        if snapshot.available() and not (data_dir_has_state()):
+            snapshot.restore()
+        else:
+            seed()
     start()
     if notify.enabled():
         threading.Thread(target=_telegram_loop, daemon=True).start()
@@ -75,7 +84,7 @@ def state():
     audit = read_audit(400)
     calls = [a for a in audit if a["kind"] == "llm"]
     return {
-        "owner": settings.owner_name, "demo": settings.demo,
+        "owner": settings.owner_name, "demo": settings.demo, "snapshot": _snapshot_meta(),
         "brief": read_json("brief.json", None),
         "open": ledger.open_sorted(),
         "closed": [r for r in ledger.items() if r["status"] != "open"][-15:][::-1],
@@ -144,6 +153,11 @@ def close_item(item_id: str, body: Close):
         raise HTTPException(400, str(e))
 
 
+def _snapshot_meta():
+    from . import snapshot
+    return snapshot.meta() if settings.demo else None
+
+
 @app.post("/api/run/{job}")
 def run(job: str):
     if job not in JOBS:
@@ -151,6 +165,10 @@ def run(job: str):
     if not _busy.acquire(blocking=False):
         raise HTTPException(409, "Kept is already working on something")
     try:
+        if settings.demo and job == "day" and _snapshot_meta():
+            # the recorded morning has already read this inbox; a live run starts from the fresh week
+            from .seed import seed
+            seed(force=True)
         return {"job": job, "result": JOBS[job]()}
     finally:
         _busy.release()
@@ -195,10 +213,14 @@ async def upload_photo(client: str, which: str, file: UploadFile = File(...)):
 
 
 @app.post("/api/demo/reset")
-def reset_demo():
+def reset_demo(fresh: bool = False):
+    """Back to the recorded morning (default) or, with ?fresh=1, the untouched week before any run."""
     if not settings.demo:
         raise HTTPException(403, "only in demo mode")
+    from . import snapshot
     from .seed import seed
 
+    if snapshot.available() and not fresh:
+        return {"ok": True, "snapshot": snapshot.restore()}
     seed(force=True)
     return {"ok": True}

@@ -9,6 +9,7 @@ rule is appended to a skill file, and every later prompt that uses that skill fo
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -59,8 +60,11 @@ def moves_earlier(rule_text: str, pattern: dict) -> bool:
     base = next((d for d in WEEKDAYS if d in str(pattern.get("due_weekday", "")).lower()), None)
     if not base:
         return False
-    named = [d for d in WEEKDAYS if d in rule_text.lower() and d != base]
-    return bool(named) and all(WEEKDAYS.index(d) < WEEKDAYS.index(base) for d in named)
+    t = rule_text.lower()
+    named = [d for d in WEEKDAYS if d in t and d != base]
+    # "the following Wednesday", "next Monday", "Tuesday after" are later than a Friday, not earlier
+    later = {d for d in named if re.search(rf"\b(following|next|after)\s+{d}\b|\b{d}\s+(after|of the following week|of next week)\b", t)}
+    return bool(named) and all(WEEKDAYS.index(d) < WEEKDAYS.index(base) and d not in later for d in named)
 
 
 def evidence_stats(rows: list[dict]) -> dict:

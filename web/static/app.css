@@ -971,3 +971,5 @@ dialog { border: var(--border); border-radius: var(--r-xs); box-shadow: none; }
 .row-date .rn { font-size: 10px; color: var(--ink-2); letter-spacing: .04em; }
 .ledger li.is-over .row-date .rn { color: var(--ink-2); }
 .closed-row.res-done .closed-text { color: var(--ink-2); }
+
+.snap-note { font: 12px/1.35 var(--mono); color: var(--ink-2); align-self: center; max-width: 46ch; }

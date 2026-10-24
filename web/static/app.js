@@ -293,6 +293,14 @@
     $("#demo-badge").hidden = !st.demo;
     $("#demo-reset").hidden = !st.demo;
     $("#reset-sep").hidden = !st.demo;
+    const sn = $("#snap-note");
+    sn.hidden = !st.snapshot;
+    if (st.snapshot) {
+      const d = new Date(st.snapshot.recorded_on + "T12:00:00");
+      sn.textContent = `A real morning on Nemotron, recorded ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` +
+        (st.snapshot.shifted_days ? `, dates moved ${st.snapshot.shifted_days / 7} wk to today` : "") +
+        ". Press Run morning loop to do it live.";
+    }
     const p = st.budget > 0 ? Math.min(100, (st.spend_today / st.budget) * 100) : 0;
     $("#spend-num").textContent = money(st.spend_today);
     $("#spend-of").textContent = `of ${money(st.budget)} budget`;
@@ -1430,9 +1438,9 @@
   // demo reset
   $("#demo-reset").addEventListener("click", async () => {
     closeMenu(false);
-    if (!confirm("Reset the demo? This puts back the seeded inbox and ledger and clears what Kept did.")) return;
+    if (!confirm("Start the demo week from scratch? This clears the recorded morning and everything Kept did.")) return;
     try {
-      await api("POST", "/api/demo/reset");
+      await api("POST", "/api/demo/reset?fresh=1");
       Object.keys(sigs).forEach((k) => delete sigs[k]);
       $("#ask-out").replaceChildren();
       $("#pre-out").replaceChildren();

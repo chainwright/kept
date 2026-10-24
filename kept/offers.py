@@ -76,6 +76,7 @@ def candidates(today: date) -> tuple[list[dict], list[dict]]:
     """(eligible, skipped-with-reason). Plain rules, no model."""
     book, r = money.load(), rules()
     sent = read_json(FILE, [])
+    inbox = read_json("inbox.json", [])
     eligible, skipped = [], []
     by_client: dict[str, list[dict]] = {}
     for inv in book["invoices"]:
@@ -88,9 +89,12 @@ def candidates(today: date) -> tuple[list[dict], list[dict]]:
         recent = [o for o in sent if o["client"] == client and
                   (today - datetime.fromisoformat(o["ts"][:10]).date()).days < r["every_days"]]
         owed = [x for x in ledger.open_sorted(today, which="i_owe") if (x.get("contact") or "").lower() == contact.lower()]
+        wrote = [m for m in inbox if contact.lower() in m.get("from", "").lower()
+                 and (today - datetime.fromisoformat(m["date"][:10]).date()).days <= 7]
         why_not = ("owes an overdue invoice" if overdue else
                    "you still owe them work" if owed else
                    "has a project in progress" if open_work else
+                   "wrote to you this week; answer them before pitching anything" if wrote else
                    f"got an offer in the last {r['every_days']} days" if recent else
                    "ordered recently" if (today - last).days < 45 else None)
         info = {"client": client, "contact": contact, "kind": "past client", "industry": industry(contact + " " + client),

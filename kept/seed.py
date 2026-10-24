@@ -116,6 +116,10 @@ def money_book() -> dict:
     return {
         "balance": 1240.0, "as_of": _d(0),
         "invoices": [
+            # Lucia hired Alex after that quote, paid early, and hasn't ordered since: the one
+            # client a well-timed offer suits (a boutique, ahead of Black Friday)
+            {"number": "104", "client": "Lucia Ferri", "contact": "lucia@ferriboutique.example", "amount": 1400,
+             "issued": _d(-130), "due": _d(-116), "paid_on": _d(-118)},
             {"number": "109", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 600,
              "issued": _d(-84), "due": _d(-70), "paid_on": _d(-58)},
             {"number": "113", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 700,
@@ -164,7 +168,8 @@ def history() -> list[dict]:
              ("Send Aisha a quote for the gym site", "Aisha Bello", 2, 2),
              ("Send Tom rates for a 3-page site", "Tom Novak", 1, 4)]
     for text, who, wk, late in leads:
-        contact = who.split(" ")[0].lower() + "@" + who.split(" ")[1].lower() + "studio.example"
+        contact = {"Lucia Ferri": "lucia@ferriboutique.example"}.get(
+            who, who.split(" ")[0].lower() + "@" + who.split(" ")[1].lower() + "studio.example")
         closed(text, who, _last_friday(wk), late, "Sent the quote" + (" late, apologised" if late else ""), contact)
     for wk in (8, 6, 4, 3, 1):
         closed(f"Fix a layout bug on the Kim Yoga site (week {wk})", "Jordan Kim",
