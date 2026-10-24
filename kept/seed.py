@@ -45,6 +45,11 @@ def inbox() -> list[dict]:
          "body": "Hi Alex! While you're on it, could you add a small blog page where we can post our seasonal "
                  "specials? And could the logo be a bit bigger on the home page? It looks tiny on my phone.\n\n"
                  "Thank you!! Maria"},
+        {"id": "demo:9", "from": "Noah Brooks <noah@brookscoffee.example>", "date": _d(-1),
+         "subject": "We're live!",
+         "body": "Alex! The new site went live this morning and we already got two catering inquiries "
+                 "through the form. Customers keep telling us how easy the menu is to read on their phones. "
+                 "You were great to work with, thank you!\n\nNoah"},
         {"id": "demo:6", "from": "Jordan Kim <jordan@kimyoga.example>", "date": _d(0),
          "subject": "Launch call + contact form",
          "body": f"Hey Alex! Can we push our launch call to {_d(2)}? Something came up on my side. "
@@ -54,11 +59,21 @@ def inbox() -> list[dict]:
 
 
 NOTES = """# About the owner
-Alex Rivera runs a one-person web design studio. Clients are local small businesses.
+Alex Rivera runs a one-person web design studio in Portland, Oregon. Clients are local small
+businesses: cafes, bakeries, clinics, studios, shops.
 Prefers short, friendly emails. Signs as "Alex". Works 9:00-17:00, no meetings on Fridays.
 
 ## Rates
 - Hourly rate: $85
+
+## Offers
+- Max discount: 15%
+- Minimum project price: $900
+- One offer per client per 60 days
+
+## Reviews and posts
+- Review link: https://g.page/r/alex-rivera-studio/review
+- Clients I may name in posts: Brooks Coffee, Sunrise Bakery
 
 ## Watch
 - Stripe fees for small businesses
@@ -107,6 +122,8 @@ def money_book() -> dict:
              "issued": _d(-53), "due": _d(-39), "paid_on": _d(-26)},
             {"number": "115", "client": "Jordan Kim", "contact": "jordan@kimyoga.example", "amount": 1800,
              "issued": _d(-60), "due": _d(-46), "paid_on": _d(-46)},
+            {"number": "119", "client": "Noah Brooks", "contact": "noah@brookscoffee.example", "amount": 1600,
+             "issued": _d(-15), "due": _d(-1), "paid_on": _d(-2)},
             {"number": "118", "client": "Priya Shah", "contact": "priya@shahdental.example", "amount": 850,
              "issued": _d(-16), "due": _d(-2), "paid_on": None},
             {"number": "121", "client": "Maria Lopez", "contact": "maria@sunrisebakery.example", "amount": 1200,
@@ -131,12 +148,12 @@ def history() -> list[dict]:
     quotes for new leads, promised for Friday, keep landing on Monday or Tuesday."""
     rows, n = [], 0
 
-    def closed(text, who, due, late, note):
+    def closed(text, who, due, late, note, contact=""):
         nonlocal n
         n += 1
         done = due + timedelta(days=late)
         rows.append({"id": f"h{n:03d}", "text": text, "who": who, "due": due.isoformat(), "source": "",
-                     "origin": "inbox", "contact": "", "direction": "i_owe", "status": "done",
+                     "origin": "inbox", "contact": contact, "direction": "i_owe", "status": "done",
                      "created": f"{(due - timedelta(days=4)).isoformat()}T09:00:00+00:00",
                      "closed": f"{done.isoformat()}T16:30:00+00:00", "note": note, "history": []})
 
@@ -147,13 +164,16 @@ def history() -> list[dict]:
              ("Send Aisha a quote for the gym site", "Aisha Bello", 2, 2),
              ("Send Tom rates for a 3-page site", "Tom Novak", 1, 4)]
     for text, who, wk, late in leads:
-        closed(text, who, _last_friday(wk), late, "Sent the quote" + (" late, apologised" if late else ""))
+        contact = who.split(" ")[0].lower() + "@" + who.split(" ")[1].lower() + "studio.example"
+        closed(text, who, _last_friday(wk), late, "Sent the quote" + (" late, apologised" if late else ""), contact)
     for wk in (8, 6, 4, 3, 1):
         closed(f"Fix a layout bug on the Kim Yoga site (week {wk})", "Jordan Kim",
                _last_friday(wk) - timedelta(days=2), 0, "Fixed and checked on mobile")
     for wk, text in ((7, "Send Maria the new menu photos"), (5, "Share the bakery logo files with Maria"),
                      (3, "Send Maria the holiday banner"), (2, "Update the bakery opening hours")):
         closed(text, "Maria Lopez", _last_friday(wk) - timedelta(days=1), 0, "Done the same day")
+    closed("Launch the Brooks Coffee site", "Noah Brooks", date.today() - timedelta(days=1), 0,
+           "Launched; DNS switched, forms tested", "noah@brookscoffee.example")
     closed("Reply to Sam about the Q2 receipts", "Sam Okafor", _last_friday(6) - timedelta(days=3), 1,
            "Replied a day late")
     return rows

@@ -340,19 +340,24 @@ def morning_brief() -> dict:
     open_rows = ledger.open_sorted(today)
     watch = read_json("watch.json", {})
     pend = approvals.pending()
+    row = lambda r: {"id": r["id"], "text": r["text"], "who": r.get("who"), "due": r.get("due"),
+                     "overdue_days": ledger.days_overdue(r, today)}
     facts = {
-        "open": [{"id": r["id"], "text": r["text"], "who": r.get("who"), "due": r.get("due"),
-                  "overdue_days": ledger.days_overdue(r, today)} for r in open_rows[:15]],
+        "you_owe": [row(r) for r in open_rows if ledger.direction(r) == "i_owe"][:12],
+        "owed_to_you": [row(r) for r in open_rows if ledger.direction(r) == "owed_to_me"][:6],
         "waiting_for_your_yes": [{"id": a["id"], "summary": a["summary"]} for a in pend],
         "news": watch.get("claims", [])[:5],
         "cash": _cash_line(),
         "yesterday": read_journal(2)[-3000:],
     }
     r = router.ask("plan", _msgs(
-        f"Write {read_notes_owner()}'s morning brief for {today.isoformat()}. Start with what is overdue. "
-        "Plain, short sentences. Reply JSON: "
-        '{"headline": "...", "lines": [{"ref": "<ledger id or approval id or null>", "text": "..."}], '
-        '"plan": ["three concrete things to do today"]}\n\nFacts:\n' + json.dumps(facts, ensure_ascii=False), "brief"),
+        f"Write {read_notes_owner()}'s morning brief for {today.isoformat()} ({today:%A}). Order: what "
+        f"{read_notes_owner()} owes that is overdue; money (if cash is short, say when and by how much); what "
+        "others owe them; then ONE line saying how many messages wait for their Yes (don't list them). "
+        f"The plan is three things {read_notes_owner()} does today, each taken from you_owe or "
+        "owed_to_you, written as an action for them. Plain, short sentences. Reply JSON: "
+        '{"headline": "...", "lines": [{"ref": "<ledger id or null>", "text": "..."}], '
+        '"plan": [{"ref": "<ledger id>", "text": "..."}]}\n\nFacts:\n' + json.dumps(facts, ensure_ascii=False), "brief"),
         purpose="morning brief", json_mode=True, max_tokens=900)
     try:
         b = r.json()
@@ -364,7 +369,10 @@ def morning_brief() -> dict:
     if not v:
         _abstain("brief", "morning brief", v, b)
         b = {"headline": "Brief written by rules (the model reply did not pass checks)", "lines": [], "plan": []}
+    facts["open"] = facts["you_owe"] + facts["owed_to_you"]
     known = {x["id"] for x in facts["open"]} | {x["id"] for x in facts["waiting_for_your_yes"]}
+    # a plan step must point at something real; free-floating to-dos are how direction got flipped
+    b["plan"] = [p for p in b["plan"] if isinstance(p, dict) and p.get("ref") in known][:3]
     b["lines"] = [ln for ln in b["lines"] if isinstance(ln, dict) and (ln.get("ref") in known or not ln.get("ref"))]
     mentioned = {ln.get("ref") for ln in b["lines"]}
     # the rule that makes the ledger trustworthy: an overdue promise is never silently skipped
