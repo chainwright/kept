@@ -54,7 +54,17 @@ line in the morning brief, or an entry under **Held back** saying what it refuse
 9. **Growth without spam**: a review ask when a client is delighted (never while a project is
    unpaid or your last delivery was late), and a before/after post using only sourced numbers.
 
-Plus **topic watch** (Tavily, grounded quotes only) and **Ask Kept** about your own week.
+Plus **topic watch** (Tavily, grounded quotes only), **check-ins** with past clients a month after a
+small job, an **ad plan** for a slow month inside the owner's own budget, and **Ask Kept** about your
+own week.
+
+**Answering someone who writes in, with a photo.** Nemotron 3.5 Super VL reads the photo (the room,
+the damage, the style to match, rough sizes). Super names the job the way the owner works (small
+repair, new fronts, countertop, backsplash, full kitchen). Code prices a small repair on the spot,
+works out a preliminary estimate for bigger jobs from sizes × the price guide in `notes.md`, offers
+free measuring times from the calendar, books the one the client picks, and offers a payment plan
+computed from the same estimate when the client says it's too much (`kept/intake.py`,
+`kept/estimate.py`, `kept/schedule.py`, `kept/vision.py`).
 
 **Answering someone who writes in.** A new email is sorted, checked against the agreement, its
 promises recorded, and, for a stranger, the business is looked up on the web (Tavily Search, and
@@ -139,8 +149,9 @@ shared files are serialised, and the one-message-per-person rule is enforced ato
 demo morning takes about two minutes.
 
 Demo mode (`KEPT_DEMO=1`, the default) opens on a recorded live morning (`demo_snapshot/`, dates
-moved forward by whole weeks) and lets a visitor write to Alex as a client. It loads a made-up week for Alex, a freelance web designer,
-with nine emails, two signed agreements, a money book and eight weeks of history.
+moved forward by whole weeks) and lets a visitor write to Alex as a client. It loads a made-up week for Alex, a one-person kitchen contractor
+in Portland: nine emails, two signed agreements, a calendar, a money book, a price guide and eight
+weeks of history. Sample photos (`demo_media/`) were generated for the demo.
 Tests: `.venv/bin/python -m pytest -q`. Live evaluation (costs model credits):
 `.venv/bin/python eval/run_eval.py --runs 5` grades each full day with 24 checks written in code.
 
