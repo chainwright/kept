@@ -8,19 +8,30 @@
   <meta name="color-scheme" content="light dark">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;600;700&family=Caveat:wght@500;600&display=swap">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
+  <!-- ink texture for rubber stamps -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.85 1.4" result="speckle"/>
+      <feComposite in="SourceGraphic" in2="speckle" operator="in" result="speckled"/>
+      <feDisplacementMap in="speckled" in2="noise" scale="1.6"/>
+    </filter>
+  </svg>
 
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="wordmark" aria-label="Kept">Kept<span class="wordmark-dot" aria-hidden="true">.</span></span>
+        <span class="wordmark" aria-label="Kept">Kept<span class="seal" aria-hidden="true">K/T</span></span>
         <span class="badge badge-demo" id="demo-badge" hidden title="Demo mode: outgoing mail is saved to an outbox, never sent">Demo</span>
         <span class="tagline">Guards your word, your time and your money.</span>
       </div>
+
+      <div class="tier-chips" id="tier-chips" aria-label="Model spend today by size"></div>
 
       <div class="spend" id="spend" title="Model spend today against the daily budget">
         <div class="spend-label"><span>Spent today</span> <strong id="spend-num">$0.00</strong> <span class="muted" id="spend-of">of $1.00</span></div>
@@ -124,7 +135,7 @@
           <div class="card-body">
             <p class="lede">Anything that reaches another person, or changes how Kept behaves, waits here. Kept drafted it and checked it; you decide.</p>
             <div id="approvals-list"></div>
-            <details class="sub" id="decided-wrap" hidden>
+            <details class="sub" id="decided-wrap" hidden open>
               <summary>Recently decided <span class="muted" id="decided-count"></span></summary>
               <ul class="plain" id="decided-list"></ul>
             </details>
@@ -202,7 +213,7 @@
               </div>
             </form>
 
-            <details class="sub" id="closed-wrap" hidden>
+            <details class="sub" id="closed-wrap" hidden open>
               <summary>Closed recently <span class="muted" id="closed-count"></span></summary>
               <ul class="plain" id="closed-list"></ul>
             </details>

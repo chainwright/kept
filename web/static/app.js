@@ -106,6 +106,22 @@
     return (v < 0 ? "−$" : "$") + abs;
   }
   const pct = (r) => `${Math.round((Number(r) || 0) * 100)}%`;
+  const monoDate = (iso) => (isoToDate(iso) ? fmtDay(iso, { month: "short", day: "numeric" }).toUpperCase() : "—");
+  const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  // a rubber stamp: red APPROVED, muted DECLINED, green KEPT …
+  function stamp(word, kind, { fresh = false, small = false } = {}) {
+    const el = h("span", { class: `stamp stamp-${kind}${small ? " stamp-sm" : ""}${fresh && !reduceMotion() ? " is-fresh" : ""}`, "aria-hidden": "true" }, word);
+    el.style.setProperty("--rot", `${(Math.random() * 10 - 6).toFixed(1)}deg`);
+    return el;
+  }
+  // a row of slip squares: ✓ kept on time, / late
+  function slips(kept, total) {
+    if (!total || total > 14) return null;
+    const row = h("span", { class: "slips", role: "img", "aria-label": `${kept} of ${total} on time` });
+    for (let i = 0; i < total; i++) row.append(h("span", { class: i < kept ? "slip-sq ok" : "slip-sq late" }));
+    return row;
+  }
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + "s")}`;
   const personName = (from) => String(from || "").split("<")[0].trim().replace(/^"|"$/g, "") || String(from || "");
   const shortModel = (m) => String(m || "").split("/").pop();
@@ -179,7 +195,7 @@
       const head = card.querySelector(".card-head h2");
       const body = card.querySelector(".card-body");
       if (!head || !body) continue;
-      body.id = body.id || `${card.id}-body`;
+      body.id = body.id || `${card.id}-fold`;
       const btn = h("button", { class: "fold-btn", type: "button", "aria-controls": body.id });
       btn.append(icon("chev", "ico chev"), ...head.childNodes);
       head.append(btn);
@@ -216,6 +232,8 @@
   let lastPending = null;
   let ledgerDir = "i_owe";
   let showAllApprovals = false;
+  const stamping = new Set();   // approvals whose stamp is landing; hold re-render until done
+  let justKept = null;          // ledger id closed as done a moment ago (draws the KEPT line)
 
   function changed(key, value) {
     const v = JSON.stringify(value);
@@ -249,7 +267,7 @@
     const safe = (name, fn) => { try { fn(); } catch (e) { console.error(`render ${name}`, e); } };
     safe("top", () => renderTop(st));
     if (changed("principles", [st.open, st.pending.length, st.abstained.length, st.calls.map((c) => c.ts), st.calibration?.overall, st.cash?.lowest, st.cash?.short])) safe("principles", () => renderPrinciples(st));
-    if (changed("approvals", [st.pending, st.decided, st.open.map((r) => [r.id, r.text]), showAllApprovals])) safe("approvals", () => renderApprovals(st));
+    if (!stamping.size && changed("approvals", [st.pending, st.decided, st.open.map((r) => [r.id, r.text]), showAllApprovals])) safe("approvals", () => renderApprovals(st));
     if (changed("brief", [st.brief, st.open.map((r) => [r.id, r.due]), st.pending.map((a) => a.id), localISO()])) safe("brief", () => renderBrief(st));
     if (changed("money", [st.cash, st.invoices, st.habits, st.pending.map((a) => [a.id, a.args && a.args.invoice, a.args && a.args.step]), localISO(), $("#cash-chart").clientWidth])) safe("money", () => renderMoney(st));
     if (changed("rescue", [st.rescue, st.pending.map((a) => a.id)])) safe("rescue", () => renderRescue(st));
@@ -285,6 +303,12 @@
     bar.classList.toggle("full", p >= 100);
     $("#spend-fill").style.width = `${Math.max(p, st.spend_today > 0 ? 2 : 0)}%`;
     setBusy(!!localJob || !!st.busy, st.busy && !localJob);
+    const t = todayUTC();
+    const by = {};
+    for (const c of st.calls) if (String(c.ts).startsWith(t)) by[c.tier] = (by[c.tier] || 0) + (Number(c.usd) || 0);
+    if (changed("tierchips", by)) fill($("#tier-chips"), ["nano", "super", "ultra"].map((k) =>
+      h("a", { class: `tchip tchip-${k}`, href: "#models", title: st.tiers && st.tiers[k] ? st.tiers[k].model : "" },
+        tierName(k).toUpperCase(), h("span", null, money(by[k] || 0)))));
   }
 
   function renderPrinciples(st) {
@@ -321,7 +345,7 @@
 
   // --- approvals
   const KIND = {
-    send_email: { label: "Email", yes: "Yes, send it", hint: "Yes sends this email. No discards it.", sending: "Sending…" },
+    send_email: { label: "Email", yes: "Yes, send", hint: "Yes sends this email. No discards it.", sending: "Sending…" },
     publish_post: { label: "Post", yes: "Yes, publish", hint: "Yes publishes this post. No discards it.", sending: "Publishing…" },
     add_rule: { label: "New rule", yes: "Yes, add this rule", hint: "Yes adds the rule to Kept's skill file. No drops it.", sending: "Adding…" },
   };
@@ -336,7 +360,7 @@
         h("strong", null, "Nothing waiting. "),
         "When a promise comes due, an invoice runs late or a client is happy, Kept drafts the message, checks it, and puts it here for your Yes or No. Nothing is sent before you decide."));
     } else {
-      const LIMIT = 3;
+      const LIMIT = 2;
       const shown = showAllApprovals ? st.pending : st.pending.slice(0, LIMIT);
       const more = st.pending.length - shown.length;
       fill(list, shown.map((a) => approvalCard(a, ledger)),
@@ -348,12 +372,12 @@
     dw.hidden = !st.decided.length;
     $("#decided-count").textContent = st.decided.length ? `(${st.decided.length})` : "";
     fill($("#decided-list"), st.decided.map((a) => {
-      const done = a.kind === "publish_post" ? "Published" : a.kind === "add_rule" ? "Added" : "Sent";
-      const map = { done: [done, "chip-ok"], approved: ["Approved", "chip-ok"], rejected: ["Declined", "chip-no"], failed: ["Failed", "chip-over"] };
-      const [label, cls] = map[a.status] || [a.status, ""];
+      const map = { done: ["APPROVED", "approved"], approved: ["APPROVED", "approved"], rejected: ["DECLINED", "declined"], failed: ["FAILED", "failed"] };
+      const [word, kind] = map[a.status] || [String(a.status).toUpperCase(), "declined"];
       return h("li", { class: "decided-row" },
-        chip(label, cls),
-        h("span", null, a.summary || a.kind),
+        h("span", { class: "slipno" }, `NO. ${String(a.id).toUpperCase()}`),
+        stamp(word, kind, { small: true }), h("span", { class: "sr-only" }, word.toLowerCase()),
+        h("span", { class: "decided-text" }, a.summary || a.kind),
         h("span", { class: "muted" }, ago(a.decided || a.created)),
         a.result ? h("span", { class: "res" }, String(a.result)) : null);
     }));
@@ -364,24 +388,36 @@
     const k = KIND[a.kind] || { label: a.kind, yes: "Yes", hint: "", sending: "Working…" };
     const row = a.ledger_id ? ledger[a.ledger_id] : null;
     const label = a.summary || "this action";
-    const yes = h("button", { class: "btn btn-yes", type: "button", "aria-label": `${k.yes}: ${label}` }, icon("check", "ico"), k.yes);
+    const yes = h("button", { class: "btn btn-yes", type: "button", "aria-label": `${k.yes}: ${label}` }, k.yes);
     const no = h("button", { class: "btn btn-no", type: "button", "aria-label": `No: ${label}` }, "No");
     const status = h("span", { class: "hint", "aria-live": "polite" }, k.hint);
+    let card = null;
     const go = async (verdict) => {
       yes.disabled = no.disabled = true;
-      status.textContent = verdict === "yes" ? k.sending : "Discarding…";
+      status.textContent = verdict === "yes" ? k.sending : "Declining…";
+      stamping.add(a.id);
       try {
         const r = await api("POST", `/api/approvals/${encodeURIComponent(a.id)}/${verdict}`);
-        if (verdict === "no") toast(row ? "Okay, not sent. The promise stays open in your ledger." : "Okay, discarded.", "good");
-        else if (r && r.status === "failed") toast(`You said Yes, but it failed: ${r.result}`, "err");
-        else toast(`Done. ${r && r.result ? r.result : ""}`.trim(), "good");
-        announce(verdict === "yes" ? "Approved." : "Declined.");
+        const failed = r && r.status === "failed";
+        // the stamp lands only once the server has recorded the decision
+        const word = verdict === "no" ? "DECLINED" : failed ? "FAILED" : "APPROVED";
+        card.append(stamp(word, verdict === "no" ? "declined" : failed ? "failed" : "approved", { fresh: true }));
+        card.classList.add("is-decided");
+        status.textContent = verdict === "no" ? "Declined. Nothing was sent." : failed ? `Failed: ${r.result}` : (r && r.result ? String(r.result) : "Approved.");
+        announce(verdict === "yes" ? (failed ? "Approved, but it failed." : "Approved.") : "Declined.");
+        if (failed) toast(`You said Yes, but it failed: ${r.result}`, "err");
+        await wait(reduceMotion() ? 900 : 1400);
+        if (!reduceMotion()) { card.classList.add("is-leaving"); await wait(280); }
       } catch (e) {
         toast(`Couldn't record your answer: ${e.message}`, "err");
         yes.disabled = no.disabled = false;
         status.textContent = k.hint;
       }
-      refresh();
+      stamping.delete(a.id);
+      delete sigs.approvals;
+      await refresh();
+      const hd = $("#h-approvals"); hd.setAttribute("tabindex", "-1");
+      if (document.activeElement === document.body || !document.body.contains(document.activeElement)) hd.focus();
     };
     yes.addEventListener("click", () => go("yes"));
     no.addEventListener("click", () => go("no"));
@@ -403,10 +439,11 @@
         h("dt", null, "Subject"), h("dd", null, args.subject || "")),
       h("div", { class: "body", tabindex: "0", role: "region", "aria-label": `Draft: ${args.subject || label}` }, args.body || ""));
 
-    return h("article", { class: `approval kind-${a.kind}`, "aria-label": `Waiting for your Yes: ${label}` },
-      h("div", { class: "approval-head" },
-        h("h3", { class: "approval-title" }, label),
+    card = h("article", { class: `approval kind-${a.kind}`, "aria-label": `Waiting for your Yes: ${label}` },
+      h("div", { class: "slip-top" }, h("span", { class: "slipno" }, `NO. ${String(a.id).toUpperCase()}`),
         h("span", { class: "meta kind-row" }, tags, h("span", null, ago(a.created)))),
+      h("div", { class: "approval-head" },
+        h("h3", { class: "approval-title" }, label)),
       content,
       h("p", { class: "why" }, h("strong", null, "Why: "), a.why || ""),
       a.reasoning ? h("details", { class: "reasoning" },
@@ -416,7 +453,8 @@
       a.checks && a.checks.length ? h("div", null,
         h("ul", { class: "checks", "aria-label": "Checks this passed" },
           a.checks.map((c) => h("li", null, icon("check"), c)))) : null,
-      h("div", { class: "decide" }, yes, no, status));
+      h("div", { class: "decide" }, no, yes, status));
+    return card;
   }
 
   function postPreview(args) {
@@ -472,10 +510,13 @@
         h("div", { class: "pc-top" },
           h("span", { class: "pc-text" }, p.text),
           p.due ? chip(`Due ${fmtDay(p.due)}`, a ? "chip-soon" : "chip-due") : chip("No date named", "chip-outline")),
-        p.quote ? h("p", { class: "pc-quote" }, `“${p.quote}”`) : null,
+        p.quote ? h("p", { class: "pc-quote" }, struck(p.quote, a ? p.when_words : "")) : null,
+        a ? h("p", { class: "hand-note" }, h("span", { class: "hook", "aria-hidden": "true" }),
+          `${String(a.why).replace(/\.$/, "").replace(/;.*$/, "")} — say ${fmtDay(a.suggested, { weekday: "long", month: "short", day: "numeric" })}?`) : null,
+        a ? h("p", { class: "slips-line" }, slips(a.kept, a.total), h("span", { class: "mono-s" }, `${a.kept} OF ${a.total} ON TIME · TYPICALLY ${a.median_slip} ${Number(a.median_slip) === 1 ? "DAY" : "DAYS"} LATE`)) : null,
         p.model_due ? h("p", { class: "note note-fix" },
           `The model said ${fmtLong(p.model_due)}; the calendar says ${fmtLong(p.due)}. Code re-read “${p.when_words}” and the words win.`) : null,
-        a ? h("p", { class: "note note-advice" }, `${a.why} `, h("strong", null, `Suggest ${fmtLong(a.suggested)}.`)) : null,
+        a ? h("p", { class: "sr-only" }, `${a.why} Suggested date: ${fmtLong(a.suggested)}.`) : null,
         p.same_day && p.same_day.length ? h("p", { class: "note note-load" },
           `Already due that day: ${p.same_day.join("; ")}.`) : null);
     });
@@ -496,24 +537,35 @@
       r.model ? h("p", { class: "foot muted" }, `Promises found by ${shortModel(r.model)}; dates and your record checked by code.`) : null);
   }
 
+  // the quoted sentence with the risky time words struck through in red
+  function struck(quote, words) {
+    const q = String(quote || "");
+    const i = words ? q.toLowerCase().indexOf(String(words).toLowerCase()) : -1;
+    if (i < 0) return `“${q}”`;
+    return ["“", q.slice(0, i), h("del", { class: "strike-risk" }, q.slice(i, i + words.length)), q.slice(i + words.length), "”"];
+  }
+
   // word-level diff (LCS); fine for drafts of a few hundred words
   function wordDiff(a, b) {
-    const A = a.split(/(\s+)/), B = b.split(/(\s+)/);
+    const tok = (t) => t.match(/\s*\S+\s*|\s+/g) || [];
+    const A = tok(a), B = tok(b);
     if (A.length * B.length > 600000) return b;
     const n = A.length, m = B.length;
     const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
     for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
-      L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+      L[i][j] = A[i].trim() === B[j].trim() ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
     const out = [];
     let i = 0, j = 0, del = [], add = [];
     const flush = () => {
-      if (del.join("").trim()) out.push(h("del", { class: "d-del" }, del.join("")), " ");
-      if (add.join("").trim()) out.push(h("ins", { class: "d-add" }, add.join("")));
-      else if (add.length) out.push(add.join(""));
+      const d = del.join(""), a2 = add.join("");
+      if (d.trim()) out.push(h("del", { class: "d-del" }, d.trim()), " ");
+      if (a2.trim()) out.push(h("ins", { class: "d-add" }, a2.trim()), /\s$/.test(a2) ? " " : "");
+      else if (a2) out.push(a2);
       del = []; add = [];
     };
+    const same = (p, q) => p.trim() === q.trim();
     while (i < n && j < m) {
-      if (A[i] === B[j]) { flush(); out.push(A[i]); i++; j++; }
+      if (same(A[i], B[j])) { flush(); out.push(B[j]); i++; j++; }
       else if (L[i + 1][j] >= L[i][j + 1]) del.push(A[i++]);
       else add.push(B[j++]);
     }
@@ -552,14 +604,19 @@
       sorted.length ? h("ul", { class: "brief-lines" }, sorted.map((l) => {
         const over = isOver(l);
         const ask = l.ref && pending.has(l.ref);
+        const r = l.ref && ledger[l.ref];
         return h("li", { class: over ? "is-over" : ask ? "is-ask" : "" },
-          over ? chip("Overdue", "chip-over") : ask ? chip("Needs your Yes", "chip-ask") : null,
-          h("span", { class: "txt" }, l.text || ""),
+          h("span", { class: "row-date" }, r && r.due ? monoDate(r.due) : monoDate(b.date)),
+          h("span", { class: "txt" }, over ? chip("Overdue", "chip-over") : ask ? chip("Needs your Yes", "chip-ask") : null, " ", l.text || ""),
           l.added_by === "rule" ? chip("added by rule", "rule-mark",
             "The model left this out. Code added it, because an overdue promise is never skipped.") : null);
       })) : h("p", { class: "muted" }, "Nothing urgent in today's brief."),
       b.plan && b.plan.length ? [h("h3", { class: "h3" }, "Plan for today"),
-        h("ol", { class: "plan" }, b.plan.map((p) => h("li", null, String(p))))] : null);
+        h("ol", { class: "plan" }, b.plan.map((p) => {
+          const text = typeof p === "string" ? p : (p && p.text) || "";
+          const r = p && p.ref && ledger[p.ref];
+          return h("li", null, h("span", null, text, r && r.due ? h("span", { class: "muted mono-s" }, ` · due ${monoDate(r.due)}`) : null));
+        }))] : null);
   }
 
   // --- money
@@ -576,13 +633,16 @@
     if (c.short) {
       const fix = (c.fix || []);
       fill(callout, h("div", { class: "callout callout-short", role: "status" },
-        h("strong", { class: "big" }, `You'll be ${usd(c.short.gap)} short on ${fmtLong(c.short.date)}`),
-        h("span", null, `when ${c.short.because} goes out.`),
+        h("p", { class: "shortfall" }, h("span", { class: "sr-only" }, "Shortfall: "), usd(-c.short.gap)),
+        h("p", { class: "mono-cap" }, `${monoDate(c.short.date)} · ${String(c.short.because).toUpperCase()}`),
+        h("span", null, `You'll be ${usd(c.short.gap)} short on ${fmtLong(c.short.date)}, when ${c.short.because} goes out.`),
         fix.length ? h("span", { class: "fix" }, "What fixes it: ", fix.map((f, i) => [i ? "; " : "",
           `${f.what} (${usd(f.amount)}) was due ${fmtShort(f.due)} but, at their usual pace, lands ${fmtShort(f.expected)}`]), ".") : null,
         st.rescue && st.rescue.needed ? h("a", { href: "#rescue" }, "See the rescue plan") : null));
     } else {
       fill(callout, h("div", { class: "callout callout-ok" },
+        c.lowest ? h("p", { class: "shortfall ok" }, usd(c.lowest.balance)) : null,
+        c.lowest ? h("p", { class: "mono-cap" }, `LOWEST POINT · ${monoDate(c.lowest.date)}`) : null,
         h("strong", null, "No shortfall in the next 30 days."),
         c.lowest ? h("span", null, `Lowest point ${usd(c.lowest.balance)} on ${fmtShort(c.lowest.date)}.`) : null));
     }
@@ -600,64 +660,80 @@
   }
 
   function drawCash(el, c) {
-    const W = Math.max(280, el.clientWidth || 600), H = 210;
-    const pad = { l: 52, r: 14, t: 18, b: 26 };
+    const W = Math.max(280, el.clientWidth || 600);
+    const narrow = W < 460;
+    const H = narrow ? 200 : 230;
+    const pad = { l: narrow ? 46 : 56, r: 12, t: 16, b: 28 };
     const today = isoToDate(localISO());
     const end = new Date(today); end.setDate(end.getDate() + 30);
     const pts = [{ d: today, b: Number(c.start) || 0 }];
     for (const e of c.timeline || []) {
       const d = isoToDate(e.date);
       if (!d) continue;
-      pts.push({ d, b: pts[pts.length - 1].b, step: true });
+      pts.push({ d, b: pts[pts.length - 1].b });           // step: flat until the payment day
       pts.push({ d, b: Number(e.balance), e });
     }
     pts.push({ d: end, b: pts[pts.length - 1].b });
     const bals = pts.map((p) => p.b);
-    let lo = Math.min(0, ...bals), hi = Math.max(0, ...bals);
-    const span = hi - lo || 1;
-    lo -= span * 0.08; hi += span * 0.1;
+    const rawLo = Math.min(0, ...bals), rawHi = Math.max(0, ...bals);
+    // a "nice" grid step so the graph paper has round numbers
+    const span = rawHi - rawLo || 100;
+    const mag = Math.pow(10, Math.floor(Math.log10(span / 4)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((v) => span / v <= 5) || mag * 10;
+    const lo = Math.floor(rawLo / step) * step - (rawLo < 0 ? 0 : 0);
+    const hi = Math.ceil(rawHi / step) * step;
+    const lo2 = lo === rawLo && rawLo < 0 ? lo - step : lo;
     const x = (d) => pad.l + ((d - today) / (end - today)) * (W - pad.l - pad.r);
-    const y = (b) => pad.t + (1 - (b - lo) / (hi - lo)) * (H - pad.t - pad.b);
+    const y = (v) => pad.t + (1 - (v - lo2) / (hi - lo2)) * (H - pad.t - pad.b);
     const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p.d).toFixed(1)},${y(p.b).toFixed(1)}`).join(" ");
     const area = `${path} L${x(end).toFixed(1)},${y(0).toFixed(1)} L${x(today).toFixed(1)},${y(0).toFixed(1)} Z`;
-    const clipId = "cash-neg-clip";
     const lowest = c.lowest;
     const desc = `Balance over the next 30 days, from ${usd(c.start)} today. ` +
       (c.short ? `It drops below zero on ${fmtLong(c.short.date)}, ${usd(-c.short.gap)}, when ${c.short.because} goes out. ` : "") +
       (lowest ? `Lowest point ${usd(lowest.balance)} on ${fmtShort(lowest.date)}.` : "");
     const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": desc });
-    svg.append(s("defs", null, s("clipPath", { id: clipId }, s("rect", { x: 0, y: y(0), width: W, height: Math.max(0, H - y(0)) }))));
-    // y ticks: top, zero, bottom
-    const ticks = [...new Set([Math.round(hi / 100) * 100, 0, lo < 0 ? Math.round(lo / 100) * 100 : null].filter((v) => v !== null))];
-    for (const v of ticks) {
-      if (y(v) < pad.t - 2 || y(v) > H - pad.b + 2) continue;
-      svg.append(s("line", { class: v === 0 ? "zero" : "ax", x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v) }));
-      svg.append(s("text", { x: pad.l - 6, y: y(v) + 4, "text-anchor": "end" }, usd(v)));
-    }
-    // x ticks
-    for (const k of [0, 10, 20, 30]) {
+    svg.append(s("defs", null,
+      s("clipPath", { id: "cash-neg-clip" }, s("rect", { x: 0, y: y(0), width: W, height: Math.max(0, H - y(0)) })),
+      s("pattern", { id: "cash-hatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
+        s("line", { class: "hatch-line", x1: 0, y1: 0, x2: 0, y2: 6 }))));
+    // graph paper: a light line every day, a stronger one every week, a rule per value step
+    for (let k = 0; k <= 30; k++) {
       const d = new Date(today); d.setDate(d.getDate() + k);
-      svg.append(s("text", { x: x(d), y: H - 6, "text-anchor": k === 0 ? "start" : k === 30 ? "end" : "middle" },
-        k === 0 ? "Today" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" })));
+      svg.append(s("line", { class: k % 7 === 0 ? "grid-major" : "grid-minor", x1: x(d), x2: x(d), y1: pad.t, y2: H - pad.b }));
     }
-    svg.append(s("path", { class: "neg-area", d: area, "clip-path": `url(#${clipId})` }));
+    for (let v = lo2; v <= hi + 1e-9; v += step) {
+      svg.append(s("line", { class: v === 0 ? "zero" : "grid-major", x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v) }));
+      svg.append(s("text", { class: "axis", x: pad.l - 6, y: y(v) + 4, "text-anchor": "end" }, v === 0 ? "0" : usd(v)));
+    }
+    for (const k of narrow ? [0, 14, 28] : [0, 7, 14, 21, 28]) {
+      const d = new Date(today); d.setDate(d.getDate() + k);
+      svg.append(s("text", { class: "axis", x: x(d), y: H - 9, "text-anchor": k === 0 ? "start" : "middle" },
+        d.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase()));
+    }
+    svg.append(s("path", { class: "neg-area", d: area, fill: "url(#cash-hatch)", "clip-path": "url(#cash-neg-clip)" }));
     svg.append(s("path", { class: "line", d: path }));
-    if (c.short) {
-      const sd = isoToDate(c.short.date);
-      const sx = x(sd);
-      svg.append(s("line", { class: "short-mark", x1: sx, x2: sx, y1: pad.t - 6, y2: H - pad.b }));
-      const right = sx > W * 0.6;
-      svg.append(s("text", { class: "short-lbl", x: sx + (right ? -6 : 6), y: pad.t + 2, "text-anchor": right ? "end" : "start" },
-        `${usd(-c.short.gap)} on ${fmtShort(c.short.date)}`));
-    }
     for (const p of pts.filter((q) => q.e)) {
-      const dot = s("circle", { class: p.e.kind === "in" ? "dot-in" : "dot-out", cx: x(p.d), cy: y(p.b), r: 4.5 },
-        s("title", null, `${fmtShort(p.e.date)}: ${p.e.what} ${p.e.kind === "in" ? "+" : ""}${usd(p.e.amount)} → ${usd(p.e.balance)}`));
-      svg.append(dot);
+      svg.append(s("circle", { class: p.e.kind === "in" ? "dot-in" : "dot-out", cx: x(p.d), cy: y(p.b), r: 3.5 },
+        s("title", null, `${fmtShort(p.e.date)}: ${p.e.what} ${p.e.kind === "in" ? "+" : ""}${usd(p.e.amount)} → ${usd(p.e.balance)}`)));
+    }
+    if (c.short) {
+      // the red stamp-style tag at the shortfall, e.g. "$116 short — Studio rent"
+      const label = `${usd(c.short.gap)} short — ${c.short.because}`;
+      const tw = Math.min(W - pad.l - pad.r - 8, label.length * (narrow ? 6.3 : 7.2) + 18);
+      const sx = x(isoToDate(c.short.date));
+      const sy = y(Math.min(0, lowest ? lowest.balance : -c.short.gap));
+      let tx = sx + 10;
+      if (tx + tw > W - pad.r) tx = Math.max(pad.l + 4, sx - 10 - tw);
+      const ty = narrow ? Math.min(H - pad.b - 28, y(0) + 8) : Math.min(H - pad.b - 26, Math.max(pad.t + 2, y(0) - 13));
+      svg.append(s("line", { class: "short-mark", x1: sx, x2: sx, y1: pad.t, y2: H - pad.b }));
+      svg.append(s("g", { class: "short-tag" },
+        s("rect", { x: tx, y: ty, width: tw, height: 26, rx: 2 }),
+        s("text", { x: tx + tw / 2, y: ty + 17.5, "text-anchor": "middle" }, label)));
+      svg.append(s("circle", { class: "short-dot", cx: sx, cy: sy, r: 4.5 }));
     }
     fill(el, svg, h("div", { class: "chart-legend", "aria-hidden": "true" },
-      h("span", null, h("i", { class: "lg-in" }), "money in"), h("span", null, h("i", { class: "lg-out" }), "money out"),
-      c.short ? h("span", null, h("i", { class: "lg-neg" }), "below zero") : null));
+      h("span", null, h("i", { class: "lg-in" }), "MONEY IN"), h("span", null, h("i", { class: "lg-out" }), "MONEY OUT"),
+      c.short ? h("span", null, h("i", { class: "lg-neg" }), "BELOW ZERO") : null));
   }
 
   function renderInvoices(st) {
@@ -784,7 +860,7 @@
       const rows = Object.entries(obj || {}).sort((a, b) => b[1].total - a[1].total || a[1].rate - b[1].rate).slice(0, limit);
       return h("ul", { class: "bars" }, rows.map(([k, v]) => h("li", null,
         h("span", { class: "lbl", title: k }, cap(k)),
-        h("span", { class: "track", role: "img", "aria-label": `${k}: ${v.kept} of ${v.total} on time` }, h("span", { class: cls(v.rate), style: `width:${Math.max(3, v.rate * 100)}%` })),
+        slips(v.kept, v.total) || h("span", { class: "track", role: "img", "aria-label": `${k}: ${v.kept} of ${v.total} on time` }, h("span", { class: cls(v.rate), style: `width:${Math.max(3, v.rate * 100)}%` })),
         h("span", { class: "val" }, `${v.kept}/${v.total}${v.median_slip > 0 ? ` · +${v.median_slip}d` : ""}`))));
     };
     const worst = Object.entries(c.by_kind || {}).filter(([, v]) => v.total >= 3 && v.median_slip > 0).sort((a, b) => a[1].rate - b[1].rate)[0];
@@ -833,12 +909,13 @@
         ? ["Nothing you owe is open. Kept adds promises when it finds one in your mail (", h("strong", null, "One step → Sort the inbox"), "), or add one below."]
         : ["Nobody owes you anything Kept knows of. When a client promises you something (a payment, content, a decision), it shows up here, or add one below with ", h("strong", null, "They owe me"), "."]));
     } else {
-      fill(list, rows.map((r) => {
+      fill(list, rows.map((r, idx) => {
         const late = r.due && dayDiff(r.due) < 0;
         const src = r.source && mails[r.source];
         const btn = h("button", { class: "btn btn-quiet btn-small", type: "button", "aria-label": `Close promise: ${r.text}` }, "Close…");
         btn.addEventListener("click", () => openClose(r, btn));
         return h("li", { class: late ? "is-over" : "" },
+          h("span", { class: "row-date" }, h("span", { class: "rn" }, `NO. ${String(idx + 1).padStart(2, "0")}`), r.due ? monoDate(r.due) : "NO DATE"),
           h("span", { class: "l-text" }, r.text),
           h("div", { class: "l-meta" },
             dueChip(r.due, ledgerDir),
@@ -855,14 +932,18 @@
     const cw = $("#closed-wrap");
     cw.hidden = !st.closed.length;
     $("#closed-count").textContent = st.closed.length ? `(${st.closed.length})` : "";
-    const res = { done: ["Done", "chip-ok"], dropped: ["Dropped", "chip-no"], handed_off: ["Handed off", "chip-super"] };
+    const res = { done: ["KEPT", "kept"], dropped: ["DROPPED", "declined"], handed_off: ["HANDED OFF", "handed"] };
     fill($("#closed-list"), st.closed.map((r) => {
-      const [l, c] = res[r.status] || [r.status, ""];
-      return h("li", { class: "closed-row" }, chip(l, c), h("span", null, r.text),
-        r.who ? h("span", { class: "muted" }, `· ${personName(r.who)}`) : null,
-        h("span", { class: "muted" }, `· ${ago(r.closed)}`),
+      const [word, kind] = res[r.status] || [String(r.status).toUpperCase(), "declined"];
+      const fresh = r.id === justKept;
+      return h("li", { class: `closed-row res-${r.status}${fresh && !reduceMotion() ? " is-fresh" : ""}` },
+        h("span", { class: "row-date" }, monoDate(r.closed)),
+        h("span", { class: "closed-text" }, h("span", { class: "struck" }, r.text),
+          r.who ? h("span", { class: "muted" }, ` · ${personName(r.who)}`) : null),
+        stamp(word, kind, { small: true, fresh }), h("span", { class: "sr-only" }, `(${word.toLowerCase()})`),
         r.note ? h("span", { class: "note" }, `Note: ${r.note}`) : null);
     }));
+    if (justKept) { $("#closed-wrap").open = true; setTimeout(() => { justKept = null; }, 1500); }
   }
   const tabs = [...document.querySelectorAll(".tabs [role=tab]")];
   function selectTab(dir, focus) {
@@ -927,6 +1008,7 @@
     try {
       await api("POST", `/api/ledger/${encodeURIComponent(closing.row.id)}/close`, { resolution, note });
       const text = closing.row.text;
+      justKept = closing.row.id;
       closing.trigger = null; // its row is about to disappear; send focus to the section heading
       endClose();
       toast(`Closed as ${resolution.replace("_", " ")}: ${text}`, "good");
