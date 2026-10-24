@@ -4,6 +4,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY kept kept
 COPY web web
-ENV KEPT_DATA_DIR=/data KEPT_DEMO=1
+COPY skills skills
+COPY demo_media demo_media
+ENV KEPT_DATA_DIR=/tmp/kept-data KEPT_DEMO=1 KEPT_DAILY_BUDGET_USD=0.40 PYTHONUNBUFFERED=1
 EXPOSE 8000
-CMD ["uvicorn", "kept.web:app", "--host", "0.0.0.0", "--port", "8000"]
+# hosts like Render pass the port in $PORT; locally it defaults to 8000
+CMD ["sh", "-c", "uvicorn kept.web:app --host 0.0.0.0 --port ${PORT:-8000}"]
