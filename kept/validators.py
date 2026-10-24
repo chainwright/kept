@@ -68,7 +68,10 @@ def grounded(claims: Iterable[dict], sources: dict[str, str]) -> Verdict:
         if len(_norm(quote)) < 12:
             v.add(f"claim {i + 1} has no usable quote from its source")
             continue
-        if _norm(quote) not in _norm(sources[sid]):
+        # a quote may skip words with "..." (two places on one page); then every piece must be on the page
+        page = _norm(sources[sid])
+        pieces = [p for p in (_norm(x) for x in re.split(r"\.\.\.|…", quote)) if len(p) >= 8]
+        if not pieces or any(p not in page for p in pieces):
             v.add(f"claim {i + 1}: the quoted words are not in source '{sid}'")
     return v
 

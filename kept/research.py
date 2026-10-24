@@ -69,15 +69,15 @@ def look_up(name: str, addr: str, body: str) -> dict:
         out["note"] = "The web lookup failed, so Kept isn't guessing."
         return _save(addr, out)
     # a page only counts if it names the business (or is their own site)
-    key = business.lower()[:14]
+    key = _norm(business)[:14]
     out["pages_seen"] = len(pages)
-    pages = [p for p in pages if (domain and domain in p["url"]) or (key and key in p["content"].lower())]
+    pages = [p for p in pages if (domain and domain in p["url"]) or (key and key in _norm(p["content"]))]
     out["pages_used"] = [p["url"] for p in pages][:6]
     if not pages:
         out["note"] = f"Nothing on the web clearly about {business or domain}. Could be brand new, or not what it says."
         return _save(addr, out)
     sources = {p["id"]: p["content"] for p in pages}
-    listing = "\n\n".join(f"[{p['id']}] {p['url']}\n{p['content'][:3000]}" for p in pages[:6])
+    listing = "\n\n".join(f"[{p['id']}] {p['url']}\n{excerpt(p['content'], key)}" for p in pages[:6])
     r = router.ask("plan", _msgs(
         f"{read_notes_owner()} runs {owner_business()} and just got an email from {name} "
         f"({business or domain}). From these pages, give up to 4 short facts that help {read_notes_owner()} reply "
@@ -107,6 +107,30 @@ def look_up(name: str, addr: str, body: str) -> dict:
     if not out["facts"]:
         out["note"] = "Found pages, but no fact survived the quote check."
     return _save(addr, out)
+
+
+def _norm(s: str) -> str:
+    """Lowercase with curly quotes made straight; same length, so positions still match the page."""
+    return s.lower().translate(str.maketrans("\u2019\u2018\u201c\u201d", "''\"\""))
+
+
+def excerpt(text: str, key: str, size: int = 3000) -> str:
+    """The part of a page that is about the business. A page usually opens with menus and
+    cookie banners; the business may be named thousands of characters further down."""
+    low = _norm(text)
+    hits = [m.start() for m in re.finditer(re.escape(key), low)] if key else []
+    if not hits:
+        return text[:size]
+    parts, used, end = [], 0, -1
+    for h in hits:
+        a, b = max(h - 600, end + 1), min(len(text), h + 1200)
+        if a >= b:
+            continue
+        piece = text[a:b][: size - used]
+        parts.append(piece); used += len(piece); end = b
+        if used >= size:
+            break
+    return "\n…\n".join(parts)
 
 
 def _save(addr: str, out: dict) -> dict:

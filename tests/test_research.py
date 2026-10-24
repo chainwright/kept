@@ -25,3 +25,12 @@ def test_only_quoted_facts_from_pages_naming_the_business_survive(fake, monkeypa
     out = research.look_up("Jo", "jo@gmail.com", "I run Happy Paws Grooming in Portland")
     assert [f["text"] for f in out["facts"]] == ["Opened in May, books by phone"]
     assert research.known("jo@gmail.com")["business"] == "Happy Paws Grooming"
+
+
+def test_the_part_of_the_page_about_the_business_reaches_the_model():
+    page = "Menu Home Shop Cookies " * 400 + "Pip’s Original Doughnuts & Chai opened in 2010 on NE Fremont."
+    key = research._norm("Pip's Original Doughnuts")[:14]
+    assert key in research._norm(page)
+    part = research.excerpt(page, key)
+    assert "opened in 2010" in part and len(part) <= 3100
+    assert research.excerpt("no mention here", key) == "no mention here"

@@ -154,3 +154,12 @@ def test_offered_time_named_in_any_language():
     assert _names_a_slot("Can I come on Monday at 5:30 pm?", slots)
     assert _names_a_slot("Могу приехать 26 октября в 17:30.", slots)
     assert not _names_a_slot("Any time next week works.", slots)
+
+
+def test_grounded_quote_with_a_gap_needs_every_piece_on_the_page():
+    page = {"web:a": "Pip's is a family-run shop, and it shows. Lots of chai. The staff behind the counter are all friendly."}
+    ok = {"source": "web:a", "quote": "Pip's is a family-run shop ... The staff behind the counter are all friendly"}
+    bad = {"source": "web:a", "quote": "Pip's is a family-run shop ... and they open at 5 am every day"}
+    assert grounded([ok], page)
+    assert not grounded([bad], page)
+    assert not grounded([{"source": "web:a", "quote": "... ... ..."}], page)
