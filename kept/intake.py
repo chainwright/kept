@@ -109,7 +109,10 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False) -> di
         out["slots"] = slots
     if job in NEEDS_VISIT:
         out["from_price"] = from_price(job)
-        their = {k: v for k, v in (d.get("sizes") or {}).items() if v}
+        # only numbers that are really in their email count as theirs; the rest came from the photo
+        body_nums = set(re.findall(r"\d+(?:\.\d+)?", m["body"]))
+        their = {k: v for k, v in (d.get("sizes") or {}).items()
+                 if v and (str(v) in body_nums or str(int(float(v))) in body_nums)}
         seen = {k: v for k, v in ((photo or {}).get("rough_sizes") or {}).items() if v}
         sizes = {**seen, **their}  # their own numbers win over the photo
         est = estimate.preliminary(job, sizes, d.get("material") or "")

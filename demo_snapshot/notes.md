@@ -10,7 +10,7 @@ evening, no site visits on Sundays.
 - Hourly rate: $85
 
 ## Services
-- Full kitchen remodel (take everything out, new cabinets, countertop, backsplash): from $18,000, 3 to 5 weeks on site
+- Full kitchen remodel (take everything out, new cabinets, countertop, backsplash): from $14,000, 3 to 5 weeks on site
 - New cabinet fronts on the existing boxes: from $4,500, about a week
 - New countertop: from $2,800
 - New backsplash: from $1,200
