@@ -105,7 +105,11 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
             out["estimate"] = last
             out["payment_plan"] = estimate.payment_plan(int(last["mid"]))
         return out
-    if job == "small_repair":
+    if job == "small_repair" and has_contract:
+        # Alex is already working at this kitchen under a signed agreement: the scope check decides what's
+        # covered and prices any extra; a repair here is never priced as a separate call-out
+        out["on_site"] = True
+    elif job == "small_repair":
         hours = d.get("repair_hours") or 1
         hours = min(6, max(_min_hours(), math.ceil(float(hours)))) if isinstance(hours, (int, float)) else _min_hours()
         out.update(hours=hours, price=hours * _rate(), hardware_note=note("Hardware for repairs", ""))
@@ -172,6 +176,9 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     slot_text = "; ".join(s["label"] for s in slots)
     if slots:
         must.append("SLOTS")  # any one of the offered times, in any language
+    if job == "small_repair" and plan.get("on_site"):
+        return ("Alex is already working at their kitchen under the agreement: say Alex will see to it while on "
+                "site, and don't put a price on anything the agreement covers.", allowed, must)
     if job == "small_repair":
         allowed.add(plan["price"])
         must.append(_num_forms(plan["price"]))

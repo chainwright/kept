@@ -149,7 +149,9 @@
       else if ((pl.slots || []).length) next = h("span", null, "Free measuring times from Alex's calendar: ", pl.slots.map((s) => s.label).join(" · "));
       const est = pl.estimate && !pl.payment_plan ? pl.estimate : null;
       rows.push(h("li", null, h("span", { class: "w-step" }, "The job and the next step (Super names it, code does the maths)"),
-        h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""), next ? h("div", null, next) : null,
+        // a booking or a payment plan is the step that matters; the job label would only be noise there
+        pl.booked_label || pl.payment_plan ? null : h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""),
+        next ? h("div", null, next) : null,
         est ? h("div", { class: "estimate" }, h("strong", null, `Preliminary ${usd(est.low)} – ${usd(est.high)}`),
           h("span", { class: "muted" }, ` · sizes from ${est.sizes_from}`),
           h("ul", { class: "plain" }, est.lines.map((l) => h("li", null, l.unit ? `${l.what}: ${l.qty} ${l.unit} × ${usd(l.price)} = ${usd(l.total)}` : `${l.what}: ${usd(l.total)}`)))) : null));

@@ -104,7 +104,10 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     scope_lines = []
     allowed = {rate} if rate else set()
     for r in (scope_res or {}).get("requests", []):
-        line = f"- '{r['request']}': {r['verdict'].replace('_', ' ')}"
+        meaning = {"in_scope": "covered by the agreement, no extra charge, never quote a price for it",
+                   "out_of_scope": "not in the agreement", "unclear": "the agreement doesn't settle it; Alex will check",
+                   "already_promised": "Alex already promised this"}.get(r["verdict"], r["verdict"])
+        line = f"- '{r['request']}': {meaning}"
         if r.get("price"):
             line += f", price ${int(r['price'])} (computed from the hourly rate)"
             allowed.add(int(r["price"]))
@@ -125,7 +128,8 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         "don't answer, say Alex will check and come back, or ask them a short question. Never invent a total "
         "price for a new project: use only the prices in Alex's services, and offer the free intro call or a "
         "written quote. If extra work "
-        "is outside the agreement, say so kindly and give the price listed below. Don't agree to a deadline "
+        "is outside the agreement, say so kindly, give the price listed below and ASK whether they want it; never say "
+        "Alex will do extra work before they've said yes to its price. Don't agree to a deadline "
         "for new work that hasn't been scoped or priced yet: offer the call, a visit or the "
         "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
         "Tuesday'). Never name visit times or dates for a visit except ones given below. Don't promise to send a "

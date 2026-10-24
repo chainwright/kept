@@ -64,3 +64,12 @@ def test_their_own_numbers_beat_the_photo(fake):
     fake([("say what job it is", {"job": "fronts", "what": "new fronts", "sizes": {"doors_and_drawers": 18}, "material": "solid wood"})])
     plan = intake.assess(_m("New solid wood doors please, we have 18 doors and drawers."), photo)
     assert plan["estimate"]["mid"] == 18 * 380 and plan["estimate"]["sizes_from"] == "your numbers"
+
+
+def test_a_repair_for_a_client_under_contract_is_not_priced_separately(fake):
+    seed(force=True)
+    fake([("say what job it is", {"job": "small_repair", "what": "pantry door", "repair_hours": 1})])
+    plan = intake.assess(_m("The pantry door doesn't close.", frm="Maria Lopez <maria@lopezhome.example>"), has_contract=True)
+    assert plan.get("on_site") and "price" not in plan
+    rules, allowed, must = intake.reply_rules(plan)
+    assert not allowed and "don't put a price" in rules

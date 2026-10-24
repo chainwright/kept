@@ -84,7 +84,10 @@ def run_once() -> dict:
     reqs = {E.norm(x["request"]): x["verdict"] for x in (r.get("scope") or {}).get("requests", [])}
     c["backsplash_not_free"] = any("backsplash" in k and v in ("out_of_scope", "unclear") for k, v in reqs.items())
     c["pantry_door_not_sold"] = not any("pantry" in k and v == "out_of_scope" for k, v in reqs.items())
-    c["maria_got_a_reply"] = bool(body_of(r))
+    b = body_of(r)
+    c["maria_got_a_reply"] = bool(b)
+    # covered work is free, and extra work is offered, not announced
+    c["maria_asked_not_told"] = bool(b) and "?" in b and not re.search(r"pantry[^.]*\$\d", b, re.I)
 
     r = tryit.handle("priya", "Re: invoice #118", "Hi Alex, so sorry again. Our office manager is back, we will pay "
                      "invoice #118 next Wednesday.\n\nPriya")
