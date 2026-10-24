@@ -102,8 +102,8 @@ def realistic_due(text: str, promised: str | date, who: str = "") -> dict | None
     return {
         "kind": k, "promised": promised_d.isoformat(), "suggested": suggested.isoformat(),
         "kept": rec.kept, "total": rec.total, "median_slip": rec.median_slip,
-        "why": (f"Of your last {rec.total} {basis}, {rec.kept} were on time; the typical one "
-                f"landed {shift} day{'s' if shift != 1 else ''} late."),
+        "why": (f"Of your last {rec.total} {basis}, {rec.kept} {'was' if rec.kept == 1 else 'were'} on time; "
+                f"the typical one landed {shift} day{'s' if shift != 1 else ''} late."),
     }
 
 

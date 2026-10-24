@@ -22,7 +22,7 @@ def test_quotes_that_usually_slip_get_a_later_date():
     adv = calibration.realistic_due("Send Dev the rates and a quote", "2026-11-06")  # a Friday
     assert adv["kind"] == "quote" and adv["kept"] == 1 and adv["total"] == 5
     assert adv["suggested"] == "2026-11-09"   # +2 days lands on Sunday -> next Monday
-    assert "1 were on time" in adv["why"] or "1 was" in adv["why"] or "of your last 5" in adv["why"].lower()
+    assert adv["why"] == "Of your last 5 'quote' promises, 1 was on time; the typical one landed 2 days late."
 
 
 def test_on_time_history_means_no_nagging():
