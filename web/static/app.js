@@ -1656,6 +1656,11 @@
         fill(status, verdict === "yes" ? stamp("APPROVED", "approved", { fresh: true, small: true }) : stamp("DECLINED", "declined", { small: true }),
           verdict === "yes" ? "  Sent. Now write back as the client to continue the conversation." : "  Declined. Nothing was sent.");
         if (r && r.status === "failed") toast(`Couldn't send: ${r.result}`, "err");
+        try {  // the conversation below now shows it as sent
+          const t = await api("GET", `/api/thread?email=${encodeURIComponent((a.args && a.args.to) || "")}`);
+          const old = $("#w-out details.sub");
+          if (old) old.replaceWith(threadView(t));
+        } catch (e) { /* the thread refreshes on the next email anyway */ }
         loadPeople();
         refresh();
       } catch (e) { toast(`Couldn't record that: ${e.message}`, "err"); yes.disabled = no.disabled = false; }
