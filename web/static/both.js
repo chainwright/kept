@@ -187,6 +187,7 @@
         fill(status, verdict === "yes" ? stamp("APPROVED", "approved") : stamp("DECLINED", "declined"),
           verdict === "yes" ? "  Sent. Look left: the client has Alex's reply. Write back to keep going." : "  Not sent.");
         loadClientThread(); loadCalendar();
+        if (verdict === "yes" && window.innerWidth < 960) setTimeout(() => $("#client-thread").scrollIntoView({ behavior: "smooth", block: "center" }), 600);
       } catch (e) { toast(e.message, "err"); yes.disabled = no.disabled = false; }
     };
     const no = h("button", { class: "btn btn-quiet btn-small", type: "button", onclick: () => go("no") }, "No");
@@ -214,6 +215,7 @@
     const t0 = Date.now();
     const secs = h("span", { class: "muted" }, " 0s");
     const timer = setInterval(() => { secs.textContent = ` ${Math.round((Date.now() - t0) / 1000)}s`; }, 1000);
+    if (window.innerWidth < 960) setTimeout(() => $("#alex-out").scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     fill($("#alex-out"), h("div", { class: "b-card" }, h("p", { class: "b-arrive" }, "New email arriving…"),
       h("p", { class: "loading" }, h("span", { class: "spinner", "aria-hidden": "true" }),
         PHOTO ? "Kept is reading the email and looking at the photo, working out the job and drafting Alex's reply…" : "Kept is reading the email and drafting Alex's reply…", secs)));
@@ -222,6 +224,8 @@
     try {
       const r = await api("POST", "/api/demo/mail", { who: who.who, name: who.name, email: who.email, subject: $("#subject").value.trim(), body, image: PHOTO });
       fill($("#alex-out"), alexView(r));
+      // on a phone the two sides are stacked: take the visitor to Alex's side
+      if (window.innerWidth < 960) $("#alex-out").scrollIntoView({ behavior: "smooth", block: "start" });
       $("#body").value = ""; setPhoto("");
       const addr = (String(r.mail.from).match(/<([^>]+)>/) || [])[1];
       await loadPeople(who.who === "new" ? `new:${addr}` : who.who);
