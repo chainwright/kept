@@ -76,9 +76,13 @@ def parse_json(text: str) -> Any:
 
 class NebiusBackend:
     def __init__(self) -> None:
+        import httpx
         from openai import OpenAI
 
-        self.client = OpenAI(base_url=settings.nebius_base_url, api_key=settings.nebius_api_key)
+        # eval run 1: two jobs died on "Request timed out" — the SDK's 5 s connect timeout is too
+        # tight for a home Wi-Fi line; reasoning calls can also take minutes, so allow both
+        self.client = OpenAI(base_url=settings.nebius_base_url, api_key=settings.nebius_api_key,
+                             timeout=httpx.Timeout(240, connect=30), max_retries=3)
         self._models: list[str] | None = None
 
     def models(self) -> list[str]:
