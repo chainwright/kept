@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kept</title>
+  <meta name="description" content="Kept: an always-on operator for a one-person business. Every promise kept visible, every model answer checked, nothing sent without your Yes.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="wordmark" aria-label="Kept">Kept<span class="wordmark-dot" aria-hidden="true">.</span></span>
+        <span class="owner" id="owner-line">for your business</span>
+        <span class="badge badge-demo" id="demo-badge" hidden title="Demo mode: outgoing mail is saved to an outbox, never sent">Demo</span>
+      </div>
+
+      <div class="spend" id="spend" title="Model spend today against the daily budget">
+        <div class="spend-label"><span>Spent today</span> <strong id="spend-num">$0.00</strong> <span class="muted" id="spend-of">of $1.00</span></div>
+        <div class="bar" role="progressbar" id="spend-bar" aria-label="Model spend today" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="spend-fill"></span></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="run-day" type="button" data-job="day">
+          <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M19 12h2M17 7l1.4-1.4M7 17a5 5 0 1 1 10 0" /><path d="M3 20h18"/></svg>
+          <span>Run morning loop</span>
+        </button>
+        <div class="menu">
+          <button class="btn btn-quiet" id="jobs-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="jobs-menu">
+            <span>One step</span>
+            <svg class="ico ico-sm" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="menu-pop" id="jobs-menu" role="menu" hidden>
+            <button role="menuitem" type="button" data-job="triage"><strong>Sort the inbox</strong><span>Nano labels mail and pulls out promises</span></button>
+            <button role="menuitem" type="button" data-job="follow_ups"><strong>Draft follow-ups</strong><span>Super writes replies for due promises</span></button>
+            <button role="menuitem" type="button" data-job="watch"><strong>Check the news</strong><span>Web search, only quoted facts survive</span></button>
+            <button role="menuitem" type="button" data-job="overload"><strong>Weigh the week</strong><span>Ultra picks one deadline to move</span></button>
+            <button role="menuitem" type="button" data-job="brief"><strong>Write the brief</strong><span>Super writes today, rules add what's overdue</span></button>
+            <hr id="reset-sep" hidden>
+            <button role="menuitem" type="button" id="demo-reset" hidden><strong>Reset demo data</strong><span>Back to the seeded week</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="runbar" id="runbar" hidden>
+      <div class="runbar-inner">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="runbar-text">Working…</span>
+        <span class="muted" id="runbar-time"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="toasts" id="toasts" aria-live="assertive" aria-atomic="false"></div>
+  <div class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></div>
+
+  <main id="main" tabindex="-1">
+    <!-- the four ideas, with live numbers -->
+    <section class="principles" aria-label="How Kept works">
+      <a class="principle" href="#promises">
+        <span class="p-num" id="p-open">0</span>
+        <span class="p-text"><strong>promises kept in view</strong><span id="p-open-sub">until you close them with a note</span></span>
+      </a>
+      <a class="principle p-ask" href="#approvals">
+        <span class="p-num" id="p-pending">0</span>
+        <span class="p-text"><strong>waiting for your Yes</strong><span>nothing reaches a person without it</span></span>
+      </a>
+      <a class="principle p-held" href="#held">
+        <span class="p-num" id="p-held">0</span>
+        <span class="p-text"><strong>held back</strong><span>a code check failed, so Kept didn't guess</span></span>
+      </a>
+      <a class="principle p-models" href="#models">
+        <span class="p-num" id="p-calls">0</span>
+        <span class="p-text"><strong>model calls today</strong><span>Nemotron Nano, Super, Ultra on Nebius</span></span>
+      </a>
+    </section>
+
+    <div class="layout">
+      <div class="col col-main">
+        <section class="card card-approvals" id="approvals" aria-labelledby="h-approvals">
+          <div class="card-head">
+            <h2 id="h-approvals">Waiting for your Yes</h2>
+            <span class="count" id="approvals-count"></span>
+          </div>
+          <p class="lede">Anything that reaches another person waits here. Kept drafted it and checked it; you decide.</p>
+          <div id="approvals-list"></div>
+          <details class="sub" id="decided-wrap" hidden>
+            <summary>Recently decided <span class="muted" id="decided-count"></span></summary>
+            <ul class="plain" id="decided-list"></ul>
+          </details>
+        </section>
+
+        <section class="card" id="today" aria-labelledby="h-today">
+          <div class="card-head">
+            <h2 id="h-today">Today</h2>
+            <span class="meta" id="brief-meta"></span>
+          </div>
+          <div id="brief"></div>
+        </section>
+
+        <section class="card" id="promises" aria-labelledby="h-promises">
+          <div class="card-head">
+            <h2 id="h-promises">Promises</h2>
+            <span class="count" id="promises-count"></span>
+          </div>
+          <p class="lede">Every promise stays here until you say what happened: done, dropped, or handed off. Overdue first.</p>
+          <ul class="ledger" id="ledger-list"></ul>
+
+          <form class="addform" id="add-form" autocomplete="off">
+            <h3 class="h3">Add a promise</h3>
+            <div class="fields">
+              <label class="field field-wide"><span>What did you promise?</span>
+                <input name="text" required maxlength="300" placeholder="Send Maria the revised quote">
+              </label>
+              <label class="field"><span>To whom</span>
+                <input name="who" maxlength="120" placeholder="Maria Lopez">
+              </label>
+              <label class="field"><span>Due <span class="muted">(optional)</span></span>
+                <input name="due" type="date">
+              </label>
+              <button class="btn btn-secondary" type="submit">Add promise</button>
+            </div>
+          </form>
+
+          <details class="sub" id="closed-wrap" hidden>
+            <summary>Closed recently <span class="muted" id="closed-count"></span></summary>
+            <ul class="plain" id="closed-list"></ul>
+          </details>
+        </section>
+
+        <section class="card" id="inbox" aria-labelledby="h-inbox">
+          <div class="card-head">
+            <h2 id="h-inbox">Inbox</h2>
+            <span class="count" id="inbox-count"></span>
+          </div>
+          <ul class="mail" id="inbox-list"></ul>
+        </section>
+      </div>
+
+      <div class="col col-side">
+        <section class="card card-held" id="held" aria-labelledby="h-held">
+          <div class="card-head">
+            <h2 id="h-held">
+              <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+              Held back
+            </h2>
+            <span class="count" id="held-count"></span>
+          </div>
+          <p class="lede">Every model answer is checked by code. When a check fails, Kept holds back and tells you why, instead of guessing.</p>
+          <ul class="held" id="held-list"></ul>
+        </section>
+
+        <section class="card" id="ask" aria-labelledby="h-ask">
+          <div class="card-head"><h2 id="h-ask">Ask Kept</h2></div>
+          <p class="lede">About your own week. Answers come only from Kept's records, and each quote is checked.</p>
+          <form id="ask-form" class="askform" autocomplete="off">
+            <label class="sr-only" for="ask-q">Your question</label>
+            <input id="ask-q" name="question" required maxlength="500" placeholder="What did I promise Maria?">
+            <button class="btn btn-secondary" type="submit" id="ask-btn">Ask</button>
+          </form>
+          <div id="ask-out" aria-live="polite"></div>
+        </section>
+
+        <section class="card" id="news" aria-labelledby="h-news">
+          <div class="card-head">
+            <h2 id="h-news">In the news</h2>
+            <span class="meta" id="news-meta"></span>
+          </div>
+          <div id="news-list"></div>
+        </section>
+
+        <section class="card" id="models" aria-labelledby="h-models">
+          <div class="card-head">
+            <h2 id="h-models">Models</h2>
+            <span class="meta">NVIDIA Nemotron via Nebius Token Factory</span>
+          </div>
+          <div class="tiers" id="tiers"></div>
+          <div class="budget" id="budget"></div>
+          <h3 class="h3">Recent calls</h3>
+          <div class="table-wrap" id="calls-wrap" tabindex="0" role="region" aria-label="Recent model calls">
+            <table class="calls">
+              <thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">What for</th><th scope="col" class="num">Tokens</th><th scope="col" class="num">ms</th><th scope="col" class="num">Cost</th></tr></thead>
+              <tbody id="calls-body"></tbody>
+            </table>
+          </div>
+          <p class="empty" id="calls-empty" hidden></p>
+        </section>
+
+        <section class="card" id="activity" aria-labelledby="h-activity">
+          <details>
+            <summary><h2 id="h-activity" class="inline-h">Activity log</h2> <span class="muted" id="activity-count"></span></summary>
+            <ul class="activity" id="activity-list"></ul>
+          </details>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p>Kept proposes, code verifies, you decide. Everything it knows lives in plain files you can open.</p>
+  </footer>
+
+  <dialog id="close-dialog" aria-labelledby="close-title">
+    <form method="dialog" id="close-form">
+      <h2 id="close-title">Close this promise</h2>
+      <p class="dialog-promise" id="close-text"></p>
+      <fieldset class="resolutions">
+        <legend>What happened?</legend>
+        <label><input type="radio" name="resolution" value="done" checked> <span><strong>Done</strong> it's delivered</span></label>
+        <label><input type="radio" name="resolution" value="dropped"> <span><strong>Dropped</strong> not doing it, on purpose</span></label>
+        <label><input type="radio" name="resolution" value="handed_off"> <span><strong>Handed off</strong> someone else has it</span></label>
+      </fieldset>
+      <label class="field"><span>Note for future you <span class="muted">(required, what actually happened)</span></span>
+        <textarea name="note" id="close-note" rows="3" minlength="5" required placeholder="Sent the quote PDF, Maria confirmed"></textarea>
+      </label>
+      <p class="form-error" id="close-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-quiet" type="button" id="close-cancel">Cancel</button>
+        <button class="btn btn-primary" type="submit" id="close-submit">Close promise</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
