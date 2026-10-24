@@ -1,0 +1,38 @@
+{
+ "headline": "Morning brief for 2026-10-24",
+ "lines": [
+  {
+   "ref": "1fa34c15",
+   "text": "Send Maria the revised quote with the online ordering page (overdue, Maria Lopez waiting)"
+  },
+  {
+   "ref": null,
+   "text": "Cash will be short by $116 on 2026-11-01"
+  },
+  {
+   "ref": "c0a7b143",
+   "text": "Priya Shah owes invoice #118 (overdue 2 days)"
+  },
+  {
+   "ref": null,
+   "text": "7 messages wait for your Yes"
+  }
+ ],
+ "plan": [
+  {
+   "ref": "1fa34c15",
+   "text": "Send Maria the revised quote with the online ordering page"
+  },
+  {
+   "ref": "dd04b6e7",
+   "text": "Send Sam Okafor the Q3 receipts"
+  },
+  {
+   "ref": "d94f0858",
+   "text": "Fix the contact form bug"
+  }
+ ],
+ "date": "2026-10-24",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "ts": "2026-10-24T13:07:02+00:00"
+}

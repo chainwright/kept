@@ -1,0 +1,94 @@
+{
+ "balance": 1240.0,
+ "as_of": "2026-10-24",
+ "invoices": [
+  {
+   "number": "104",
+   "client": "Lucia Ferri",
+   "contact": "lucia@ferriboutique.example",
+   "amount": 1400,
+   "issued": "2026-06-16",
+   "due": "2026-06-30",
+   "paid_on": "2026-06-28"
+  },
+  {
+   "number": "109",
+   "client": "Priya Shah",
+   "contact": "priya@shahdental.example",
+   "amount": 600,
+   "issued": "2026-08-01",
+   "due": "2026-08-15",
+   "paid_on": "2026-08-27"
+  },
+  {
+   "number": "113",
+   "client": "Priya Shah",
+   "contact": "priya@shahdental.example",
+   "amount": 700,
+   "issued": "2026-09-01",
+   "due": "2026-09-15",
+   "paid_on": "2026-09-28"
+  },
+  {
+   "number": "115",
+   "client": "Jordan Kim",
+   "contact": "jordan@kimyoga.example",
+   "amount": 1800,
+   "issued": "2026-08-25",
+   "due": "2026-09-08",
+   "paid_on": "2026-09-08"
+  },
+  {
+   "number": "119",
+   "client": "Noah Brooks",
+   "contact": "noah@brookscoffee.example",
+   "amount": 1600,
+   "issued": "2026-10-09",
+   "due": "2026-10-23",
+   "paid_on": "2026-10-22"
+  },
+  {
+   "number": "118",
+   "client": "Priya Shah",
+   "contact": "priya@shahdental.example",
+   "amount": 850,
+   "issued": "2026-10-08",
+   "due": "2026-10-22",
+   "paid_on": null
+  },
+  {
+   "number": "121",
+   "client": "Maria Lopez",
+   "contact": "maria@sunrisebakery.example",
+   "amount": 1200,
+   "issued": "2026-10-20",
+   "due": "2026-11-10",
+   "paid_on": null
+  }
+ ],
+ "bills": [
+  {
+   "payee": "Hosting (HostingCo)",
+   "amount": 36,
+   "due": "2026-10-26",
+   "recurring": "monthly"
+  },
+  {
+   "payee": "Business insurance",
+   "amount": 420,
+   "due": "2026-10-30"
+  },
+  {
+   "payee": "Studio rent",
+   "amount": 900,
+   "due": "2026-11-01",
+   "recurring": "monthly"
+  },
+  {
+   "payee": "Design software",
+   "amount": 54,
+   "due": "2026-11-05",
+   "recurring": "monthly"
+  }
+ ]
+}

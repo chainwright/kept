@@ -1,0 +1,65 @@
+[
+ {
+  "id": "demo:1",
+  "from": "Maria Lopez <maria@sunrisebakery.example>",
+  "date": "2026-10-21",
+  "subject": "Re: website refresh",
+  "body": "Hi Alex,\n\nThanks for the call on Monday. You said you'd send the revised quote with the online ordering page by 2026-10-23, so I can show it to my partner over the weekend.\n\nAlso, could the menu page show prices in both sizes?\n\nMaria"
+ },
+ {
+  "id": "demo:2",
+  "from": "Dev Patel <dev@greenleaflandscaping.example>",
+  "date": "2026-10-23",
+  "subject": "Website for a landscaping company",
+  "body": "Hello, I found your portfolio through a friend. We need a 5-page site with a gallery and a quote request form. Could you send me your rates and a rough timeline by 2026-10-26? We'd like to launch before spring.\n\nThanks,\nDev"
+ },
+ {
+  "id": "demo:3",
+  "from": "Billing <billing@hostingco.example>",
+  "date": "2026-10-22",
+  "subject": "Invoice #4412 is due",
+  "body": "Your invoice #4412 for $36.00 (Business hosting, monthly) is due on 2026-10-26. To avoid interruption, please pay before the due date."
+ },
+ {
+  "id": "demo:4",
+  "from": "Design Weekly <news@designweekly.example>",
+  "date": "2026-10-23",
+  "subject": "10 fonts you'll love this autumn",
+  "body": "Our editors picked ten typefaces for your next project. Plus: a giveaway!"
+ },
+ {
+  "id": "demo:5",
+  "from": "Sam Okafor <sam@okaforcpa.example>",
+  "date": "2026-10-23",
+  "subject": "Q3 receipts",
+  "body": "Hi Alex, friendly reminder: please send me your Q3 receipts before 2026-10-25 so I can file on time. A zip or a shared folder is fine.\n\nSam"
+ },
+ {
+  "id": "demo:7",
+  "from": "Priya Shah <priya@shahdental.example>",
+  "date": "2026-10-18",
+  "subject": "Re: invoice #118",
+  "body": "Hi Alex, thanks for the reminder and sorry for the delay! Our office manager is back on Monday. We'll pay invoice #118 ($850) by 2026-10-22 at the latest.\n\nPriya"
+ },
+ {
+  "id": "demo:8",
+  "from": "Maria Lopez <maria@sunrisebakery.example>",
+  "date": "2026-10-24",
+  "subject": "Two small things",
+  "body": "Hi Alex! While you're on it, could you add a small blog page where we can post our seasonal specials? And could the logo be a bit bigger on the home page? It looks tiny on my phone.\n\nThank you!! Maria"
+ },
+ {
+  "id": "demo:9",
+  "from": "Noah Brooks <noah@brookscoffee.example>",
+  "date": "2026-10-23",
+  "subject": "We're live!",
+  "body": "Alex! The new site went live this morning and we already got two catering inquiries through the form. Customers keep telling us how easy the menu is to read on their phones. You were great to work with, thank you!\n\nNoah"
+ },
+ {
+  "id": "demo:6",
+  "from": "Jordan Kim <jordan@kimyoga.example>",
+  "date": "2026-10-24",
+  "subject": "Launch call + contact form",
+  "body": "Hey Alex! Can we push our launch call to 2026-10-26? Something came up on my side. Also, last week you mentioned you'd fix the contact form bug this week. Is that still the plan? People told me the form says 'sent' but I never get the message.\n\nJordan"
+ }
+]

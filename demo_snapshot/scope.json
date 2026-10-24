@@ -1,0 +1,82 @@
+[
+ {
+  "ts": "2026-10-24T13:02:22+00:00",
+  "mail": "demo:1",
+  "client": "Maria Lopez",
+  "subject": "Re: website refresh",
+  "requests": [
+   {
+    "request": "online ordering page",
+    "email_quote": "You said you'd send the revised quote with the online ordering page by 2026-10-23",
+    "verdict": "out_of_scope",
+    "agreement_quote": "Not included (quoted separately if wanted): online ordering",
+    "reason": "The agreement explicitly lists online ordering as not included.",
+    "hours_low": 10,
+    "hours_high": 25,
+    "price": 1490
+   },
+   {
+    "request": "menu page show prices in both sizes",
+    "email_quote": "Also, could the menu page show prices in both sizes?",
+    "verdict": "unclear",
+    "agreement_quote": "Menu page with item names, descriptions and prices. Two rounds of revisions on the design (layout, colours, sizes of existing elements).",
+    "reason": "The agreement covers menu page with prices but does not specify product size variations; revisions are limited to design elements.",
+    "hours_low": 0,
+    "hours_high": 0,
+    "price": null
+   }
+  ],
+  "approval": "5292a478",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ {
+  "ts": "2026-10-24T13:03:07+00:00",
+  "mail": "demo:8",
+  "client": "Maria Lopez",
+  "subject": "Two small things",
+  "requests": [
+   {
+    "request": "Add a blog page for seasonal specials",
+    "email_quote": "could you add a small blog page where we can post our seasonal specials?",
+    "verdict": "out_of_scope",
+    "agreement_quote": "Not included (quoted separately if wanted): online ordering, a blog, new photography, logo redesign.",
+    "reason": "The agreement explicitly lists a blog as not included.",
+    "hours_low": 4,
+    "hours_high": 8,
+    "price": 510
+   },
+   {
+    "request": "Increase logo size on home page",
+    "email_quote": "could the logo be a bit bigger on the home page?",
+    "verdict": "in_scope",
+    "agreement_quote": "Two rounds of revisions on the design (layout, colours, sizes of existing elements).",
+    "reason": "The agreement includes revisions on sizes of existing elements, and the logo is an existing element.",
+    "hours_low": 0,
+    "hours_high": 0,
+    "price": null
+   }
+  ],
+  "approval": null,
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ {
+  "ts": "2026-10-24T13:03:22+00:00",
+  "mail": "demo:6",
+  "client": "Jordan Kim",
+  "subject": "Launch call + contact form",
+  "requests": [
+   {
+    "request": "Fix contact form bug where form says 'sent' but email not received",
+    "email_quote": "last week you mentioned you'd fix the contact form bug this week. Is that still the plan? People told me the form says 'sent' but I never get the message.",
+    "verdict": "in_scope",
+    "agreement_quote": "Fixing any bugs in the delivered pages for 60 days after launch.",
+    "reason": "The contact form is a delivered page and bug fixes are included for 60 days post-launch.",
+    "hours_low": 0,
+    "hours_high": 0,
+    "price": null
+   }
+  ],
+  "approval": null,
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ }
+]

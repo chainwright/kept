@@ -1,0 +1,45 @@
+[
+ {
+  "ts": "2026-10-24T13:06:53+00:00",
+  "job": "overload",
+  "subject": "pick one to move",
+  "problems": [
+   "model reply unusable: no JSON object in model reply"
+  ],
+  "payload": null
+ },
+ {
+  "ts": "2026-10-24T13:07:56+00:00",
+  "job": "learn",
+  "subject": "When a quote is due Friday, promise delivery by Monday at the earliest.",
+  "problems": [
+   "the rule tells you to promise an earlier day, but these promises land late"
+  ],
+  "payload": {
+   "rule": "When a quote is due Friday, promise delivery by Monday at the earliest.",
+   "skill": "follow_up",
+   "explain": "Quotes due Friday slip median 2.5 days; a Monday promise matches actual landing.",
+   "pattern": {
+    "kind": "quote",
+    "due_weekday": "Friday"
+   }
+  }
+ },
+ {
+  "ts": "2026-10-24T13:07:56+00:00",
+  "job": "learn",
+  "subject": "When a reply is due Tuesday, promise delivery by Wednesday at the earliest.",
+  "problems": [
+   "only 1 promises behind this rule; need 4"
+  ],
+  "payload": {
+   "rule": "When a reply is due Tuesday, promise delivery by Wednesday at the earliest.",
+   "skill": "follow_up",
+   "explain": "Replies due Tuesday slip median 1 day; a Wednesday promise matches actual landing.",
+   "pattern": {
+    "kind": "reply",
+    "due_weekday": "Tuesday"
+   }
+  }
+ }
+]

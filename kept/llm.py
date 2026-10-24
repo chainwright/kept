@@ -94,6 +94,10 @@ class NebiusBackend:
         return self._models
 
     def complete(self, model, messages, max_tokens, temperature, json_mode, thinking=True):
+        import time as _time
+
+        from openai import APIStatusError, APITimeoutError, InternalServerError
+
         kw: dict[str, Any] = {}
         if json_mode:
             kw["response_format"] = {"type": "json_object"}
@@ -101,9 +105,24 @@ class NebiusBackend:
             # Nemotron 3 reasons by default. For sorting and extraction that hidden reasoning
             # ate the whole token budget and left an empty answer, so Nano runs with it off.
             kw["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
-        r = self.client.chat.completions.create(
-            model=model, messages=messages, max_tokens=max_tokens,
-            temperature=temperature, **kw)
+        # Token Factory had an intermittent 503 window on Oct 24 that outlasted the SDK's own
+        # fast retries. We wait longer here so one flaky minute doesn't fail a whole morning.
+        last: Exception | None = None
+        for attempt in range(6):
+            try:
+                r = self.client.chat.completions.create(
+                    model=model, messages=messages, max_tokens=max_tokens,
+                    temperature=temperature, **kw)
+                break
+            except (InternalServerError, APITimeoutError) as e:
+                last = e
+            except APIStatusError as e:
+                if e.status_code not in (500, 502, 503, 504, 429):
+                    raise
+                last = e
+            _time.sleep(min(30, 5 * (attempt + 1)))
+        else:
+            raise last  # type: ignore[misc]
         u, ch = r.usage, r.choices[0]
         return (ch.message.content or "",
                 getattr(u, "prompt_tokens", 0) or 0,

@@ -1,0 +1,59 @@
+{
+ "ts": "2026-10-24T13:05:22+00:00",
+ "skipped": [
+  {
+   "client": "Priya Shah",
+   "contact": "priya@shahdental.example",
+   "kind": "past client",
+   "industry": "dental",
+   "last_order_days": 16,
+   "habit": {
+    "paid": 2,
+    "typical_days_late": 12
+   },
+   "why_not": "owes an overdue invoice"
+  },
+  {
+   "client": "Jordan Kim",
+   "contact": "jordan@kimyoga.example",
+   "kind": "past client",
+   "industry": "fitness",
+   "last_order_days": 60,
+   "habit": {
+    "paid": 1,
+    "typical_days_late": 0
+   },
+   "why_not": "you still owe them work"
+  },
+  {
+   "client": "Noah Brooks",
+   "contact": "noah@brookscoffee.example",
+   "kind": "past client",
+   "industry": "bakery",
+   "last_order_days": 15,
+   "habit": {
+    "paid": 1,
+    "typical_days_late": 0
+   },
+   "why_not": "wrote to you this week; answer them before pitching anything"
+  },
+  {
+   "client": "Maria Lopez",
+   "contact": "maria@sunrisebakery.example",
+   "kind": "past client",
+   "industry": "bakery",
+   "last_order_days": 4,
+   "habit": {
+    "paid": 0,
+    "typical_days_late": 0
+   },
+   "why_not": "you still owe them work"
+  }
+ ],
+ "offers": [
+  "991e86bf"
+ ],
+ "considered": [
+  "Lucia Ferri"
+ ]
+}

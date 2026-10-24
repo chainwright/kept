@@ -1,0 +1,41 @@
+{
+ "ts": "2026-10-24T13:06:31+00:00",
+ "topics": [
+  "Stripe fees for small businesses",
+  "Google search changes for local businesses",
+  "Squarespace and Wix pricing changes"
+ ],
+ "claims": [
+  {
+   "topic": "Stripe fees for small businesses",
+   "text": "Businesses can move between dollars and OUSD without paying mint/burn fees.",
+   "url": "https://smallbiztrends.com/stripe-empowers-businesses-with-no-cost-open-usd-stablecoin-integration",
+   "quote": "businesses can freely transition between dollars and OUSD without incurring costly “mint” and “burn” fees typically associated with converting between fiat currencies and stablecoins"
+  },
+  {
+   "topic": "Stripe fees for small businesses",
+   "text": "Open Standard charges a small, predictable transaction fee for OUSD use.",
+   "url": "https://smallbiztrends.com/stripe-empowers-businesses-with-no-cost-open-usd-stablecoin-integration",
+   "quote": "Open Standard imposes a small, predictable transaction fee"
+  },
+  {
+   "topic": "Google search changes for local businesses",
+   "text": "Google's AI can now call local businesses to check prices and availability on behalf of customers.",
+   "url": "https://www.linkedin.com/pulse/google-business-profile-2026-8-biggest-changes-what-do-michael-doyle-4vrkc",
+   "quote": "Google's AI can now call your business."
+  },
+  {
+   "topic": "Google search changes for local businesses",
+   "text": "When updating a Google Business Profile address, Google reviews the change before it goes live, usually within about 10 minutes, though some edits take up to 30 days, and a moved business must re‑verify.",
+   "url": "https://www.vendasta.com/blog/update-google-address",
+   "quote": "Google reviews the change before it goes live, usually within about 10 minutes, though some edits take up to 30 days, and a business that moves after verification has to verify the profile again."
+  },
+  {
+   "topic": "Squarespace and Wix pricing changes",
+   "text": "Check the plan pages for current prices, because they change often.",
+   "url": "https://lairdpage.com/blog/wix-vs-squarespace",
+   "quote": "Check the plan pages for current prices, because they change often."
+  }
+ ],
+ "dropped": 0
+}

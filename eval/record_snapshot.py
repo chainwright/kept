@@ -27,7 +27,10 @@ from kept import agent, learn, snapshot  # noqa: E402
 
 seed(force=True)
 out = agent.run_day()
-rules = learn.propose_rules()
+try:
+    rules = learn.propose_rules()
+except Exception as e:  # the day is already paid for; keep it and say what failed
+    rules = f"failed: {type(e).__name__}: {str(e)[:120]}"
 g = E.grade(None)
 ok = sum(g["checks"].values())
 print(json.dumps({"passed": f"{ok}/{len(g['checks'])}", "failed": [k for k, v in g["checks"].items() if not v],

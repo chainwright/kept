@@ -1,0 +1,47 @@
+{
+ "demo:1": {
+  "kind": "client",
+  "needs_reply": true,
+  "one_line": "Client asks about revised quote and menu page pricing details."
+ },
+ "demo:2": {
+  "kind": "lead",
+  "needs_reply": true,
+  "one_line": "Dev Patel requests website quote and timeline by 2026-10-26."
+ },
+ "demo:3": {
+  "kind": "bill",
+  "needs_reply": true,
+  "one_line": "Invoice #4412 due 2026-10-26 for $36.00"
+ },
+ "demo:4": {
+  "kind": "noise",
+  "needs_reply": false,
+  "one_line": "Newsletter promotion, no action needed."
+ },
+ "demo:5": {
+  "kind": "bill",
+  "needs_reply": true,
+  "one_line": "Send Q3 receipts by 2026-10-25 to file on time."
+ },
+ "demo:7": {
+  "kind": "bill",
+  "needs_reply": false,
+  "one_line": "Will pay invoice #118 ($850) by 2026-10-22"
+ },
+ "demo:8": {
+  "kind": "client",
+  "needs_reply": true,
+  "one_line": "Request to add blog page and enlarge logo on home page."
+ },
+ "demo:9": {
+  "kind": "client",
+  "needs_reply": true,
+  "one_line": "Congrats on launch! Two catering inquiries already."
+ },
+ "demo:6": {
+  "kind": "client",
+  "needs_reply": true,
+  "one_line": "Request to reschedule launch call and follow up on contact form fix."
+ }
+}

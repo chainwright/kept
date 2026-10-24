@@ -51,6 +51,13 @@ builder actually goes through. Times are from our notes on Oct 24, 2026.
   in the quickstart ("Nemotron 3 reasons by default; budget for it or switch it off") would have
   saved us an hour. The `/no_think` system prompt and `reasoning_effort: low` did not help.
 
+**An outage the status page didn't show.** On Oct 24 from about 12:45 UTC (end time: TODO), chat completions
+for all three Nemotron sizes returned `503 Service Temporarily Unavailable` (an nginx page) on and off,
+while `/v1/models` answered 200 and status.nebius.com showed Token Factory as operational. Our trial
+balance was fine. Kept handled it the way we'd hoped: each job failed on its own, nothing was invented,
+and the dashboard kept showing the last good morning. A status entry would have saved us from wondering
+whether our account was the problem.
+
 ## NVIDIA Nemotron
 
 **Nano (reasoning off)** was good enough wherever the job is narrow and code checks the answer:
