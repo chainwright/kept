@@ -77,13 +77,25 @@ def health():
 _BUILD = str(int(time.time()))
 
 
+def _page(name: str):
+    """Pages name their scripts and styles with this build's stamp, so a redeploy never meets a stale cache."""
+    from fastapi.responses import HTMLResponse
+    html = (WEB / name).read_text()
+    for asset in ("app.js", "app.css", "both.js", "both.css"):
+        html = html.replace(f'/static/{asset}"', f'/static/{asset}?v={_BUILD}"')
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
+
+
 @app.get("/")
 def index():
-    """The page names its script and styles with this build's stamp, so a redeploy never meets a stale cache."""
-    from fastapi.responses import HTMLResponse
-    html = (WEB / "index.html").read_text()
-    html = html.replace('/static/app.js"', f'/static/app.js?v={_BUILD}"').replace('/static/app.css"', f'/static/app.css?v={_BUILD}"')
-    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
+    """Both sides: the client writing on the left, Alex with Kept on the right."""
+    return _page("both.html")
+
+
+@app.get("/dashboard")
+def dashboard():
+    """Alex's full dashboard."""
+    return _page("index.html")
 
 
 @app.get("/api/state")

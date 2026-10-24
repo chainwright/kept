@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kept, both sides</title>
+  <meta name="description" content="Write to Alex, a one-person kitchen contractor, as a client, and watch Alex's assistant Kept handle it on NVIDIA Nemotron.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;600;700&family=Caveat:wght@500;600&display=swap">
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/both.css">
+</head>
+<body class="both">
+  <header class="b-top">
+    <div class="b-top-inner">
+      <span class="wordmark" aria-label="Kept">Kept<span class="seal" aria-hidden="true">K/T</span></span>
+      <p class="b-lede">An assistant for people who run a business alone. Here you see <strong>both sides</strong>:
+        on the left you're a client writing to Alex, a kitchen contractor; on the right is what Alex sees, with Kept
+        doing the work on NVIDIA Nemotron. Nothing is sent until Alex says Yes.</p>
+      <a class="btn btn-quiet b-dash" href="/dashboard">Alex's full dashboard →</a>
+    </div>
+  </header>
+
+  <main class="b-grid" id="main">
+    <!-- the client's side -->
+    <section class="b-side b-client" aria-labelledby="h-client">
+      <p class="b-eyebrow">1 · The client's side</p>
+      <h1 id="h-client" class="b-h">You write to Alex</h1>
+      <p class="b-sub">This is what a client sees: Alex's business, a place to write (with a photo), and the conversation.</p>
+
+      <div class="b-card b-biz">
+        <div class="b-biz-head">
+          <span class="monogram" aria-hidden="true">AR</span>
+          <div>
+            <strong>Alex Rivera Kitchens</strong>
+            <span class="muted">Portland, Oregon · one person, a van and a workshop</span>
+          </div>
+        </div>
+        <dl class="meet-services">
+          <dt>Full kitchen, out with the old</dt><dd>from $14,000</dd>
+          <dt>New cabinet fronts on the old boxes</dt><dd>from $4,500</dd>
+          <dt>New countertop · backsplash</dt><dd>from $2,800 · $1,200</dd>
+          <dt>Small repairs: handles, hinges, drawers</dt><dd>$85/hour, 2-hour min.</dd>
+          <dt>Measuring visit</dt><dd>free</dd>
+        </dl>
+      </div>
+
+      <div class="b-card">
+        <p class="b-label">Try an example, or write your own</p>
+        <div class="meet-ideas" id="ideas"></div>
+        <form id="f" class="preform" autocomplete="off">
+          <label class="field"><span>Write as</span><select id="who"></select></label>
+          <p class="foot muted" id="who-about"></p>
+          <div class="w-new" id="newbox">
+            <label class="field"><span>Your name</span><input id="name" maxlength="60" placeholder="Jo Rivera"></label>
+            <label class="field"><span>Your email <span class="muted">(nothing is sent)</span></span><input id="email" maxlength="120" placeholder="jo@example.com"></label>
+          </div>
+          <label class="field"><span>Subject</span><input id="subject" maxlength="120" placeholder="Our kitchen"></label>
+          <label class="field"><span>Message</span><textarea id="body" rows="5" maxlength="2000" placeholder="Hi Alex, …" required></textarea></label>
+          <div class="field w-photo"><span>Photo <span class="muted">(optional: your kitchen, a broken hinge…)</span></span>
+            <div class="w-photo-row">
+              <input id="file" type="file" accept="image/jpeg,image/png,image/webp">
+              <img id="thumb" alt="" hidden>
+              <button type="button" class="btn btn-quiet btn-small" id="clear" hidden>Remove</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit" id="send">Send to Alex</button>
+        </form>
+      </div>
+
+      <div class="b-card">
+        <p class="b-label">Your conversation with Alex</p>
+        <ul class="thread" id="client-thread"><li class="muted b-empty">Nothing yet. Send Alex a message.</li></ul>
+      </div>
+    </section>
+
+    <!-- Alex's side -->
+    <section class="b-side b-alex" aria-labelledby="h-alex">
+      <p class="b-eyebrow">2 · Alex's side, with Kept</p>
+      <h1 id="h-alex" class="b-h">Alex is on a job site. Kept handles the email.</h1>
+      <p class="b-sub">This is what Alex sees on the phone: what Kept understood and worked out, and the reply waiting for Alex's Yes.</p>
+      <div id="alex-out" aria-live="polite">
+        <div class="b-card b-wait">
+          <p>When your message arrives, this is what Alex sees: what Kept understood (the photo, the job, a price
+            worked out from Alex's own price list, free times from Alex's calendar) and the reply Kept drafted,
+            waiting for Alex's <strong>Yes</strong>.</p>
+          <p class="muted">Press Yes here, as Alex, and the reply appears on the client's side.</p>
+        </div>
+      </div>
+      <div class="b-card">
+        <p class="b-label">Alex's calendar</p>
+        <ul class="cal" id="cal"></ul>
+      </div>
+      <p class="b-more">Kept also runs Alex's whole morning: promises both ways, money and the cash gap on the 1st,
+        reminders, seasonal offers, check-ins, reviews. <a href="/dashboard">Open Alex's full dashboard →</a></p>
+    </section>
+  </main>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="/static/both.js" defer></script>
+</body>
+</html>

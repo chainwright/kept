@@ -1043,3 +1043,5 @@ section[id], #write { scroll-margin-top: 150px; }
 .write-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
 @media (max-width: 860px) { .write-grid { grid-template-columns: 1fr; } }
 .w-empty { border: var(--bw) dashed var(--line-strong); padding: 14px; margin: 0; }
+.dash-banner { margin: 18px 0 16px; padding: 12px 16px; border: var(--bw) dashed var(--line-strong); background: var(--surface); }
+.dash-banner p { margin: 0; }

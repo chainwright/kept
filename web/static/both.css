@@ -1,0 +1,26 @@
+/* "Both sides": the client's page on the left, Alex's phone with Kept on the right */
+body.both { min-height: 100vh; }
+.b-top { border-bottom: var(--bw) solid var(--line-strong); background: var(--surface); }
+.b-top-inner { max-width: 1280px; margin: 0 auto; padding: 14px 16px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+.b-lede { margin: 0; font-size: 15px; line-height: 1.45; max-width: 72ch; }
+@media (max-width: 860px) { .b-top-inner { grid-template-columns: 1fr; } }
+.b-grid { max-width: 1280px; margin: 0 auto; padding: 18px 16px 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 22px; align-items: start; }
+@media (max-width: 960px) { .b-grid { grid-template-columns: 1fr; } }
+.b-side { display: grid; gap: 14px; }
+.b-eyebrow { font: 600 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.b-h { font-size: 24px; line-height: 1.2; margin: 0; }
+.b-client .b-h::after { content: ""; display: block; width: 56px; height: 3px; background: var(--ink-2); margin-top: 8px; }
+.b-alex .b-h::after { content: ""; display: block; width: 56px; height: 3px; background: var(--risk, #D7262E); margin-top: 8px; }
+.b-card { background: var(--surface); border: var(--bw) solid var(--line-strong); border-radius: 2px; padding: 14px 16px; }
+.b-alex .b-card { border-left: 3px solid var(--risk, #D7262E); }
+.b-label { font: 600 11px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 8px; }
+.b-biz-head { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+.b-biz-head strong { display: block; font-size: 17px; }
+.b-biz .meet-services { margin-top: 10px; }
+.b-empty { list-style: none; border: 0 !important; background: none !important; padding: 0 !important; }
+.b-wait p { margin: 0 0 8px; }
+.b-more { margin: 0; font-size: 14px; color: var(--ink-2); }
+.b-arrive { font: 600 12px/1.3 var(--mono); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 6px; }
+.thread li.t-pending { margin-left: 18px; border-style: dashed; color: var(--ink-2); font-size: 14px; }
+.b-dash { white-space: nowrap; }
+.b-sub { margin: -4px 0 0; color: var(--ink-2); font-size: 15px; }
