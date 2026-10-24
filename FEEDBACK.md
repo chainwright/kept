@@ -81,6 +81,13 @@ each proposal ("How Nemotron Ultra weighed it"). It still needs a short leash:
 - in our first two evaluation runs (about 15 Ultra calls) one reply was invalid JSON and a
   decision was lost; Kept now retries once.
 
+**Super VL (`nvidia/Nemotron-3.5-Super-VL`)** reads a client's kitchen photo well: the cabinet style,
+the damage, what the picture can't show, and rough sizes that are good enough for a preliminary
+estimate. Two things we'd flag: with reasoning on, it spent a 1,500-token budget thinking and
+returned nothing (same lesson as Nano: `enable_thinking: false` gave a clean JSON answer in about
+8 seconds), and we couldn't find its price on the model catalog page, so our cost display assumes
+Super's price for it.
+
 **Cost and speed.** A full morning for a one-person business is about 40-43 calls (14 Nano,
 19-21 Super, 7-8 Ultra) and costs $0.05-0.07. It takes 3-6 minutes end to end, which is fine for a job that runs before
 the owner wakes up.
