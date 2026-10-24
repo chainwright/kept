@@ -6,12 +6,12 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, calibration, learn, ledger, memory_qa, money, precheck, scope
+from . import agent, approvals, calibration, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, router
 from .store import read_audit, read_json
@@ -20,7 +20,8 @@ from .tools import mail, notify  # noqa: F401  (registers actions)
 WEB = ROOT / "web"
 JOBS = {"triage": agent.triage_inbox, "follow_ups": agent.follow_ups, "watch": agent.watch_topics,
         "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day,
-        "learn": learn.propose_rules, "money": money.chase}
+        "learn": learn.propose_rules, "money": money.chase, "rescue": rescue.plan,
+        "offers": offers.propose, "growth": growth.moments}
 _busy = threading.Lock()
 
 
@@ -90,6 +91,10 @@ def state():
         "invoices": money.load()["invoices"],
         "habits": {c: money.payment_habit(c) for c in {i["client"] for i in money.load()["invoices"]}},
         "scope": read_json("scope.json", [])[-10:][::-1],
+        "rescue": read_json("rescue.json", None),
+        "offers_plan": read_json("offers_plan.json", None),
+        "growth": read_json("growth_last.json", None),
+        "media": read_json("media.json", {}),
     }
 
 
@@ -161,6 +166,25 @@ def before_you_send(d: Draft):
 @app.post("/api/ask")
 def ask(q: Question):
     return memory_qa.ask(q.question[:500])
+
+
+@app.get("/media/{client}/{name}")
+def media_file(client: str, name: str):
+    from .store import data_dir
+    p = (data_dir() / "media" / client / name).resolve()
+    if not str(p).startswith(str((data_dir() / "media").resolve())) or not p.exists():
+        raise HTTPException(404)
+    return FileResponse(p)
+
+
+@app.post("/api/media/{client}/{which}")
+async def upload_photo(client: str, which: str, file: UploadFile = File(...)):
+    if which not in ("before", "after"):
+        raise HTTPException(400, "before or after")
+    try:
+        return media.save_upload(client, which, file.filename or "photo.jpg", await file.read())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.post("/api/demo/reset")

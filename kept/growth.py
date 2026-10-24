@@ -20,7 +20,7 @@ import json
 import re
 from datetime import date, datetime, timedelta
 
-from . import approvals, calibration, ledger, money
+from . import approvals, calibration, ledger, media, money
 from .agent import _abstain, _msgs, read_notes_owner, sender
 from .llm import router
 from .store import data_dir, journal, now_iso, read_json, read_notes, write_json
@@ -151,13 +151,16 @@ def _ask(client: str, addr: str, m: dict, quote: str) -> dict | None:
 
 def _post(client: str, m: dict) -> dict | None:
     allowed = [n for n in nameable() if n.lower().split(" ")[0] in (m["from"] + m["body"]).lower()]
+    pics = media.pair(client)
     facts = {"client_words": m["body"], "may_name": allowed[0] if allowed else None,
+             "has_before_and_after_pictures": "before" in pics and "after" in pics,
              "work": [r["text"] for r in ledger.items() if r["status"] == "done" and
                       (r.get("contact") or "").lower() == sender(m)[1]][-3:]}
     r = router.ask("draft", _msgs(
         f"Write a short LinkedIn post (under 120 words) by {read_notes_owner()}, a solo web designer, about "
         "finished work. Use ONLY these facts. If may_name is null, don't name the client; describe them "
-        "('a local coffee shop'). No hashtags beyond two, no emojis beyond one, no invented numbers. "
+        "('a local coffee shop'). If there are before and after pictures, the post introduces them in one "
+        "line (they're attached). No hashtags beyond two, no emojis beyond one, no invented numbers. "
         'Reply JSON: {"text": "..."}\n\nFacts:\n' + json.dumps(facts, ensure_ascii=False)),
         purpose=f"proof-of-work post {client}", json_mode=True, max_tokens=500)
     try:
@@ -177,7 +180,8 @@ def _post(client: str, m: dict) -> dict | None:
     if not v:
         _abstain("growth", f"post {client}", v, {"text": text})
         return None
-    req = approvals.propose("publish_post", {"platform": "linkedin", "text": text},
+    images = [pics[w]["path"] for w in ("before", "after") if w in pics]
+    req = approvals.propose("publish_post", {"platform": "linkedin", "text": text, "images": images},
                             summary=f"Post about the {client.split(' ')[-1]} project on LinkedIn",
                             why="Finished work your client is happy with is the best advertising you have.",
                             checks=["every number comes from your records or their email",

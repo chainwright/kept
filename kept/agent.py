@@ -390,8 +390,9 @@ def morning_brief() -> dict:
 def run_day() -> dict:
     """The whole loop, as the scheduler runs it each morning."""
     out: dict[str, Any] = {}
-    from . import money
+    from . import growth, money, offers, rescue
     for name, fn in [("triage", triage_inbox), ("follow_ups", follow_ups), ("money", money.chase),
+                     ("rescue", rescue.plan), ("growth", growth.moments), ("offers", offers.propose),
                      ("watch", watch_topics), ("overload", weigh_overload), ("brief", morning_brief)]:
         try:
             out[name] = fn()

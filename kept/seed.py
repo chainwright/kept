@@ -190,6 +190,9 @@ def seed(force: bool = False) -> None:
     (d / "inbox.json").write_text(json.dumps(inbox(), indent=1))
     (d / "notes.md").write_text(NOTES)
     write_json("money.json", money_book())
+    from .config import ROOT
+    from .media import copy_demo
+    copy_demo("Noah Brooks", ROOT / "demo_media" / "brooks-before.png", ROOT / "demo_media" / "brooks-after.png")
     (d / "contracts").mkdir(exist_ok=True)
     for addr, text in CONTRACTS.items():
         (d / "contracts" / f"{addr}.md").write_text(text)
