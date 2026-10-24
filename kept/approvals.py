@@ -53,7 +53,7 @@ def get(aid: str) -> dict:
 
 
 def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] | None = None,
-            ledger_id: str | None = None) -> dict:
+            ledger_id: str | None = None, reasoning: str = "", model_label: str = "") -> dict:
     """Queue an action. Returns the request; nothing has happened yet."""
     if kind not in _ACTIONS:
         raise GateError(f"unknown action '{kind}'")
@@ -63,7 +63,8 @@ def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] 
         if a["status"] == "pending" and a["kind"] == kind and a["args"] == args:
             return a
     req = {"id": uuid.uuid4().hex[:8], "kind": kind, "args": args, "summary": summary, "why": why,
-           "checks": checks or [], "ledger_id": ledger_id, "status": "pending", "created": now_iso()}
+           "checks": checks or [], "ledger_id": ledger_id, "reasoning": reasoning[:4000],
+           "model_label": model_label, "status": "pending", "created": now_iso()}
     rows.append(req)
     write_json(FILE, rows)
     append_audit("approval_requested", id=req["id"], action=kind, summary=summary)

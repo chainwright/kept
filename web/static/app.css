@@ -557,3 +557,7 @@ h2[tabindex="-1"]:focus-visible { outline: 3px solid var(--focus); outline-offse
   .calls .c-cost { grid-area: cost; font-weight: 600; }
   .calls .c-ms { grid-area: ms; color: var(--muted); font-size: .76rem; }
 }
+
+details.reasoning { margin: .5rem 0; }
+details.reasoning > summary { cursor: pointer; font-weight: 600; }
+details.reasoning .body { white-space: pre-wrap; font-size: .85rem; max-height: 18rem; overflow: auto; }

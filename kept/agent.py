@@ -216,6 +216,8 @@ def watch_topics(topics: list[str] | None = None) -> dict:
             continue
         for c in (data.get("claims") or [])[:3]:
             c["source"] = str(c.get("source", "")).strip().strip("[]").strip()
+            if c["source"] not in sources and f"web:{c['source']}" in sources:
+                c["source"] = f"web:{c['source']}"
             v = grounded([c], sources)
             if v:
                 url = next(r["url"] for r in results if r["id"] == c["source"])
@@ -237,9 +239,12 @@ def weigh_overload() -> dict | None:
     busy = {a.get("ledger_id") for a in approvals.pending()}
     # a promise that already has a message waiting for the owner's Yes is off the table:
     # two contradicting emails to the same person is worse than either one
-    soon = [r for r in ledger.open_sorted(today) if r.get("due") and r.get("contact") and
-            r["id"] not in busy and (date.fromisoformat(r["due"][:10]) - today).days <= 3]
-    if len(soon) < 3:
+    due_soon = [r for r in ledger.open_sorted(today) if r.get("due") and
+                (date.fromisoformat(r["due"][:10]) - today).days <= 3]
+    if len(due_soon) < 3:  # overload is about the week's load, counted over everything due
+        return None
+    soon = [r for r in due_soon if r.get("contact") and r["id"] not in busy]
+    if not soon:
         return None
     mails = {m["id"]: m for m in mail.inbox(50)}
 
@@ -286,7 +291,8 @@ def weigh_overload() -> dict | None:
         "send_email", {"to": to, "subject": d["subject"], "body": d["body"]},
         summary=f"Ask {row.get('who')} to move '{row['text']}' to {d['new_due']}",
         why=d["reason"], checks=["picked from this week's promises", "new date is sane",
-                                 "no template holes"], ledger_id=row["id"])
+                                 "no template holes"], ledger_id=row["id"],
+        reasoning=r.reasoning, model_label="Nemotron Ultra")
     notify.ask(req)
     return req
 
@@ -313,6 +319,8 @@ def morning_brief() -> dict:
         purpose="morning brief", json_mode=True, max_tokens=900)
     try:
         b = r.json()
+        if isinstance(b, dict):
+            b.setdefault("plan", [])  # a brief without a plan is still a brief
         v = shape(b, {"headline": str, "lines": list, "plan": list})
     except Exception as e:
         b, v = {}, Verdict(False, [f"model reply unusable: {e}"])

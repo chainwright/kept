@@ -148,5 +148,5 @@ def test_overload_skips_promises_that_already_have_a_message_waiting(fake):
                       summary="x", why="y", ledger_id=rows[0]["id"])
     fb = fake([("Pick the ONE", {"move_id": rows[0]["id"], "new_due": (TODAY + timedelta(days=6)).isoformat(),
                                  "reason": "r", "subject": "s", "body": "Hi Client0, can we move it?"})])
-    assert agent.weigh_overload() is None        # only two candidates left: no overload call at all
-    assert fb.calls == []
+    assert agent.weigh_overload() is None        # Ultra picked the busy one; code refuses it
+    assert rows[0]["id"] not in fb.calls[-1][1]  # and it was never offered as a choice

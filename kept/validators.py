@@ -60,6 +60,8 @@ def grounded(claims: Iterable[dict], sources: dict[str, str]) -> Verdict:
     for i, c in enumerate(claims):
         # models write "[web:1a2b]" when the listing showed the id in brackets; same source
         sid, quote = str(c.get("source", "")).strip().strip("[]").strip(), str(c.get("quote", ""))
+        if sid not in sources and f"web:{sid}" in sources:  # the model dropped the prefix
+            sid = f"web:{sid}"
         if sid not in sources:
             v.add(f"claim {i + 1} cites '{sid}', which Kept never fetched")
             continue

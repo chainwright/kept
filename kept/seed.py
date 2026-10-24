@@ -23,7 +23,7 @@ def inbox() -> list[dict]:
         {"id": "demo:2", "from": "Dev Patel <dev@greenleaflandscaping.example>", "date": _d(-1),
          "subject": "Website for a landscaping company",
          "body": "Hello, I found your portfolio through a friend. We need a 5-page site with a gallery and "
-                 "a quote request form. Could you send me your rates and a rough timeline by Friday? "
+                 f"a quote request form. Could you send me your rates and a rough timeline by {_d(2)}? "
                  "We'd like to launch before spring.\n\nThanks,\nDev"},
         {"id": "demo:3", "from": "Billing <billing@hostingco.example>", "date": _d(-2),
          "subject": "Invoice #4412 is due",
