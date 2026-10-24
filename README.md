@@ -27,24 +27,34 @@ back and tells you why.
 
 ## What it does every morning
 
-1. **Reads the inbox** and sorts it (Nemotron Nano): leads, clients, bills, noise.
-2. **Finds promises** in each thread (Nano) and adds them to the **commitment ledger**, but only
-   if it can quote the exact words in the email that show the promise. If it can't point at
-   the words, it isn't a promise.
-3. **Drafts follow-ups** for anything overdue or due today (Nemotron Super), runs the draft
-   through checks (no template holes, right name, sane length), and puts it in front of you
-   with **Yes / No** buttons. Nothing is sent until you press Yes.
-4. **Watches topics you care about** with Tavily web search. Super summarises, and a fact only
-   reaches you if it quotes a page Kept actually fetched.
-5. **Makes the one hard call** when the week has more promises than hours (Nemotron Ultra):
-   which deadline should move, and a short honest note asking for the new date. That note also
-   waits for your Yes.
-6. **Writes the morning brief** (Super). Code checks it afterwards: a brief that forgets an
-   overdue promise gets the promise put back at the top, marked "added by rule".
+Kept reads the inbox and runs nine skills. Each one ends in a proposal waiting for your Yes, a
+line in the morning brief, or an entry under **Held back** saying what it refused to do and why.
 
-You can also **ask Kept about your own week** ("what did I promise Maria?"). It answers only
-from its own records and shows the lines it relied on, with a Verified badge when every quote
-checks out.
+**Your word**
+1. **Promise ledger, both ways**: what you owe and what you're owed, each with the exact words
+   from the email (Nemotron Super extracts, code checks the quote).
+2. **Calibration** from your closed promises, and **Before you send**: paste a reply, Kept finds
+   the promise (Nano), works out the date in code and suggests the day you'll actually hit.
+3. **Rules it learns** (Ultra proposes a pattern; code recounts every match; needs 4+ matches and
+   60% late; you approve; it's appended to the skill file).
+
+**Your time**
+4. **Scope guard**: Ultra reads the signed agreement twice (two temperatures); disagreement means
+   "unclear". Extra work is priced by code from your hourly rate.
+5. **Overload call**: when promises exceed hours, Ultra picks the one deadline that can move and
+   drafts an honest note. Hard deadlines are never moved.
+
+**Your money**
+6. **Cash guard**: 30-day forecast using each client's usual payment delay; reminder ladder
+   (friendly, firm, final) checked for the right invoice number and amount.
+7. **Rescue plan**: when the forecast goes below zero, what closes the gap fastest from your own
+   pipeline, plus new local prospects found with Tavily (the page must name the business).
+8. **Well-timed offers**: a calendar computed by code, your own limits from `notes.md` (max
+   discount, minimum price, one offer per 60 days); nobody who owes you or whom you owe work.
+9. **Growth without spam**: a review ask when a client is delighted (never while a project is
+   unpaid or your last delivery was late), and a before/after post using only sourced numbers.
+
+Plus **topic watch** (Tavily, grounded quotes only) and **Ask Kept** about your own week.
 
 ## Propose, verify, or abstain
 
@@ -79,14 +89,15 @@ kind of work, and every call is logged with its tier, reason, tokens, latency an
 
 | Work | Tier | Why |
 |---|---|---|
-| sorting mail, extracting promises | **Nemotron 3 Nano** | cheap and fast; runs on every email |
-| planning the day, drafting text, summarising news | **Nemotron 3 Super** | someone will read it, so quality matters |
-| deciding which promise to break | **Nemotron 3 Ultra** | rare, and a wrong call costs trust or money |
+| sorting mail, spotting promises in a draft | **Nemotron 3 Nano** (reasoning off) | cheap and fast; runs on every email |
+| extracting promises, planning the day, drafting, summarising news | **Nemotron 3 Super** | someone will read it, so quality matters |
+| scope, overload, learned rules, rescue ranking, offers | **Nemotron 3 Ultra** | rare, and a wrong call costs trust or money |
 
 Model IDs are discovered from `/v1/models` at start-up. A daily budget (default $1.00) stops
 calls before they happen once it's reached.
 
-_(Real numbers from our runs: cost per day, latency per tier, to be added.)_
+A full demo morning is about 40-43 calls (14 Nano, 19-21 Super, 7-8 Ultra) and costs $0.05-0.07,
+measured by `eval/run_eval.py` on the live models.
 
 ## Memory you can read
 
@@ -116,7 +127,9 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 Demo mode (`KEPT_DEMO=1`, the default) loads a made-up week for Alex, a freelance web designer,
-with six emails. Tests: `.venv/bin/python -m pytest -q`.
+with nine emails, two signed agreements, a money book and eight weeks of history.
+Tests: `.venv/bin/python -m pytest -q`. Live evaluation (costs model credits):
+`.venv/bin/python eval/run_eval.py --runs 5` grades each full day with 24 checks written in code.
 
 ## What live testing taught us
 
@@ -137,7 +150,7 @@ Our first runs on the real models went badly, and we kept the evidence because i
 - **Two contradicting emails waited for approval** ("it's coming today" and "can we move it to
   Monday?"). Fix: a promise that already has a message waiting is off-limits to other jobs.
 
-Each of these has a regression test in `tests/test_agent.py`.
+Each of these has a regression test in `tests/`.
 
 ## Limitations (honest list)
 
@@ -145,7 +158,7 @@ Each of these has a regression test in `tests/test_agent.py`.
   until you add them.
 - The grounding check is lexical: a quote must match the source word for word. A model that
   paraphrases gets held back even when it's right. We chose false "no" over false "yes".
-- One action type today (`send_email`). Calendar and invoices are next.
+- One outgoing action today (`send_email`; posts go to an outbox). Calendar and invoices are next.
 - Single user. No multi-tenant auth; run it for yourself.
 
 ## Privacy
