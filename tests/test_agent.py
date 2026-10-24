@@ -219,3 +219,22 @@ def test_out_of_scope_request_is_a_decision_not_a_promise(fake):
     agent.triage_inbox()
     assert ledger.items("open") == []                       # not a promise yet
     assert any("$340" in a["summary"] for a in approvals.pending())   # but an offer waits for Yes
+
+
+def test_promise_to_quote_for_extra_work_is_still_a_promise(fake):
+    d = store.data_dir() / "contracts"
+    d.mkdir(exist_ok=True)
+    (d / "maria@bakery.example.md").write_text("Included: four pages.\nNot included: online ordering.\n")
+    (store.data_dir() / "notes.md").write_text("Hourly rate: $85\n")
+    m = {"id": "mail:1", "from": "Maria Lopez <maria@bakery.example>", "subject": "Quote", "date": "",
+         "body": "You said you'd send the revised quote with the online ordering page by Friday. Maria"}
+    _inbox([m])
+    fake([("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "x"}),
+          ("signed agreement", {"requests": [{"request": "Online ordering page", "email_quote": "the revised quote with the online ordering page",
+                                              "verdict": "out_of_scope", "agreement_quote": "Not included: online ordering.", "reason": "x",
+                                              "hours_low": 10, "hours_high": 14}]}),
+          ("Confirm the covered items", {"subject": "Ordering", "body": "Hi Maria,\\nOnline ordering wasn't in our agreement; I can add it for $1020.\\nAlex"}),
+          ("Find two kinds", {"mine": [{"text": "Send Maria the revised quote with the online ordering page", "due": None,
+                                        "quote": "send the revised quote with the online ordering page"}], "theirs": []})])
+    agent.triage_inbox()
+    assert [r["text"] for r in ledger.items("open")] == ["Send Maria the revised quote with the online ordering page"]

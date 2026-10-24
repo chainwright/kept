@@ -142,8 +142,10 @@ def _extract_commitments(m: dict, kind: str = "", skip: list[str] | None = None)
     for direction, items in batches:
         for it in items[:5]:
             v = shape(it, {"text": str, "quote": str})
-            if v and skip and direction == "i_owe" and any(
+            quoting = re.search(r"\b(quote|estimate|proposal|rates|pricing|price)\b", it["text"], re.I)
+            if v and skip and direction == "i_owe" and not quoting and any(
                     _shared_words(it.get("quote", "") + " " + it["text"], q) >= 2 for q in skip):
+                # "build the online ordering page" waits for a decision; "send the quote for it" is a promise
                 journal(f"Not adding '{it['text']}' as a promise: it's extra work waiting for your decision")
                 continue
             if v and len(it["text"].split()) < 3:
