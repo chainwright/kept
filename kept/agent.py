@@ -85,6 +85,11 @@ def triage_inbox() -> dict:
         report["labels"][m["id"]] = cls
         if cls["kind"] != "noise":
             report["commitments"] += _extract_commitments(m)
+        if cls["kind"] == "client":
+            from . import scope
+            if scope.contract_for(sender(m)[1]):
+                res = scope.review(m)
+                report.setdefault("scope", []).append({"mail": m["id"], **(res or {})})
         seen.add(m["id"])
     write_json("seen_mail.json", sorted(seen))
     labels = read_json("labels.json", {})

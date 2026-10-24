@@ -40,6 +40,11 @@ def inbox() -> list[dict]:
          "subject": "Re: invoice #118",
          "body": f"Hi Alex, thanks for the reminder and sorry for the delay! Our office manager is back on "
                  f"Monday. We'll pay invoice #118 ($850) by {_d(-2)} at the latest.\n\nPriya"},
+        {"id": "demo:8", "from": "Maria Lopez <maria@sunrisebakery.example>", "date": _d(0),
+         "subject": "Two small things",
+         "body": "Hi Alex! While you're on it, could you add a small blog page where we can post our seasonal "
+                 "specials? And could the logo be a bit bigger on the home page? It looks tiny on my phone.\n\n"
+                 "Thank you!! Maria"},
         {"id": "demo:6", "from": "Jordan Kim <jordan@kimyoga.example>", "date": _d(0),
          "subject": "Launch call + contact form",
          "body": f"Hey Alex! Can we push our launch call to {_d(2)}? Something came up on my side. "
@@ -52,11 +57,42 @@ NOTES = """# About the owner
 Alex Rivera runs a one-person web design studio. Clients are local small businesses.
 Prefers short, friendly emails. Signs as "Alex". Works 9:00-17:00, no meetings on Fridays.
 
+## Rates
+- Hourly rate: $85
+
 ## Watch
 - Stripe fees for small businesses
 - Google search changes for local businesses
 - Squarespace and Wix pricing changes
 """
+
+
+CONTRACTS = {
+    "maria@sunrisebakery.example": """# Agreement: website refresh for Sunrise Bakery
+Signed by Maria Lopez and Alex Rivera on September 12.
+
+Price: $2,400, half up front, half on launch.
+
+Included:
+- Four pages: Home, Menu, About, Contact.
+- Menu page with item names, descriptions and prices.
+- Mobile-friendly layout.
+- Two rounds of revisions on the design (layout, colours, sizes of existing elements).
+
+Not included (quoted separately if wanted): online ordering, a blog, new photography, logo redesign.
+""",
+    "jordan@kimyoga.example": """# Agreement: Kim Yoga site
+Signed by Jordan Kim and Alex Rivera on August 3.
+
+Price: $1,800.
+
+Included:
+- Five pages including a class schedule and a contact form that emails Jordan.
+- Fixing any bugs in the delivered pages for 60 days after launch.
+
+Not included: online booking or payments, a members area.
+""",
+}
 
 
 def _last_friday(weeks_back: int) -> date:
@@ -107,6 +143,9 @@ def seed(force: bool = False) -> None:
         d = data_dir()
     (d / "inbox.json").write_text(json.dumps(inbox(), indent=1))
     (d / "notes.md").write_text(NOTES)
+    (d / "contracts").mkdir(exist_ok=True)
+    for addr, text in CONTRACTS.items():
+        (d / "contracts" / f"{addr}.md").write_text(text)
     y = (date.today() - timedelta(days=1)).isoformat()
     write_json("ledger.json", history() + [
         {"id": "a1c0de01", "text": "Send Jordan the new homepage photos", "who": "Jordan Kim", "due": y,
