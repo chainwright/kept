@@ -42,6 +42,7 @@ def client_base() -> list[dict]:
     """Everyone Alex deals with in the demo, with what Kept knows about each. People a visitor
     invents by writing in are added here too: Kept remembers them like any other contact."""
     from .agent import sender
+    from . import research
     from .reply import facts_about, thread
     from .tools import mail
 
@@ -55,6 +56,7 @@ def client_base() -> list[dict]:
     for p in rows:
         t = thread(p["email"])
         p["facts"] = facts_about(p["email"], p["name"])
+        p["web"] = research.known(p["email"])
         p["messages"] = len([x for x in t if x["dir"] in ("in", "out")])
         p["drafts"] = len([x for x in t if x["dir"] == "draft"])
         p["last"] = t[-1]["ts"] if t else None
@@ -95,7 +97,14 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
         inbox.append(m)
         write_json("inbox.json", inbox)
 
-    one = _triage_one(m)
+    # a stranger gets looked up on the web (Tavily) while the email is being read
+    from concurrent.futures import ThreadPoolExecutor
+    from . import research
+    is_new = addr not in {p["email"] for p in PEOPLE}
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        looked = ex.submit(research.look_up, who, addr, body) if is_new and not research.known(addr) else None
+        one = _triage_one(m)
+        found = looked.result() if looked else research.known(addr)
     with locked():
         seen = set(read_json("seen_mail.json", []))
         seen.add(m["id"])
@@ -113,7 +122,7 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
     if label and label.get("kind") != "noise" and not (growth_out or {}).get("asks"):
         # a delighted client already gets the thank-you (with the review link) from growth
         from .reply import draft_reply
-        reply_out = draft_reply(m, label, one["scope"])
+        reply_out = draft_reply(m, label, one["scope"], web=found)
 
     calls = [a for a in read_audit(100000)[audit_before:] if a.get("kind") == "llm"]
     new_approvals = [a for a in approvals.recent(10000) if a["id"] not in approvals_before]
@@ -126,6 +135,7 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "") -
         "promises": [{**r, "already_known": r.get("source") != m["id"]} for r in one["commitments"]],
         "approvals": new_approvals,
         "growth": growth_out,
+        "research": found,
         "reply": {k: v for k, v in (reply_out or {}).items() if k != "held"} if reply_out else None,
         "held_back": [{"job": h["job"], "subject": h["subject"], "problems": h["problems"]} for h in held],
         "waiting_already": [s.get("waiting") for s in skipped],

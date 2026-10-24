@@ -984,7 +984,7 @@ dialog { border: var(--border); border-radius: var(--r-xs); box-shadow: none; }
 .w-examples button:hover { border-style: solid; }
 .w-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
 .w-steps li { border-top: var(--bw) solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
-.w-steps .w-step { font: 600 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.w-steps .w-step, .c-web .w-step { font: 600 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
 .w-steps .w-draft { white-space: pre-wrap; font: 13px/1.5 var(--mono); border-left: 3px solid var(--line-strong); padding: 6px 10px; background: var(--surface-2); }
 .w-steps .w-moved { color: var(--ink-2); font-size: 13px; }
 .thread { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }

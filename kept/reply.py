@@ -77,7 +77,7 @@ def supersede(addr: str, newer: str) -> list[str]:
     return replaced
 
 
-def draft_reply(m: dict, label: dict, scope_res: dict | None) -> dict:
+def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None = None) -> dict:
     """Returns {"approval": ..., "held": ..., "dates": [...], "replaced": [...]}"""
     name, addr = sender(m)
     first = name.split(" ")[0]
@@ -113,6 +113,8 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None) -> dict:
         f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
         + (f"\nSCOPE CHECK ON THIS EMAIL:\n" + "\n".join(scope_lines) + "\n" if scope_lines else "")
         + (f"\nEARLIER MESSAGES:\n{convo}\n" if convo else "")
+        + ("\nWHAT THE WEB SAYS ABOUT THEM (checked against the pages; mention at most one, only if it helps):\n"
+           + "\n".join(f"- {f['text']}" for f in web["facts"]) + "\n" if web and web.get("facts") else "")
         + f"\nTHEIR NEW EMAIL (subject: {m['subject']}):\n{m['body']}", "follow_up"),
         purpose=f"reply to {m['id']}", json_mode=True, max_tokens=700)
     try:

@@ -510,6 +510,13 @@
   });
 
   function precheckResult(original, r) {
+    const web = r.research;
+    if (web) steps.push(h("li", null, h("span", { class: "w-step" }, "Who is writing? (Tavily search + extract, facts checked by code)"),
+      (web.facts || []).length ? h("ul", { class: "plain" }, web.facts.map((f) => h("li", null, f.text, " ",
+        h("a", { href: f.url, target: "_blank", rel: "noopener" }, new URL(f.url).hostname.replace(/^www\./, "")),
+        h("div", { class: "foot muted" }, `"${f.quote}"`))))
+        : h("span", { class: "muted" }, web.note || "Nothing checked out, so nothing is shown."),
+      (web.searched || []).length ? h("div", { class: "foot muted" }, web.searched.join(" · ")) : null));
     const ps = r.promises || [];
     if (!ps.length) {
       return h("div", { class: "pre-result" }, h("p", { class: "empty" }, r.note || "No promises found in this draft. Nothing to warn you about."));
@@ -1462,7 +1469,7 @@
     const v = $("#w-who").value;
     const p = PEOPLE.find((x) => x.key === v || `new:${x.email}` === v);
     $("#w-new").hidden = v !== "new";
-    $("#w-about").textContent = v === "new" ? "Alex has never heard of you. Kept will add you as a new contact."
+    $("#w-about").textContent = v === "new" ? "Alex has never heard of you. Name your real business and city, and Kept looks you up on the web (Tavily) before drafting the reply."
       : p ? `${p.about}.` : "";
   }
   $("#w-who").addEventListener("change", whoChanged);
@@ -1600,6 +1607,9 @@
         h("summary", null, h("span", { class: "c-name" }, p.name, h("span", { class: "muted" }, `  ${p.email}`)),
           h("span", { class: "c-about" }, p.about), h("span", { class: "c-chips" }, chips)),
         owes.length ? h("ul", { class: "c-owes" }, owes.map((x) => h("li", null, x))) : null,
+        p.web && (p.web.facts || []).length ? h("div", { class: "c-web" }, h("span", { class: "w-step" }, "From the web (Tavily)"),
+          h("ul", { class: "c-owes" }, p.web.facts.map((f) => h("li", null, f.text, " ",
+            h("a", { href: f.url, target: "_blank", rel: "noopener" }, "source"))))) : null,
         body,
         h("p", null, h("button", { class: "btn btn-quiet btn-small", type: "button", onclick: () => {
           const sel = $("#w-who");
