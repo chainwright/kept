@@ -133,6 +133,12 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
             est["sizes_from"] = "your numbers" if their else "your photo (rough)"
             out["estimate"] = est
             estimate.remember(addr, est, job)
+        elif out["from_price"]:
+            # no sizes yet: if they push back on price later, a payment plan can still be worked out on the
+            # starting price from Alex's list
+            fp = out["from_price"]
+            estimate.remember(addr, {"low": fp, "high": fp, "mid": fp, "lines": [], "used": {},
+                                     "sizes_from": "Alex's starting price"}, job)
         if has_contract:
             out["on_site"] = True  # Alex is already working at their kitchen and can measure there
         else:

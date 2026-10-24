@@ -51,8 +51,10 @@ def run_once() -> dict:
     c["kitchen_job"] = p.get("job") in ("full_kitchen", "fronts")
     c["estimate_from_guide"] = bool(est) and est["low"] <= est["mid"] <= est["high"]
     c["three_visit_times"] = len(p.get("slots") or []) == 3
-    c["reply_has_a_time_and_price"] = bool(b) and any(s["label"].split(",")[0] in b for s in p.get("slots") or []) \
-        and bool(re.search(r"\$\s?1\d,\d{3}", b))
+    from kept.reply import _names_a_slot
+    from kept.validators import dollar_amounts
+    c["reply_has_a_time_and_price"] = bool(b) and _names_a_slot(b, p.get("slots") or []) \
+        and bool(dollar_amounts(b) & {est.get("low"), est.get("mid"), est.get("high"), p.get("from_price")})
     if (r.get("reply") or {}).get("approval"):
         approvals.decide(r["reply"]["approval"]["id"], True)
 
@@ -87,7 +89,8 @@ def run_once() -> dict:
     b = body_of(r)
     c["maria_got_a_reply"] = bool(b)
     # covered work is free, and extra work is offered, not announced
-    c["maria_asked_not_told"] = bool(b) and "?" in b and not re.search(r"pantry[^.]*\$\d", b, re.I)
+    c["maria_asked_not_told"] = bool(b) and bool(re.search(r"\?|let me know|would you like|shall i", b, re.I)) \
+        and not re.search(r"pantry[^.]*\$\d", b, re.I)
 
     r = tryit.handle("priya", "Re: invoice #118", "Hi Alex, so sorry again. Our office manager is back, we will pay "
                      "invoice #118 next Wednesday.\n\nPriya")
