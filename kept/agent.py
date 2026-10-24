@@ -111,8 +111,11 @@ def _triage_one(m: dict) -> dict:
             # scope first: extra work is a decision for the owner, not a promise they've made
             res = scope.review(m) or {}
             out["scope"] = {"mail": m["id"], **res}
+            # only clear extra work waits for the owner's decision. An "unclear" request stays in
+            # the ledger: losing a promise is worse than tracking one too many (a visitor's "send me
+            # the menu PDF by Thursday" was judged unclear and vanished)
             pending_decision = [r["email_quote"] for r in res.get("requests", [])
-                                if r["verdict"] in ("out_of_scope", "unclear")
+                                if r["verdict"] == "out_of_scope"
                                 and not _owner_already_said(r.get("email_quote", ""))]
     if cls["kind"] != "noise":
         out["commitments"] = _extract_commitments(m, cls["kind"], skip=pending_decision)

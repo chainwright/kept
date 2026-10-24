@@ -21,7 +21,9 @@ def _load_on(day: str) -> list[dict]:
     return [r for r in ledger.open_sorted(which="i_owe") if (r.get("due") or "")[:10] == day]
 
 
-def check(draft: str, to_name: str = "") -> dict:
+def check(draft: str, to_name: str = "", already_promised: set[str] | None = None) -> dict:
+    """already_promised: dates (YYYY-MM-DD) this person was already given. Restating one isn't a new
+    optimistic promise, and moving it again would compound the correction."""
     today = date.today()
     owner = read_notes_owner()
     draft = draft.strip()[:4000]
@@ -61,7 +63,7 @@ def check(draft: str, to_name: str = "") -> dict:
         if code_due and code_due.isoformat() != (item["due"] or "")[:10]:
             # the words win over the model's arithmetic
             item["model_due"], item["due"] = item["due"], code_due.isoformat()
-        if item["due"]:
+        if item["due"] and item["due"][:10] not in (already_promised or set()):
             item["advice"] = calibration.realistic_due(p["text"], item["due"])
             busy = _load_on(item["due"][:10])
             if busy:

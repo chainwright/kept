@@ -64,7 +64,7 @@
             <button role="menuitem" type="button" data-job="watch"><strong>Check the news</strong><span>Web search, only quoted facts survive</span></button>
             <button role="menuitem" type="button" data-job="brief"><strong>Write the brief</strong><span>Super writes today, rules add what's overdue</span></button>
             <hr id="reset-sep" hidden>
-            <button role="menuitem" type="button" id="demo-reset" hidden><strong>Reset demo data</strong><span>Back to the seeded week</span></button>
+            <button role="menuitem" type="button" id="demo-reset" hidden><strong>Reset the demo</strong><span>Back to the recorded morning; clears what you tried</span></button>
           </div>
         </div>
       </div>
@@ -111,6 +111,7 @@
     </section>
 
     <nav class="jump" aria-label="Sections">
+      <a href="#write">Write to Alex</a>
       <a href="#approvals">Waiting for Yes</a>
       <a href="#precheck">Before you send</a>
       <a href="#today">Today</a>
@@ -120,6 +121,7 @@
       <a href="#scope">Scope</a>
       <a href="#word">Your word</a>
       <a href="#held">Held back</a>
+      <a href="#clients">Clients</a>
       <a href="#inbox">Inbox</a>
       <a href="#news">News</a>
       <a href="#growth">Offers &amp; growth</a>
@@ -128,6 +130,24 @@
 
     <div class="layout">
       <div class="col col-main">
+        <section class="card card-howto o-0" id="howto" aria-labelledby="h-howto">
+          <div class="card-head">
+            <h2 id="h-howto">What you're looking at</h2>
+            <span class="meta">demo week · live models</span>
+          </div>
+          <div class="card-body howto">
+            <p><strong>Alex</strong> is a made-up freelance web designer in Portland. Kept has Alex's week: 9 emails, two signed
+              agreements, unpaid invoices and bills, and eight weeks of promises Alex kept or missed. The page opens on a
+              real morning Kept ran on Nemotron with that week.</p>
+            <p><strong>In real use</strong> Kept connects to your own inbox, sorts new mail every hour and runs the full morning
+              loop at 7:30 before you're up. Everything it learns stays in plain files you can read: the promise ledger,
+              a daily journal, every model call.</p>
+            <p><strong>Try it as a client:</strong> use <a href="#write">Write to Alex</a> and send Alex an email as yourself or as
+              anyone in <a href="#clients">Alex's clients</a>. Kept handles it live, drafts Alex's reply, and waits for your
+              Yes. Then write back and keep the conversation going. Nothing ever leaves this demo.</p>
+          </div>
+        </section>
+
         <section class="card card-approvals o-1" id="approvals" aria-labelledby="h-approvals">
           <div class="card-head">
             <h2 id="h-approvals">Waiting for your Yes</h2>
@@ -232,6 +252,18 @@
           </div>
         </section>
 
+        <section class="card o-6" id="clients" aria-labelledby="h-clients" data-fold>
+          <div class="card-head">
+            <h2 id="h-clients">Alex's clients</h2>
+            <span class="count" id="clients-count"></span>
+          </div>
+          <div class="card-body">
+            <p class="lede">Who Alex works with and what Kept knows about each: agreements, unpaid invoices, how late they
+              usually pay, and who owes whom. Open a person to read the whole conversation.</p>
+            <div id="clients-list"></div>
+          </div>
+        </section>
+
         <section class="card o-10" id="inbox" aria-labelledby="h-inbox" data-fold data-folded>
           <div class="card-head">
             <h2 id="h-inbox">Inbox</h2>
@@ -242,6 +274,36 @@
       </div>
 
       <div class="col col-side">
+        <section class="card card-write o-0" id="write" aria-labelledby="h-write">
+          <div class="card-head">
+            <h2 id="h-write">Write to Alex</h2>
+            <span class="meta">live on Nemotron · ~10–40 s</span>
+          </div>
+          <div class="card-body">
+            <p class="lede">Be one of Alex's clients, or yourself as a new one. Kept reads your email the way it reads Alex's
+              real inbox, and drafts the reply Alex would send.</p>
+            <form id="w-form" class="preform" autocomplete="off">
+              <label class="field"><span>Write as</span>
+                <select id="w-who" name="who"></select>
+              </label>
+              <p class="foot muted" id="w-about"></p>
+              <div class="w-new" id="w-new" hidden>
+                <label class="field"><span>Your name</span><input id="w-name" maxlength="60" placeholder="Jo Rivera"></label>
+                <label class="field"><span>Your email <span class="muted">(nothing is sent)</span></span><input id="w-email" maxlength="120" placeholder="jo@example.com"></label>
+              </div>
+              <label class="field"><span>Subject</span><input id="w-subject" maxlength="120" placeholder="Website for my salon"></label>
+              <label class="field"><span>Email</span>
+                <textarea id="w-body" rows="5" required maxlength="2000" placeholder="Hi Alex, …"></textarea>
+              </label>
+              <div class="w-examples" id="w-examples" aria-label="Examples"></div>
+              <div class="pre-actions">
+                <button class="btn btn-primary" type="submit" id="w-btn">Send to Alex</button>
+              </div>
+            </form>
+            <div id="w-out" aria-live="polite"></div>
+          </div>
+        </section>
+
         <section class="card card-precheck o-2" id="precheck" aria-labelledby="h-precheck">
           <div class="card-head">
             <h2 id="h-precheck">Before you send</h2>

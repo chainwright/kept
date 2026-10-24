@@ -64,12 +64,14 @@ def not_now(client: str, contact: str, today: date) -> str | None:
     return None
 
 
-def moments(today: date | None = None) -> dict:
+def moments(today: date | None = None, only: list[dict] | None = None) -> dict:
+    """only: look at just these emails (a judge's own message in the demo) and leave the
+    morning's growth summary alone."""
     today = today or date.today()
     clients = {i["contact"].lower(): i["client"] for i in money.load()["invoices"]}
     out = {"asks": [], "posts": [], "waiting": []}
     recent = []
-    for m in mail.inbox(50):
+    for m in (only if only is not None else mail.inbox(50)):
         name, addr = sender(m)
         if addr not in clients:
             continue
@@ -114,7 +116,8 @@ def moments(today: date | None = None) -> dict:
         post = _post(client, m)
         if post:
             out["posts"].append(post["id"])
-    write_json("growth_last.json", {"ts": now_iso(), **out})
+    if only is None:
+        write_json("growth_last.json", {"ts": now_iso(), **out})
     return out
 
 

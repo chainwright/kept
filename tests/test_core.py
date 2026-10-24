@@ -132,3 +132,10 @@ def test_broken_json_twice_is_returned_for_the_caller_to_abstain(fake):
     assert len(fb.calls) == 2
     with pytest.raises(Exception):
         r.json()
+
+
+def test_same_invoice_promise_in_other_words_is_one_row_and_new_date_is_kept():
+    a = ledger.add("Pay invoice #118", who="Priya Shah", due="2026-10-22", direction="owed_to_me")
+    b = ledger.add("Priya pays invoice #118", who="Priya Shah", due="2026-10-28", direction="owed_to_me")
+    assert a["id"] == b["id"] and b["due"] == "2026-10-28"
+    assert "promised again for 2026-10-28" in b["history"][-1]["event"]

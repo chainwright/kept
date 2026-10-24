@@ -1,0 +1,163 @@
+"""Answering someone who just wrote: a draft reply that only says what Alex can stand behind.
+
+Super writes the reply from facts code gathers (the thread so far, Alex's rates and hours, what
+the signed agreement says, open promises both ways, unpaid invoices). Code then checks it:
+the right name, no prices that didn't come from Alex's records, no dates that have passed, and
+every promised date is run through "Before you send", so a reply never commits Alex to a day
+history says Alex won't hit. The draft waits for Yes like everything else.
+"""
+from __future__ import annotations
+
+import re
+from datetime import date
+
+from . import approvals, ledger, money, precheck
+from .agent import _abstain, _msgs, read_notes_owner, sender
+from .llm import router
+from .store import locked, now_iso, read_json, read_notes
+from .tools import mail, notify
+from .validators import Verdict, honest_email, sendable_text, shape
+
+
+def _rate() -> int | None:
+    m = re.search(r"hourly rate:\s*\$?\s*(\d+)", read_notes(), re.I)
+    return int(m.group(1)) if m else None
+
+
+def thread(addr: str) -> list[dict]:
+    """Every message between Alex and this address: theirs, Alex's sent replies, drafts waiting."""
+    addr = addr.lower()
+    out = []
+    for m in mail.inbox(500):
+        if sender(m)[1] == addr:
+            out.append({"dir": "in", "id": m["id"], "subject": m["subject"], "body": m["body"],
+                        "ts": m.get("ts") or f"{m['date']}T08:00:00+00:00"})
+    for a in approvals.recent(10000):
+        if a["kind"] == "send_email" and a["args"].get("to", "").lower() == addr:
+            state = {"pending": "draft", "done": "out", "approved": "out"}.get(a["status"], a["status"])
+            out.append({"dir": state, "id": a["id"], "subject": a["args"].get("subject", ""),
+                        "body": a["args"].get("body", ""), "ts": a.get("finished") or a["created"]})
+    return sorted(out, key=lambda x: x["ts"])
+
+
+def facts_about(addr: str, name: str, exclude_source: str = "") -> dict:
+    """exclude_source: leave out promises read from the email being answered; otherwise the reply
+    treats the client's own request as something Alex already agreed to."""
+    addr = addr.lower()
+    book = money.load()
+    invs = [i for i in book["invoices"] if i["contact"].lower() == addr]
+    today = date.today().isoformat()
+    from .scope import contract_for
+    return {
+        "unpaid_invoices": [{"number": i["number"], "amount": i["amount"], "due": i["due"],
+                             "overdue": i["due"] < today} for i in invs if not i.get("paid_on")],
+        "pays_late_by_days": money.payment_habit(invs[-1]["client"], book).get("typical_days_late") if invs else None,
+        "has_signed_agreement": bool(contract_for(addr)),
+        "alex_owes_them": [r["text"] for r in ledger.open_sorted(which="i_owe")
+                           if (r.get("contact") or "").lower() == addr and r.get("source") != exclude_source],
+        "they_owe_alex": [r["text"] for r in ledger.open_sorted(which="owed_to_me")
+                          if (r.get("contact") or "").lower() == addr and r.get("source") != exclude_source],
+    }
+
+
+def supersede(addr: str, newer: str) -> list[str]:
+    """A newer email from the same person makes an unsent draft to them stale. Mark it replaced
+    (never deleted) so the one-message-per-person rule leaves room for the up-to-date reply."""
+    replaced = []
+    with locked():
+        rows = read_json(approvals.FILE, [])
+        for a in rows:
+            if a["status"] == "pending" and a["kind"] == "send_email" and a["args"].get("to", "").lower() == addr.lower():
+                a["status"], a["decided"], a["by"] = "replaced", now_iso(), "kept"
+                a["note"] = f"they wrote again ({newer}); a fresh reply replaces this draft"
+                replaced.append(a["id"])
+        if replaced:
+            from .store import write_json
+            write_json(approvals.FILE, rows)
+    return replaced
+
+
+def draft_reply(m: dict, label: dict, scope_res: dict | None) -> dict:
+    """Returns {"approval": ..., "held": ..., "dates": [...], "replaced": [...]}"""
+    name, addr = sender(m)
+    first = name.split(" ")[0]
+    owner = read_notes_owner()
+    rate = _rate()
+    facts = facts_about(addr, name, exclude_source=m["id"])
+    scope_lines = []
+    allowed = {rate} if rate else set()
+    for r in (scope_res or {}).get("requests", []):
+        line = f"- '{r['request']}': {r['verdict'].replace('_', ' ')}"
+        if r.get("price"):
+            line += f", price ${int(r['price'])} (computed from the hourly rate)"
+            allowed.add(int(r["price"]))
+        scope_lines.append(line)
+    priced = [int(r["price"]) for r in (scope_res or {}).get("requests", []) if r.get("price")]
+    if len(priced) > 1:
+        allowed.add(sum(priced))
+    allowed |= {int(i["amount"]) for i in facts["unpaid_invoices"]}
+    convo = "\n\n".join(f"{'THEM' if t['dir'] == 'in' else owner.upper()} ({t['ts'][:10]}): {t['body'][:800]}"
+                        for t in thread(addr)[-6:] if t["dir"] in ("in", "out") and t["id"] != m["id"])
+    today = date.today()
+    r = router.ask("draft", _msgs(
+        f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs a one-person web "
+        f"studio. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
+        "don't answer, say Alex will check and come back, or ask them a short question. Never invent a total "
+        "price for a new project: give the hourly rate and offer a short call or a written quote. If extra work "
+        "is outside the agreement, say so kindly and give the price listed below. Don't agree to a deadline "
+        "for new work that hasn't been scoped or priced yet (a new site, a new feature): offer the call or the "
+        "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
+        "Tuesday'). Greet them by first name, sign as Alex, under 140 words. "
+        'Reply JSON: {"subject": "...", "body": "..."}\n\n'
+        f"ABOUT ALEX:\n{read_notes().split('## Offers')[0].strip()}\n\n"
+        f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
+        + (f"\nSCOPE CHECK ON THIS EMAIL:\n" + "\n".join(scope_lines) + "\n" if scope_lines else "")
+        + (f"\nEARLIER MESSAGES:\n{convo}\n" if convo else "")
+        + f"\nTHEIR NEW EMAIL (subject: {m['subject']}):\n{m['body']}", "follow_up"),
+        purpose=f"reply to {m['id']}", json_mode=True, max_tokens=700)
+    try:
+        e = r.json()
+    except Exception as ex:
+        return {"held": _abstain("reply", m["subject"], Verdict(False, [f"model reply unusable: {ex}"]))}
+    v = shape(e, {"subject": str, "body": str})
+    dates = []
+    if v:
+        body = e["body"].strip()
+        v.merge(sendable_text(body, max_chars=1200))
+        v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
+        amounts = {int(float(x.replace(",", ""))) for x in re.findall(r"\$\s?([\d,]+(?:\.\d\d)?)", body)}
+        if amounts - allowed:
+            v.add(f"the reply names amounts that aren't in Alex's records: {sorted(amounts - allowed)}")
+        if v:
+            # every date Alex commits to goes through Before you send
+            from .validators import dates_in
+            given = {d.isoformat() for t in thread(addr) if t["dir"] == "out" for d in dates_in(t["body"], today)}
+            pc = precheck.check(body, name, already_promised=given)
+            for p in pc.get("promises", []):
+                if p.get("advice"):
+                    dates.append({"promise": p["text"], "said": p["when_words"], "usual": p["advice"]["why"],
+                                  "moved_to": p["advice"]["suggested"]})
+            if dates:
+                rw = pc.get("rewrite") or {}
+                if rw.get("ok") and rw.get("text"):
+                    body = rw["text"]
+                else:
+                    v.add("the reply promises a date Alex usually misses, and the safer wording couldn't be checked")
+        e["body"] = body
+    if not v:
+        return {"held": _abstain("reply", m["subject"], v, e)}
+    replaced = supersede(addr, m["id"])
+    subject = e["subject"] if e["subject"].lower().startswith("re:") else f"Re: {m['subject']}"
+    checks = [f"greets {first}, signed by {owner.split(' ')[0]}", "every price comes from Alex's records",
+              "no dates that have passed"]
+    if dates:
+        checks.append("dates moved to when Alex usually delivers: " +
+                      ", ".join(f"{d['said']} -> {date.fromisoformat(d['moved_to']):%a %b %-d}" for d in dates))
+    req = approvals.propose(
+        "send_email", {"to": addr, "subject": subject, "body": e["body"], "in_reply_to": m["id"]},
+        summary=f"Reply to {name}: {subject}",
+        why=f"{name} wrote: {label.get('one_line', m['subject'])}" if label else f"{name} wrote to you",
+        checks=checks, reasoning=r.reasoning, model_label="Nemotron Super")
+    if req:
+        notify.ask(req)
+    return {"approval": req, "dates": dates, "replaced": replaced}

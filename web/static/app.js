@@ -278,6 +278,7 @@
     if (changed("inbox", [st.inbox, st.labels, st.open.map((r) => r.source)])) safe("inbox", () => renderInbox(st));
     if (changed("news", st.watch)) safe("news", () => renderNews(st));
     if (changed("growth", [st.offers_plan, st.growth, st.pending.map((a) => a.id)])) safe("growth", () => renderGrowth(st));
+    if (changed("people", [(st.inbox || []).length, st.pending.map((a) => a.id), (st.decided || []).map((a) => a.id)])) loadPeople();
     if (changed("media", [st.media, st.invoices.map((i) => i.client)])) safe("media", () => renderMedia(st));
     if (changed("models", [st.tiers, st.routes, st.calls, st.spend_today, st.budget])) safe("models", () => renderModels(st));
     if (changed("activity", st.activity)) safe("activity", () => renderActivity(st));
@@ -369,7 +370,8 @@
         "When a promise comes due, an invoice runs late or a client is happy, Kept drafts the message, checks it, and puts it here for your Yes or No. Nothing is sent before you decide."));
     } else {
       const LIMIT = 2;
-      const shown = showAllApprovals ? st.pending : st.pending.slice(0, LIMIT);
+      const pend = [...st.pending].sort((a, b) => String(b.created).localeCompare(String(a.created)));
+      const shown = showAllApprovals ? pend : pend.slice(0, LIMIT);
       const more = st.pending.length - shown.length;
       fill(list, shown.map((a) => approvalCard(a, ledger)),
         more > 0 ? h("button", { class: "btn btn-quiet more-btn", type: "button", onclick: () => { showAllApprovals = true; delete sigs.approvals; render(S); } },
@@ -1354,7 +1356,7 @@
 
   // ------------------------------------------------------------------ jobs
   const JOB_NAMES = {
-    day: "Running the morning loop: mail, follow-ups, money, offers, news, the week, the brief",
+    day: "Running the whole morning live (about 2 minutes): the 9 emails first, then money, offers and news side by side, then the brief. Slips appear as each is ready",
     triage: "Sorting the inbox with Nemotron Nano", follow_ups: "Drafting follow-ups with Nemotron Super",
     watch: "Checking the news and verifying every quote", overload: "Weighing the week with Nemotron Ultra",
     brief: "Writing the morning brief with Nemotron Super", learn: "Looking for patterns in your history with Nemotron Ultra",
@@ -1435,16 +1437,194 @@
   }
   for (const b of jobButtons()) b.addEventListener("click", () => runJob(b.dataset.job));
 
+  // ------------------------------------------------------------------ write to Alex (a visitor plays a client)
+  let PEOPLE = [];
+  const W_EXAMPLES = [
+    { label: "New lead asks for a price", who: "new", name: "Jo Rivera", email: "jo@happypaws.example",
+      subject: "Website for my dog grooming salon",
+      body: "Hi Alex, I just opened a dog grooming salon in SE Portland and need a simple site with online booking. What do you charge, and could you have something ready by Friday?\n\nThanks, Jo" },
+    { label: "Maria wants extra work", who: "maria", subject: "Two more things",
+      body: "Hi Alex! Could you also add a gift card page before the holidays? And please send me the final menu PDF by Thursday so I can print it.\n\nMaria" },
+    { label: "Priya promises to pay", who: "priya", subject: "Re: invoice #118",
+      body: "Hi Alex, so sorry again. Our office manager is back, we will pay invoice #118 next Wednesday.\n\nPriya" },
+    { label: "Lucia is delighted", who: "lucia", subject: "Thank you!",
+      body: "Alex, since the new shop page went live our online orders doubled. Customers say it's so easy to use. Thank you!\n\nLucia" },
+  ];
+  function whoOptions() {
+    const sel = $("#w-who");
+    const cur = sel.value;
+    fill(sel, PEOPLE.map((p) => h("option", { value: p.key === "new" ? `new:${p.email}` : p.key }, `${p.name}${p.key === "new" ? " (new)" : ""}`)),
+      h("option", { value: "new" }, "Me, a new client"));
+    if (cur && [...sel.options].some((o) => o.value === cur)) sel.value = cur;
+    whoChanged();
+  }
+  function whoChanged() {
+    const v = $("#w-who").value;
+    const p = PEOPLE.find((x) => x.key === v || `new:${x.email}` === v);
+    $("#w-new").hidden = v !== "new";
+    $("#w-about").textContent = v === "new" ? "Alex has never heard of you. Kept will add you as a new contact."
+      : p ? `${p.about}.` : "";
+  }
+  $("#w-who").addEventListener("change", whoChanged);
+  fill($("#w-examples"), W_EXAMPLES.map((ex) => h("button", { type: "button", onclick: () => {
+    $("#w-who").value = ex.who; whoChanged();
+    if (ex.who === "new") { $("#w-name").value = ex.name; $("#w-email").value = ex.email; }
+    $("#w-subject").value = ex.subject; $("#w-body").value = ex.body; $("#w-body").focus();
+  } }, ex.label)));
+
+  async function loadPeople() {
+    try {
+      PEOPLE = await api("GET", "/api/people");
+      whoOptions();
+      renderClients();
+    } catch (e) { console.error("people", e); }
+  }
+
+  $("#w-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const body = $("#w-body").value.trim();
+    if (!body) { $("#w-body").focus(); return; }
+    let who = $("#w-who").value, name = "", email = "";
+    if (who === "new") { name = $("#w-name").value.trim(); email = $("#w-email").value.trim(); }
+    else if (who.startsWith("new:")) { const p = PEOPLE.find((x) => `new:${x.email}` === who); who = "new"; name = p.name; email = p.email; }
+    const out = $("#w-out"), btn = $("#w-btn");
+    btn.disabled = true;
+    const t0 = Date.now();
+    const line = h("span", null, "Kept is reading your email: sorting it, checking the agreement, finding promises, drafting Alex's reply…");
+    const secs = h("span", { class: "muted" }, " 0s");
+    fill(out, h("p", { class: "loading" }, h("span", { class: "spinner", "aria-hidden": "true" }), line, secs));
+    const timer = setInterval(() => { secs.textContent = ` ${Math.round((Date.now() - t0) / 1000)}s`; }, 1000);
+    try {
+      const r = await api("POST", "/api/demo/mail", { who, name, email, subject: $("#w-subject").value.trim(), body });
+      fill(out, writeResult(r));
+      announce("Kept handled your email.");
+      $("#w-body").value = "";
+      if (who === "new") {
+        await loadPeople();
+        const opt = [...$("#w-who").options].find((o) => o.value === `new:${(r.mail.from.match(/<([^>]+)>/) || [])[1]}`);
+        if (opt) { $("#w-who").value = opt.value; whoChanged(); }
+      } else loadPeople();
+    } catch (e) {
+      fill(out, h("div", { class: "answer notok" }, chip("Not handled", "chip-held"), h("p", null, e.message)));
+    } finally {
+      clearInterval(timer);
+      btn.disabled = false;
+      refresh();
+    }
+  });
+
+  function writeResult(r) {
+    const steps = [];
+    const lab = r.label || {};
+    steps.push(h("li", null, h("span", { class: "w-step" }, "1 · Sorted (Nemotron Nano)"),
+      r.label ? h("span", null, chip(lab.kind || "?", "chip-nano"), " ", lab.one_line || "") : h("span", null, "Couldn't sort it, so Kept held back.")));
+    const sc = (r.scope && r.scope.requests) || [];
+    if (sc.length) steps.push(h("li", null, h("span", { class: "w-step" }, "2 · Checked against the signed agreement (Nemotron Ultra, read twice)"),
+      h("ul", { class: "plain" }, sc.map((x) => h("li", null, chip(x.verdict.replace(/_/g, " "), x.verdict === "out_of_scope" ? "chip-ask" : x.verdict === "in_scope" ? "chip-ok" : "chip-outline"),
+        " ", x.request, x.price ? ` · ${usd(x.price)} at Alex's hourly rate (code did the maths)` : "",
+        x.agreement_quote ? h("div", { class: "foot muted" }, `Agreement: "${x.agreement_quote}"`) : null)))));
+    const ps = r.promises || [];
+    steps.push(h("li", null, h("span", { class: "w-step" }, `${sc.length ? 3 : 2} · Promises in your email (Nemotron Super; code checks the quote)`),
+      ps.length ? h("ul", { class: "plain" }, ps.map((p) => h("li", null,
+        chip(p.direction === "owed_to_me" ? "they owe Alex" : "Alex owes", p.direction === "owed_to_me" ? "chip-super" : "chip-due"), " ", p.text,
+        p.due ? ` · due ${fmtShort(p.due)}` : "", p.already_known ? h("span", { class: "muted" }, " (already in the ledger; date updated)") : null,
+        h("div", { class: "foot muted" }, `"${p.quote || ""}"`))))
+        : h("span", { class: "muted" }, "No promise either way in this one.")));
+    const rp = r.reply && r.reply.approval;
+    const g = r.growth || {};
+    if (g.asks && g.asks.length) steps.push(h("li", null, h("span", { class: "w-step" }, "Delighted client"),
+      h("span", null, "Kept drafted a thank-you with Alex's review link, and a before/after post. Both wait in ", h("a", { href: "#approvals" }, "Waiting for your Yes"), ".")));
+    if (rp) {
+      steps.push(h("li", null, h("span", { class: "w-step" }, "Alex's reply (Nemotron Super), waiting for Yes"),
+        h("div", { class: "w-draft" }, rp.args.body),
+        (r.reply.dates || []).map((d) => {
+          const what = String(d.promise || "").replace(/[.\s]+$/, "");
+          return h("p", { class: "w-moved" }, "Before you send moved ", h("strong", null, what.length > 70 ? what.slice(0, 68) + "…" : what),
+            ` to ${fmtLong(d.moved_to)}. ${d.usual}`);
+        }),
+        (r.reply.replaced || []).length ? h("p", { class: "foot muted" }, "An older unsent draft to this person was marked replaced: your new email made it stale.") : null,
+        decideHere(rp)));
+    }
+    if ((r.held_back || []).length) steps.push(h("li", null, h("span", { class: "w-step" }, "Held back"),
+      h("ul", { class: "plain" }, r.held_back.map((x) => h("li", null, `${x.job}: ${x.problems.join("; ")}`)))));
+    const calls = r.calls || [];
+    const tiers = ["nano", "super", "ultra"].map((t) => [t, calls.filter((c) => c.tier === t).length]).filter(([, n]) => n);
+    return h("div", { class: "pre-result" },
+      h("ol", { class: "w-steps" }, steps),
+      h("p", { class: "foot muted" }, `${calls.length} model calls (${tiers.map(([t, n]) => `${n} ${t}`).join(", ")}) · ${r.seconds}s · ${money(r.usd)}`),
+      threadView(r.thread || []));
+  }
+
+  function decideHere(a) {
+    const status = h("span", { class: "muted" }, "Nothing is sent until you decide. In this demo, Yes saves it to Alex's sent mail.");
+    const go = async (verdict) => {
+      yes.disabled = no.disabled = true;
+      try {
+        const r = await api("POST", `/api/approvals/${encodeURIComponent(a.id)}/${verdict}`);
+        fill(status, verdict === "yes" ? stamp("APPROVED", "approved", { fresh: true, small: true }) : stamp("DECLINED", "declined", { small: true }),
+          verdict === "yes" ? "  Sent. Now write back as the client to continue the conversation." : "  Declined. Nothing was sent.");
+        if (r && r.status === "failed") toast(`Couldn't send: ${r.result}`, "err");
+        loadPeople();
+        refresh();
+      } catch (e) { toast(`Couldn't record that: ${e.message}`, "err"); yes.disabled = no.disabled = false; }
+    };
+    const no = h("button", { class: "btn btn-quiet btn-small", type: "button", onclick: () => go("no") }, "No");
+    const yes = h("button", { class: "btn btn-primary btn-small", type: "button", onclick: () => go("yes") }, "Yes, send");
+    return h("div", { class: "decide" }, no, yes, status);
+  }
+
+  function threadView(t) {
+    if (!t.length) return null;
+    return h("details", { class: "sub", open: true }, h("summary", null, `Conversation (${t.filter((x) => x.dir !== "replaced").length})`),
+      h("ul", { class: "thread" }, t.map((m) => h("li", { class: `t-${m.dir}` },
+        h("div", { class: "t-meta" }, { in: "They wrote", out: "Alex sent", draft: "Alex's draft, waiting for Yes", replaced: "Replaced draft", rejected: "Declined draft" }[m.dir] || m.dir,
+          " · ", ago(m.ts), m.subject ? ` · ${m.subject}` : ""),
+        h("div", { class: "t-body" }, m.body)))));
+  }
+
+  function renderClients() {
+    $("#clients-count").textContent = PEOPLE.length ? `${PEOPLE.length} people` : "";
+    fill($("#clients-list"), PEOPLE.map((p) => {
+      const f = p.facts || {};
+      const unpaid = (f.unpaid_invoices || []);
+      const chips = [
+        f.has_signed_agreement ? chip("signed agreement", "chip-ok") : null,
+        ...unpaid.map((i) => chip(`#${i.number} ${usd(i.amount)}${i.overdue ? " overdue" : ""}`, i.overdue ? "chip-over" : "chip-due")),
+        f.pays_late_by_days ? chip(`pays ~${f.pays_late_by_days} days late`, "chip-soon") : null,
+        p.drafts ? chip(`${p.drafts} draft waiting`, "chip-ask") : null,
+        p.key === "new" ? chip("new", "chip-super") : null,
+      ];
+      const owes = [...(f.alex_owes_them || []).map((x) => `Alex owes: ${x}`), ...(f.they_owe_alex || []).map((x) => `Owes Alex: ${x}`)];
+      const body = h("div", null, h("p", { class: "muted" }, "Loading the conversation…"));
+      const det = h("details", { class: "client" },
+        h("summary", null, h("span", { class: "c-name" }, p.name, h("span", { class: "muted" }, `  ${p.email}`)),
+          h("span", { class: "c-about" }, p.about), h("span", { class: "c-chips" }, chips)),
+        owes.length ? h("ul", { class: "c-owes" }, owes.map((x) => h("li", null, x))) : null,
+        body,
+        h("p", null, h("button", { class: "btn btn-quiet btn-small", type: "button", onclick: () => {
+          const sel = $("#w-who");
+          sel.value = p.key === "new" ? `new:${p.email}` : p.key; whoChanged();
+          $("#write").scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth" }); $("#w-body").focus();
+        } }, `Write to Alex as ${p.name.split(" ")[0]}`)));
+      det.addEventListener("toggle", async () => {
+        if (!det.open) return;
+        try { fill(body, threadView(await api("GET", `/api/thread?email=${encodeURIComponent(p.email)}`)) || h("p", { class: "muted" }, "No messages yet.")); }
+        catch (e) { fill(body, h("p", { class: "muted" }, `Couldn't load: ${e.message}`)); }
+      });
+      return det;
+    }));
+  }
+
   // demo reset
   $("#demo-reset").addEventListener("click", async () => {
     closeMenu(false);
-    if (!confirm("Start the demo week from scratch? This clears the recorded morning and everything Kept did.")) return;
+    if (!confirm("Reset the demo? Kept goes back to the recorded morning, and the emails and replies you tried are cleared.")) return;
     try {
-      await api("POST", "/api/demo/reset?fresh=1");
+      await api("POST", "/api/demo/reset");
       Object.keys(sigs).forEach((k) => delete sigs[k]);
       $("#ask-out").replaceChildren();
       $("#pre-out").replaceChildren();
-      toast("Demo data reset.", "good");
+      toast("Back to the recorded morning.", "good"); loadPeople(); fill($("#w-out"));
       refresh();
     } catch (e) {
       toast(`Couldn't reset: ${e.message}`, "err");

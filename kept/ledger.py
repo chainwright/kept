@@ -6,6 +6,7 @@ state. The morning brief always starts with what is still open.
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, datetime
 from typing import Any
@@ -47,8 +48,25 @@ def _add(text: str, *, who: str = "", due: str | None = None, source: str = "",
         raise LedgerError(f"direction must be one of {DIRECTIONS}")
     rows = _all()
     # the same promise mentioned twice is still one promise
+    def same(r):
+        if r["status"] != "open" or r.get("who") != who:
+            return False
+        if r["text"].lower() == text.lower():
+            return True
+        # "Pay invoice #118" and "Priya pays invoice #118" are one promise
+        refs = set(re.findall(r"#\s?(\d+)", text))
+        return bool(refs) and refs == set(re.findall(r"#\s?(\d+)", r["text"])) and \
+            (r.get("direction") or "i_owe") == direction
+
     for r in rows:
-        if r["status"] == "open" and r["text"].lower() == text.lower() and r.get("who") == who:
+        if same(r):
+            if due and due != r.get("due"):
+                # promised again with a new date: keep the old one in the history, so a slipped
+                # promise is visible ("was due Oct 22, now promised for Oct 28")
+                r.setdefault("history", []).append({"ts": now_iso(), "event": f"promised again for {due} (was {r.get('due')})"})
+                r["due"] = due
+                write_json(FILE, rows)
+                journal(f"{who or 'Someone'} promised '{text}' again, now for {due}")
             return r
     row = {"id": uuid.uuid4().hex[:8], "text": text, "who": who, "due": due, "source": source,
            "origin": origin, "contact": contact, "direction": direction, "quote": quote, "status": "open", "created": now_iso(), "history": []}

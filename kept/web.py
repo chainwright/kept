@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from . import agent, approvals, calibration, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
-from .llm import ROUTES, router
+from .llm import ROUTES, BudgetExceeded, router
 from .store import read_audit, read_json
 from .tools import mail, notify  # noqa: F401  (registers actions)
 
@@ -210,6 +210,44 @@ async def upload_photo(client: str, which: str, file: UploadFile = File(...)):
         return media.save_upload(client, which, file.filename or "photo.jpg", await file.read())
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+class Letter(BaseModel):
+    who: str = "maria"
+    subject: str = ""
+    body: str
+    name: str = ""
+    email: str = ""
+
+
+@app.get("/api/people")
+def people():
+    from . import tryit
+    return tryit.client_base()
+
+
+@app.get("/api/thread")
+def get_thread(email: str):
+    from .reply import thread
+    return thread(email)
+
+
+@app.post("/api/demo/mail")
+def write_to_alex(l: Letter):
+    """A visitor's own email, handled live on Nemotron (demo only; nothing is ever sent)."""
+    if not settings.demo:
+        raise HTTPException(403, "only in demo mode")
+    from . import tryit
+    if not _busy.acquire(blocking=False):
+        raise HTTPException(409, "Kept is already working on something")
+    try:
+        return tryit.handle(l.who, l.subject, l.body, l.name, l.email)
+    except BudgetExceeded as e:
+        raise HTTPException(429, f"{e}. The demo has a small daily model budget; try again tomorrow.")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    finally:
+        _busy.release()
 
 
 @app.post("/api/demo/reset")
