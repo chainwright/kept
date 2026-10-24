@@ -58,6 +58,13 @@ if (WEB / "static").exists():
     app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
 
 
+@app.get("/api/health")
+def health():
+    """Tiny wake-up probe for the landing page on another domain."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse({"ok": True}, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
+
+
 @app.get("/")
 def index():
     return FileResponse(WEB / "index.html")
