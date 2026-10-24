@@ -103,6 +103,18 @@ def test_memory_answer_is_verified_only_with_real_quotes(fake):
     assert memory_qa.ask("What do I owe Maria?")["verified"] is False
 
 
+def test_memory_answer_quoting_across_a_row_still_checks_out(fake):
+    """Live, Oct 24: 'Who owes me money?' was right but marked NOT VERIFIED, because the model
+    quoted across the fields of a JSON row. Rows now reach the model as plain sentences."""
+    from kept import memory_qa
+    row = ledger.add("Priya pays invoice #118", who="Priya Shah", due="2026-10-28", direction="owed_to_me")
+    fake([("Question:", {"answer": "Priya owes you invoice #118.",
+                         "evidence": [{"source": f"[LEDGER:{row['id'].upper()}]",
+                                       "quote": "Priya pays invoice #118. Who: Priya Shah. Owed to the owner"}]})])
+    out = memory_qa.ask("Who owes me money?")
+    assert out["verified"] is True, out["problems"]
+
+
 # ---- regressions from the first live run on Nemotron (Oct 24) ----
 def test_extracted_promise_is_owed_to_the_sender_not_the_owner(fake):
     _inbox([MAIL])
