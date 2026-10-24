@@ -124,8 +124,11 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
         out["from_price"] = from_price(job)
         # only numbers that are really in their email count as theirs; the rest came from the photo
         body_nums = set(re.findall(r"\d+(?:\.\d+)?", m["body"]))
-        their = {k: v for k, v in (d.get("sizes") or {}).items()
-                 if v and (str(v) in body_nums or str(int(float(v))) in body_nums)}
+        their = {}
+        for k, v in (d.get("sizes") or {}).items():
+            n = estimate._num(v, add_up=(k == "doors_and_drawers"))
+            if n and (str(v) in body_nums or f"{n:g}" in body_nums or str(int(n)) in body_nums):
+                their[k] = n
         seen = {k: v for k, v in ((photo or {}).get("rough_sizes") or {}).items() if v}
         sizes = {**seen, **their}  # their own numbers win over the photo
         est = estimate.preliminary(job, sizes, d.get("material") or "")

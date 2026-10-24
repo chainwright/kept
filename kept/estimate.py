@@ -38,18 +38,22 @@ def _pick(g: dict, prefix: str, material: str) -> tuple[str, int] | None:
     return rows[0]  # the first line in each group is the mid-range default
 
 
-def _num(x) -> float | None:
-    try:
-        v = float(x)
-        return v if v > 0 else None
-    except (TypeError, ValueError):
+def _num(x, add_up: bool = False) -> float | None:
+    """A size from a model or an email: 12, "12", "about 12 ft", or "8 upper doors, 6 lower doors, 4 drawers"
+    (counts add up). Anything else is None, never a crash."""
+    if isinstance(x, (int, float)):
+        return float(x) if x > 0 else None
+    nums = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", str(x or ""))]
+    if not nums:
         return None
+    v = sum(nums) if add_up else nums[0]
+    return v if v > 0 else None
 
 
 def preliminary(job: str, sizes: dict, material: str = "", counter: str = "", splash: str = "") -> dict | None:
     """Returns {low, high, mid, lines: [...], used: {...}} or None when the sizes it needs are missing."""
     g = guide()
-    run, fronts = _num(sizes.get("cabinet_run_ft")), _num(sizes.get("doors_and_drawers"))
+    run, fronts = _num(sizes.get("cabinet_run_ft")), _num(sizes.get("doors_and_drawers"), add_up=True)
     ctop, bsp = _num(sizes.get("countertop_sqft")), _num(sizes.get("backsplash_sqft"))
     lines = []
 
@@ -91,8 +95,9 @@ def preliminary(job: str, sizes: dict, material: str = "", counter: str = "", sp
     mid = sum(l["total"] for l in lines)
     low, high = int(math.floor(mid * 0.9 / 100) * 100), int(math.ceil(mid * 1.1 / 100) * 100)
     return {"low": low, "high": high, "mid": mid, "lines": lines,
-            "used": {k: sizes.get(k) for k in ("cabinet_run_ft", "doors_and_drawers", "countertop_sqft", "backsplash_sqft")
-                     if sizes.get(k)}}
+            "used": {k: _num(sizes.get(k), add_up=(k == "doors_and_drawers")) for k in
+                     ("cabinet_run_ft", "doors_and_drawers", "countertop_sqft", "backsplash_sqft")
+                     if _num(sizes.get(k), add_up=(k == "doors_and_drawers"))}}
 
 
 def plan_terms() -> dict | None:

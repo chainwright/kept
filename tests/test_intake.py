@@ -73,3 +73,13 @@ def test_a_repair_for_a_client_under_contract_is_not_priced_separately(fake):
     assert plan.get("on_site") and "price" not in plan
     rules, allowed, must = intake.reply_rules(plan)
     assert not allowed and "don't put a price" in rules
+
+
+def test_sizes_written_as_words_dont_crash_and_counts_add_up():
+    from kept import estimate
+    seed(force=True)
+    assert estimate._num("8 upper doors, 6 lower doors, 4 drawers", add_up=True) == 18
+    assert estimate._num("about 12 ft") == 12
+    assert estimate._num("not sure") is None
+    est = estimate.preliminary("fronts", {"doors_and_drawers": "8 upper doors, 6 lower doors, 4 drawers"})
+    assert est["mid"] == 18 * 250
