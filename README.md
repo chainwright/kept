@@ -56,6 +56,13 @@ line in the morning brief, or an entry under **Held back** saying what it refuse
 
 Plus **topic watch** (Tavily, grounded quotes only) and **Ask Kept** about your own week.
 
+**Answering someone who writes in.** A new email is sorted, checked against the agreement, its
+promises recorded, and, for a stranger, the business is looked up on the web (Tavily Search, and
+Tavily Extract on their own site) while the email is read. Super then drafts Alex's reply from facts
+code gathered: the thread so far, Alex's rate, scope prices, unpaid invoices, open promises both ways.
+Code checks the reply (the right name, only prices from Alex's records, no past dates) and runs every
+promised date through Before you send. The reply waits for Yes; the conversation continues from there.
+
 ## Propose, verify, or abstain
 
 | Model output | Checked by code | If the check fails |
@@ -126,7 +133,13 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 # open http://localhost:8000 and press "Run morning loop"
 ```
 
-Demo mode (`KEPT_DEMO=1`, the default) loads a made-up week for Alex, a freelance web designer,
+The morning loop runs its independent parts in parallel (the emails, then follow-ups, money,
+rescue, growth, offers and news side by side, then the overload call and the brief); writes to the
+shared files are serialised, and the one-message-per-person rule is enforced atomically. A full
+demo morning takes about two minutes.
+
+Demo mode (`KEPT_DEMO=1`, the default) opens on a recorded live morning (`demo_snapshot/`, dates
+moved forward by whole weeks) and lets a visitor write to Alex as a client. It loads a made-up week for Alex, a freelance web designer,
 with nine emails, two signed agreements, a money book and eight weeks of history.
 Tests: `.venv/bin/python -m pytest -q`. Live evaluation (costs model credits):
 `.venv/bin/python eval/run_eval.py --runs 5` grades each full day with 24 checks written in code.
