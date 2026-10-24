@@ -16,7 +16,7 @@ def test_delighted_client_gets_a_review_ask_and_a_post_both_waiting(fake):
 
 def test_happy_client_with_open_work_is_not_asked_yet(fake):
     seed(force=True)
-    fake([("clearly delighted", lambda p: {"delighted": "Maria" in p, "quote": "Thank you!!"})])
+    fake([("clearly delighted", lambda p: {"delighted": "Maria" in p, "quote": "Thank you!! Maria"})])
     out = growth.moments()
     assert out["asks"] == [] and out["waiting"][0]["why"] == "the project isn't finished and paid yet"
 
