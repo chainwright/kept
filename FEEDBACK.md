@@ -29,8 +29,25 @@ builder actually goes through. Times are from our notes on Oct 24, 2026.
   then shows the State field. Filling the country first avoids it, but nothing tells you that.
 
 ## Token Factory API
-_(to be filled in once we have a key: latency per model, JSON mode behaviour, rate limits,
-`/v1/models` listing, error messages)_
+
+**What worked**
+- `/v1/models` lists the Nemotron family with stable IDs (`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`,
+  `nvidia/nemotron-3-super-120b-a12b`, `nvidia/Nemotron-3-Ultra-550b-a55b`), so Kept discovers the
+  models at start-up instead of hard-coding them. Note the inconsistent casing between the three IDs;
+  we match case-insensitively.
+- `response_format: json_object` is honoured by all three sizes.
+- Latency was good: Nano answers in under a second with reasoning off, Super in 2-8 s, Ultra in
+  roughly 5-15 s for a real decision.
+- Super and Ultra return their reasoning in a separate `reasoning_content` field. We store Ultra's
+  reasoning next to its decision so the owner can see *why* it proposed moving a deadline.
+
+**What needs work**
+- **Hidden reasoning can eat the whole answer.** Our first live run of Nano with `max_tokens=200`
+  came back with `finish_reason: length`, empty `content` and empty `reasoning_content`, while
+  usage showed all 200 tokens spent. Nothing in the response says the tokens went to reasoning.
+  Passing `chat_template_kwargs: {"enable_thinking": false}` fixed it: 34 tokens, 0.8 s. A line
+  in the quickstart ("Nemotron 3 reasons by default; budget for it or switch it off") would have
+  saved us an hour. The `/no_think` system prompt and `reasoning_effort: low` did not help.
 
 ## NVIDIA Nemotron
 _(to be filled in: where Nano was good enough, where Super was needed, what Ultra was worth)_

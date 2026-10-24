@@ -29,12 +29,13 @@ class Tier:
     usd_in_per_m: float      # list price per 1M input tokens (approximate, shown in the UI)
     usd_out_per_m: float
     why: str
+    thinking: bool = True    # Nemotron 3 reasoning on/off for this tier
 
 
 TIERS = {
-    "nano": Tier("nano", "nano", "nvidia/Nemotron-3-Nano-30B-A3B", 0.06, 0.24,
-                 "cheap and fast: sorting, tagging, yes/no questions"),
-    "super": Tier("super", "super", "nvidia/Nemotron-3-Super-120B-A12B", 0.30, 0.90,
+    "nano": Tier("nano", "nano", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", 0.06, 0.24,
+                 "cheap and fast: sorting, tagging, yes/no questions", thinking=False),
+    "super": Tier("super", "super", "nvidia/nemotron-3-super-120b-a12b", 0.30, 0.90,
                   "planning the day and drafting text that someone will read"),
     "ultra": Tier("ultra", "ultra", "nvidia/Nemotron-3-Ultra-550b-a55b", 1.00, 3.00,
                   "the one hard judgement call where a mistake costs real money"),

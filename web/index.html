@@ -176,30 +176,33 @@
           <div id="news-list"></div>
         </section>
 
-        <section class="card" id="models" aria-labelledby="h-models">
-          <div class="card-head">
-            <h2 id="h-models">Models</h2>
-            <span class="meta">NVIDIA Nemotron via Nebius Token Factory</span>
-          </div>
-          <div class="tiers" id="tiers"></div>
-          <div class="budget" id="budget"></div>
-          <h3 class="h3">Recent calls</h3>
-          <div class="table-wrap" id="calls-wrap" tabindex="0" role="region" aria-label="Recent model calls">
-            <table class="calls">
-              <thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">What for</th><th scope="col" class="num">Tokens</th><th scope="col" class="num">ms</th><th scope="col" class="num">Cost</th></tr></thead>
-              <tbody id="calls-body"></tbody>
-            </table>
-          </div>
-          <p class="empty" id="calls-empty" hidden></p>
-        </section>
-
-        <section class="card" id="activity" aria-labelledby="h-activity">
-          <details>
-            <summary><h2 id="h-activity" class="inline-h">Activity log</h2> <span class="muted" id="activity-count"></span></summary>
-            <ul class="activity" id="activity-list"></ul>
-          </details>
-        </section>
       </div>
+    </div>
+
+    <div class="wide">
+      <section class="card" id="models" aria-labelledby="h-models">
+        <div class="card-head">
+          <h2 id="h-models">Models</h2>
+          <span class="meta">NVIDIA Nemotron via Nebius Token Factory</span>
+        </div>
+        <div class="tiers" id="tiers"></div>
+        <div class="budget" id="budget"></div>
+        <h3 class="h3">Recent calls</h3>
+        <div class="table-wrap" id="calls-wrap" tabindex="0" role="region" aria-label="Recent model calls">
+          <table class="calls">
+            <thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">What for</th><th scope="col" class="why-col">Why this size</th><th scope="col" class="num tok-col">Tokens</th><th scope="col" class="num">Latency</th><th scope="col" class="num">Cost</th></tr></thead>
+            <tbody id="calls-body"></tbody>
+          </table>
+        </div>
+        <p class="empty" id="calls-empty" hidden></p>
+      </section>
+
+      <section class="card" id="activity" aria-labelledby="h-activity">
+        <details>
+          <summary><h2 id="h-activity" class="inline-h">Activity log</h2> <span class="muted" id="activity-count"></span></summary>
+          <ul class="activity" id="activity-list"></ul>
+        </details>
+      </section>
     </div>
   </main>
 

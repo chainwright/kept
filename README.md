@@ -118,6 +118,27 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 Demo mode (`KEPT_DEMO=1`, the default) loads a made-up week for Alex, a freelance web designer,
 with six emails. Tests: `.venv/bin/python -m pytest -q`.
 
+## What live testing taught us
+
+Our first runs on the real models went badly, and we kept the evidence because it shaped the design:
+
+- **Every email got held back.** Nemotron Nano spent its whole token budget reasoning and returned an
+  empty answer. Kept didn't guess; it logged "model reply unusable" for each one. Fix: Nano runs with
+  reasoning switched off, Super and Ultra get extra room to think.
+- **A promise was "owed to" the owner.** The model filled in the owner's name as the person waiting,
+  so the follow-up started "Hi Alex" (that's the sender) and promised a date that had already passed.
+  Fix: who the promise is owed to and their address now come from the email header, by code; a new
+  check holds back drafts that greet the sender or mention a past date.
+- **Ultra emailed an address it made up.** Fix: Ultra picks *which* promise to move; the address
+  always comes from the original email.
+- **Ultra told an accountant a delay "has no impact on your filing".** It only saw a one-line title.
+  Fix: Ultra now reads each person's own words, and is told never to move someone's hard deadline.
+  Its next decision moved the only promise without one, and its reasoning is saved next to it.
+- **Two contradicting emails waited for approval** ("it's coming today" and "can we move it to
+  Monday?"). Fix: a promise that already has a message waiting is off-limits to other jobs.
+
+Each of these has a regression test in `tests/test_agent.py`.
+
 ## Limitations (honest list)
 
 - It only knows what's in the inbox and its own files. Promises made on a phone call don't exist

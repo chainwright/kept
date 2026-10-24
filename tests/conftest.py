@@ -24,7 +24,7 @@ class FakeBackend:
         return ["nvidia/Nemotron-3-Nano-30B-A3B", "nvidia/Nemotron-3-Super-120B-A12B",
                 "nvidia/Nemotron-3-Ultra-550b-a55b", "meta-llama/Llama-3.3-70B-Instruct"]
 
-    def complete(self, model, messages, max_tokens, temperature, json_mode):
+    def complete(self, model, messages, max_tokens, temperature, json_mode, thinking=True):
         prompt = messages[-1]["content"]
         self.calls.append((model, prompt))
         for key, reply in self.rules:

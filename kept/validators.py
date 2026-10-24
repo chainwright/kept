@@ -58,7 +58,8 @@ def grounded(claims: Iterable[dict], sources: dict[str, str]) -> Verdict:
     """
     v = Verdict(True)
     for i, c in enumerate(claims):
-        sid, quote = str(c.get("source", "")), str(c.get("quote", ""))
+        # models write "[web:1a2b]" when the listing showed the id in brackets; same source
+        sid, quote = str(c.get("source", "")).strip().strip("[]").strip(), str(c.get("quote", ""))
         if sid not in sources:
             v.add(f"claim {i + 1} cites '{sid}', which Kept never fetched")
             continue
@@ -114,4 +115,40 @@ def one_of(value: Any, allowed: Iterable[str], field_name: str) -> Verdict:
     allowed = list(allowed)
     if value not in allowed:
         v.add(f"{field_name} '{value}' is not one of {allowed}")
+    return v
+
+
+_MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct",
+                                       "nov", "dec"], start=1)}
+
+
+def dates_in(text: str, today: date) -> list[date]:
+    found = []
+    for y, m, d in re.findall(r"\b(20\d\d)-(\d\d)-(\d\d)\b", text):
+        try:
+            found.append(date(int(y), int(m), int(d)))
+        except ValueError:
+            pass
+    for mon, d in re.findall(r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? (\d{1,2})\b", text, re.I):
+        try:
+            found.append(date(today.year, _MONTHS[mon.lower()[:3]], int(d)))
+        except ValueError:
+            pass
+    return found
+
+
+def honest_email(text: str, *, recipient_first: str, owner_first: str, today: date | None = None) -> Verdict:
+    """Catches the mistakes we saw in live runs: greeting the owner instead of the client,
+    and promising a date that has already passed."""
+    today = today or date.today()
+    v = Verdict(True)
+    first_line = text.strip().splitlines()[0] if text.strip() else ""
+    if owner_first and re.search(rf"\b{re.escape(owner_first)}\b", first_line, re.I) and \
+            owner_first.lower() != recipient_first.lower():
+        v.add(f"the greeting addresses {owner_first}, the sender, instead of {recipient_first}")
+    if recipient_first and recipient_first.lower() not in text.lower():
+        v.add(f"the draft never mentions '{recipient_first}'")
+    past = [d for d in dates_in(text, today) if d < today]
+    if past:
+        v.add(f"the draft mentions {past[0].isoformat()}, which has already passed")
     return v

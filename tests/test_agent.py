@@ -19,7 +19,7 @@ def test_triage_extracts_only_grounded_commitments(fake):
     _inbox([MAIL])
     fake([
         ("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "Maria waits for quote"}),
-        ("List promises", {"items": [
+        ("List things", {"items": [
             {"text": "Send Maria the revised quote", "who": "Maria Lopez", "due": (TODAY - timedelta(days=1)).isoformat(),
              "quote": "you'd send the revised quote by"},
             {"text": "Build her a logo", "who": "Maria", "due": None, "quote": "and you also promised a free logo"},
@@ -67,14 +67,15 @@ def test_brief_strips_references_to_things_that_dont_exist(fake):
 
 
 def test_overload_uses_ultra_and_still_needs_yes(fake):
-    rows = [ledger.add(f"Deliver item {i}", who=f"client{i}@x.example", due=(TODAY + timedelta(days=1)).isoformat())
-            for i in range(3)]
+    rows = [ledger.add(f"Deliver item {i}", who=f"Client{i} Smith", contact=f"client{i}@x.example",
+                       due=(TODAY + timedelta(days=1)).isoformat()) for i in range(3)]
     fb = fake([("Pick the ONE", lambda p: {"move_id": rows[1]["id"], "new_due": (TODAY + timedelta(days=6)).isoformat(),
-                                           "reason": "smallest impact", "to": "client1@x.example",
-                                           "subject": "Moving the date", "body": "Hi, could we move this to next week?"})])
+                                           "reason": "smallest impact", "to": "made-up@example.com",
+                                           "subject": "Moving the date", "body": "Hi Client1, could we move this to next week?"})])
     req = agent.weigh_overload()
     assert req and req["status"] == "pending"
     assert "Ultra" in fb.calls[-1][0]
+    assert req["args"]["to"] == "client1@x.example"     # never the address the model typed
 
 
 def test_watch_keeps_only_quoted_facts(fake, monkeypatch):
@@ -100,3 +101,52 @@ def test_memory_answer_is_verified_only_with_real_quotes(fake):
     fake([("Question:", {"answer": "You owe Maria a logo.",
                          "evidence": [{"source": f"ledger:{row['id']}", "quote": "design a new logo for Maria"}]})])
     assert memory_qa.ask("What do I owe Maria?")["verified"] is False
+
+
+# ---- regressions from the first live run on Nemotron (Oct 24) ----
+def test_extracted_promise_is_owed_to_the_sender_not_the_owner(fake):
+    _inbox([MAIL])
+    fake([("Classify this email", {"kind": "client", "needs_reply": True, "one_line": "x"}),
+          ("List things", {"items": [{"text": "send the revised quote", "who": "Alex", "due": None,
+                                      "quote": "you'd send the revised quote by"}]})])
+    agent.triage_inbox()
+    row = ledger.items("open")[0]
+    assert row["who"] == "Maria Lopez" and row["contact"] == "maria@bakery.example"
+    assert row["text"] == "Send the revised quote"
+
+
+def test_follow_up_that_greets_the_owner_is_held_back(fake):
+    _inbox([MAIL])
+    ledger.add("Send Maria the revised quote", who="Maria Lopez", contact="maria@bakery.example",
+               due=TODAY.isoformat(), source="mail:1")
+    fake([("Write a short, warm", {"subject": "Quote", "body": "Hi Alex,\nThe quote is coming today. Maria asked about sizes.\nAlex"})])
+    assert agent.follow_ups() == []
+    probs = store.read_json("abstained.json", [])[-1]["problems"]
+    assert any("addresses Alex" in p for p in probs)
+
+
+def test_follow_up_promising_a_past_date_is_held_back(fake):
+    _inbox([MAIL])
+    ledger.add("Send Maria the revised quote", who="Maria Lopez", contact="maria@bakery.example",
+               due=TODAY.isoformat(), source="mail:1")
+    past = (TODAY - timedelta(days=1)).isoformat()
+    fake([("Write a short, warm", {"subject": "Quote", "body": f"Hi Maria, I'm on track to send it by {past}. Alex"})])
+    assert agent.follow_ups() == []
+    assert any("already passed" in p for p in store.read_json("abstained.json", [])[-1]["problems"])
+
+
+def test_bracketed_source_ids_still_count_as_the_same_source():
+    from kept.validators import grounded
+    assert grounded([{"source": "[web:aa]", "quote": "card fees for small merchants rise"}],
+                    {"web:aa": "Stripe said card fees for small merchants rise in January."})
+
+
+def test_overload_skips_promises_that_already_have_a_message_waiting(fake):
+    rows = [ledger.add(f"Deliver item {i}", who=f"Client{i} Smith", contact=f"client{i}@x.example",
+                       due=(TODAY + timedelta(days=1)).isoformat()) for i in range(3)]
+    approvals.propose("send_email", {"to": "client0@x.example", "subject": "s", "body": "b"},
+                      summary="x", why="y", ledger_id=rows[0]["id"])
+    fb = fake([("Pick the ONE", {"move_id": rows[0]["id"], "new_due": (TODAY + timedelta(days=6)).isoformat(),
+                                 "reason": "r", "subject": "s", "body": "Hi Client0, can we move it?"})])
+    assert agent.weigh_overload() is None        # only two candidates left: no overload call at all
+    assert fb.calls == []

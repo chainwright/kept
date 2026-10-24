@@ -16,7 +16,9 @@ from .config import ROOT
 from .llm import BudgetExceeded, router
 from .store import append_audit, journal, now_iso, read_journal, read_json, read_notes, write_json
 from .tools import mail, notify
-from .validators import Verdict, grounded, one_of, plausible_due, sendable_text, shape
+from email.utils import parseaddr
+
+from .validators import Verdict, grounded, honest_email, one_of, plausible_due, sendable_text, shape
 
 SYSTEM = ("You are Kept, an operator for a one-person business. You are careful and plain-spoken. "
           "You never invent facts. When asked for JSON, reply with JSON only.")
@@ -45,6 +47,13 @@ def _abstain(job: str, subject: str, verdict: Verdict, payload: Any = None) -> d
     append_audit("abstained", job=job, subject=subject, problems=verdict.problems)
     journal(f"Held back on {job} ({subject}): " + "; ".join(verdict.problems))
     return rec
+
+
+def sender(m: dict) -> tuple[str, str]:
+    """(display name, address) from the From header. Facts like these come from code, not the model:
+    in a live run the model once named the owner as the person a promise was owed to."""
+    name, addr = parseaddr(m.get("from", ""))
+    return (name or addr.split("@")[0]).strip(), addr.strip().lower()
 
 
 # --------------------------------------------------------------------------- inbox
@@ -90,12 +99,13 @@ def _extract_commitments(m: dict) -> list[dict]:
     out = []
     try:
         data = router.ask("extract", _msgs(
-            "List promises the business owner made or agreed to in this email thread "
-            "(things THEY must do), and requests they must answer. For each, copy the exact "
-            "words from the email that show it. Reply JSON: "
-            '{"items": [{"text": "what must be done, short", "who": "person it is owed to", '
-            '"due": "YYYY-MM-DD or null", "quote": "exact words from the email"}]}. '
-            f"Today is {date.today().isoformat()}. If there are none, return an empty list.\n\n"
+            f"This email was sent TO the business owner, {read_notes_owner()}, BY {sender(m)[0]}. "
+            f"List things {read_notes_owner()} promised or must do for {sender(m)[0]}. Write each as a short "
+            f"instruction to {read_notes_owner()}, naming the person (e.g. 'Send Maria the revised quote'). "
+            "For each, copy the exact words from the email that show it. Reply JSON: "
+            '{"items": [{"text": "short instruction", "due": "YYYY-MM-DD or null", '
+            '"quote": "exact words from the email"}]}. '
+            f"Today is {date.today().isoformat()} ({date.today():%A}). If there are none, return an empty list.\n\n"
             f"From: {m['from']}\nSubject: {m['subject']}\n\n{m['body'][:4000]}", "extract"),
             purpose=f"extract {m['id']}", json_mode=True, max_tokens=500).json()
     except Exception as e:
@@ -109,7 +119,9 @@ def _extract_commitments(m: dict) -> list[dict]:
         if not v:
             _abstain("extract", it.get("text", m["subject"]), v, it)
             continue
-        out.append(ledger.add(it["text"], who=it.get("who") or m["from"], due=it.get("due"),
+        name, addr = sender(m)
+        text = it["text"].strip()
+        out.append(ledger.add(text[:1].upper() + text[1:], who=name, contact=addr, due=it.get("due"),
                               source=m["id"], origin="inbox"))
     return out
 
@@ -123,16 +135,23 @@ def follow_ups(limit: int = 3) -> list[dict]:
     for row in ledger.open_sorted(today):
         if len(asked) >= limit:
             break
+        if any(a.get("ledger_id") == row["id"] for a in approvals.pending()):
+            continue
         due_soon = row.get("due") and row["due"][:10] <= today.isoformat()
         src = mails.get(row.get("source", ""))
         if not (due_soon and src):
             continue
-        to = src["from"].split("<")[-1].rstrip(">").strip()
-        name = row.get("who", "").split("<")[0].strip().split(" ")[0]
+        full, to = sender(src)
+        name = full.split(" ")[0]
+        overdue = ledger.days_overdue(row, today)
+        status = (f"It is {overdue} day(s) late; apologise in one sentence and say it will arrive today."
+                  if overdue else "It is due today; say it will arrive today.")
         r = router.ask("draft", _msgs(
-            f"Write a short, warm, human email from {read_notes_owner()} to {row.get('who')} about this "
-            f"commitment: '{row['text']}' (due {row.get('due')}). Be honest about status; do not promise "
-            "anything new and do not invent facts. Use their first name. No placeholders. "
+            f"Today is {today.isoformat()} ({today:%A}). Write a short, warm email FROM {read_notes_owner()} "
+            f"TO {full} about this: '{row['text']}'. {status} Greet {name} by first name, sign as "
+            f"{read_notes_owner()}. Answer any open question from their email only if the answer is "
+            "obvious; otherwise say you'll confirm. Do not invent facts. Write dates the way people do "
+            "('today', 'Friday'), never as YYYY-MM-DD. "
             'Reply JSON: {"subject": "...", "body": "..."}\n\n'
             f"Their original email:\nSubject: {src['subject']}\n{src['body'][:2500]}", "follow_up"),
             purpose=f"follow-up {row['id']}", json_mode=True, max_tokens=600)
@@ -143,7 +162,9 @@ def follow_ups(limit: int = 3) -> list[dict]:
             continue
         v = shape(d, {"subject": str, "body": str})
         if v:
-            v.merge(sendable_text(d["body"], must_mention=[name] if name else []))
+            v.merge(sendable_text(d["body"]))
+            v.merge(honest_email(d["body"], recipient_first=name, owner_first=read_notes_owner().split(" ")[0],
+                                 today=today))
         if not v:
             _abstain("follow_up", row["text"], v, d)
             continue
@@ -151,7 +172,7 @@ def follow_ups(limit: int = 3) -> list[dict]:
             "send_email", {"to": to, "subject": d["subject"], "body": d["body"]},
             summary=f"Email {to}: \"{d['subject']}\"",
             why=f"You promised: {row['text']} (due {row.get('due')}).",
-            checks=["no template holes", f"addresses {name or 'them'} by name", "length ok"],
+            checks=["no template holes", f"greets {name}, not you", "no dates already passed", "length ok"],
             ledger_id=row["id"])
         ledger.touch(row["id"], f"drafted follow-up, waiting for approval {req['id']}")
         notify.ask(req)
@@ -184,15 +205,17 @@ def watch_topics(topics: list[str] | None = None) -> dict:
         listing = "\n\n".join(f"[{r['id']}] {r['title']}\n{r['content'][:2500]}" for r in results)
         try:
             data = router.ask("plan", _msgs(
-                f"The owner follows this topic: '{topic}'. From the sources below, give at most 3 facts "
-                "that matter to a small business owner this week. Each fact must quote the exact words "
-                "from its source. Reply JSON: "
+                f"The owner follows this topic: '{topic}'. From the sources below, give at most 2 facts "
+                "that could change what a small business owner does this month (prices, rules, deadlines). "
+                "Each fact must make sense on its own, without the article, and must quote the exact words "
+                "from its source. Skip opinions and marketing. Reply JSON: "
                 '{"claims": [{"text": "...", "source": "<id in brackets>", "quote": "exact words"}]}\n\n'
                 + listing), purpose=f"watch '{topic}'", json_mode=True, max_tokens=700).json()
         except Exception as e:
             _abstain("watch", topic, Verdict(False, [f"model reply unusable: {e}"]))
             continue
         for c in (data.get("claims") or [])[:3]:
+            c["source"] = str(c.get("source", "")).strip().strip("[]").strip()
             v = grounded([c], sources)
             if v:
                 url = next(r["url"] for r in results if r["id"] == c["source"])
@@ -211,16 +234,31 @@ def weigh_overload() -> dict | None:
     """When the week holds more promises than time, Ultra decides what to move and drafts
     the honest message. That message still needs the owner's Yes."""
     today = date.today()
-    soon = [r for r in ledger.open_sorted(today) if r.get("due") and
-            (date.fromisoformat(r["due"][:10]) - today).days <= 3]
+    busy = {a.get("ledger_id") for a in approvals.pending()}
+    # a promise that already has a message waiting for the owner's Yes is off the table:
+    # two contradicting emails to the same person is worse than either one
+    soon = [r for r in ledger.open_sorted(today) if r.get("due") and r.get("contact") and
+            r["id"] not in busy and (date.fromisoformat(r["due"][:10]) - today).days <= 3]
     if len(soon) < 3:
         return None
-    listing = "\n".join(f"- [{r['id']}] {r['text']} | owed to {r.get('who')} | due {r['due']}" for r in soon)
+    mails = {m["id"]: m for m in mail.inbox(50)}
+
+    def context(r: dict) -> str:
+        src = mails.get(r.get("source", ""))
+        return f"\n    their words: \"{src['body'][:600]}\"" if src else ""
+
+    # the decision is only as good as what Ultra can see: give it the original words, not just a title
+    listing = "\n".join(f"- [{r['id']}] {r['text']} | owed to {r.get('who')} | due {r['due']}{context(r)}"
+                        for r in soon)
     r = router.ask("judge", _msgs(
         "These promises are all due within three days and the owner works alone. Pick the ONE whose "
-        "deadline should move, considering who is affected, money at stake, and trust. Draft a short, "
-        "honest note proposing a new date. Reply JSON: "
-        '{"move_id": "<id>", "new_due": "YYYY-MM-DD", "reason": "...", "to": "<email>", '
+        "deadline should move, considering who is affected, money at stake, and trust. Read each "
+        "person's own words: never move something that they say has a hard deadline of their own "
+        "(a filing date, a launch, a payment due), and never claim the delay has no impact on them. "
+        "Draft a short, "
+        f"honest note from {read_notes_owner()} to that person proposing a new date (greet them by first "
+        f"name, write dates the way people do). Today is {today.isoformat()} ({today:%A}). Reply JSON: "
+        '{"move_id": "<id>", "new_due": "YYYY-MM-DD", "reason": "...", '
         '"subject": "...", "body": "..."}\n\n' + listing), purpose="overload decision",
         json_mode=True, max_tokens=900)
     try:
@@ -229,20 +267,24 @@ def weigh_overload() -> dict | None:
         _abstain("overload", "pick one to move", Verdict(False, [f"model reply unusable: {e}"]))
         return None
     ids = {x["id"]: x for x in soon}
-    v = shape(d, {"move_id": str, "new_due": str, "reason": str, "to": str, "subject": str, "body": str})
+    v = shape(d, {"move_id": str, "new_due": str, "reason": str, "subject": str, "body": str})
     if v:
         v.merge(one_of(d["move_id"], list(ids), "move_id"))
         v.merge(plausible_due(d["new_due"]))
+        if v and d["new_due"][:10] <= ids[d["move_id"]]["due"][:10]:
+            v.add(f"new date {d['new_due']} is not later than the current one")
         v.merge(sendable_text(d["body"]))
-        if "@" not in d["to"]:
-            v.add(f"'{d['to']}' is not an email address")
+    if v:
+        row = ids[d["move_id"]]
+        v.merge(honest_email(d["body"], recipient_first=(row.get("who") or "").split(" ")[0],
+                             owner_first=read_notes_owner().split(" ")[0], today=today))
     if not v:
         _abstain("overload", "pick one to move", v, d)
         return None
-    row = ids[d["move_id"]]
+    to = row["contact"]  # the address comes from the original email, never from the model
     req = approvals.propose(
-        "send_email", {"to": d["to"], "subject": d["subject"], "body": d["body"]},
-        summary=f"Ask {d['to']} to move '{row['text']}' to {d['new_due']}",
+        "send_email", {"to": to, "subject": d["subject"], "body": d["body"]},
+        summary=f"Ask {row.get('who')} to move '{row['text']}' to {d['new_due']}",
         why=d["reason"], checks=["picked from this week's promises", "new date is sane",
                                  "no template holes"], ledger_id=row["id"])
     notify.ask(req)

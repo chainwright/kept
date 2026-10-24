@@ -24,6 +24,9 @@ ROUTES = {
 }
 
 
+THINK_ALLOWANCE = 3000  # extra tokens for Super/Ultra to reason before the answer
+
+
 class BudgetExceeded(RuntimeError):
     pass
 
@@ -37,6 +40,8 @@ class Reply:
     completion_tokens: int
     usd: float
     ms: int
+    reasoning: str = ""
+    finish: str = "stop"
 
     def json(self) -> Any:
         return parse_json(self.text)
@@ -74,17 +79,23 @@ class NebiusBackend:
                 self._models = []
         return self._models
 
-    def complete(self, model, messages, max_tokens, temperature, json_mode):
+    def complete(self, model, messages, max_tokens, temperature, json_mode, thinking=True):
         kw: dict[str, Any] = {}
         if json_mode:
             kw["response_format"] = {"type": "json_object"}
+        if not thinking:
+            # Nemotron 3 reasons by default. For sorting and extraction that hidden reasoning
+            # ate the whole token budget and left an empty answer, so Nano runs with it off.
+            kw["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
         r = self.client.chat.completions.create(
             model=model, messages=messages, max_tokens=max_tokens,
             temperature=temperature, **kw)
-        u = r.usage
-        return (r.choices[0].message.content or "",
+        u, ch = r.usage, r.choices[0]
+        return (ch.message.content or "",
                 getattr(u, "prompt_tokens", 0) or 0,
-                getattr(u, "completion_tokens", 0) or 0)
+                getattr(u, "completion_tokens", 0) or 0,
+                getattr(ch.message, "reasoning_content", None) or "",
+                ch.finish_reason or "stop")
 
 
 class Router:
@@ -126,13 +137,21 @@ class Router:
                          reason=f"daily budget ${settings.daily_budget_usd:.2f} reached")
             raise BudgetExceeded(f"daily model budget ${settings.daily_budget_usd:.2f} reached")
         model = self.model_for(tier)
+        # thinking tiers need room to reason *and* answer
+        budget = max_tokens + (THINK_ALLOWANCE if t.thinking else 0)
         t0 = time.time()
-        text, pin, pout = self._backend().complete(model, messages, max_tokens, temperature, json_mode)
+        out = self._backend().complete(model, messages, budget, temperature, json_mode, t.thinking)
+        text, pin, pout = out[:3]
+        reasoning, finish = (out[3], out[4]) if len(out) >= 5 else ("", "stop")
         ms = int((time.time() - t0) * 1000)
         usd = pin / 1e6 * t.usd_in_per_m + pout / 1e6 * t.usd_out_per_m
         append_audit("llm", task=task, tier=tier, model=model, why=t.why, purpose=purpose,
-                     prompt_tokens=pin, completion_tokens=pout, usd=round(usd, 6), ms=ms)
-        return Reply(text, model, tier, pin, pout, usd, ms)
+                     thinking=t.thinking, prompt_tokens=pin, completion_tokens=pout,
+                     usd=round(usd, 6), ms=ms, finish=finish,
+                     reasoning=reasoning[:1500] if task == "judge" else None)
+        if finish == "length" and not text.strip():
+            raise ValueError(f"{tier} ran out of tokens before answering ({pout} used)")
+        return Reply(text, model, tier, pin, pout, usd, ms, reasoning, finish)
 
 
 router = Router()

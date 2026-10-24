@@ -37,7 +37,7 @@ def get(item_id: str) -> dict:
 
 
 def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
-        origin: str = "owner") -> dict:
+        origin: str = "owner", contact: str = "") -> dict:
     text = text.strip()
     if not text:
         raise LedgerError("a commitment needs words")
@@ -47,7 +47,7 @@ def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
         if r["status"] == "open" and r["text"].lower() == text.lower() and r.get("who") == who:
             return r
     row = {"id": uuid.uuid4().hex[:8], "text": text, "who": who, "due": due, "source": source,
-           "origin": origin, "status": "open", "created": now_iso(), "history": []}
+           "origin": origin, "contact": contact, "status": "open", "created": now_iso(), "history": []}
     rows.append(row)
     write_json(FILE, rows)
     append_audit("ledger_add", id=row["id"], text=text, who=who, due=due, origin=origin)
