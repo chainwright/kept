@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta
 from . import approvals, calibration, ledger, media, money
 from .agent import _abstain, _msgs, read_notes_owner, sender
 from .llm import router
-from .store import data_dir, journal, now_iso, read_json, read_notes, write_json
+from .store import data_dir, journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import mail, notify
 from .validators import Verdict, grounded, honest_email, sendable_text, shape
 
@@ -68,6 +68,7 @@ def moments(today: date | None = None) -> dict:
     today = today or date.today()
     clients = {i["contact"].lower(): i["client"] for i in money.load()["invoices"]}
     out = {"asks": [], "posts": [], "waiting": []}
+    recent = []
     for m in mail.inbox(50):
         name, addr = sender(m)
         if addr not in clients:
@@ -78,13 +79,22 @@ def moments(today: date | None = None) -> dict:
                 continue
         except ValueError:
             pass
+        recent.append(m)
+
+    def delight(m):
         r = router.ask("classify", _msgs(
             "Is this client clearly delighted with finished work (praise, thanks, a good result)? If yes, copy the "
             'exact words that show it. Reply JSON: {"delighted": true|false, "quote": "exact words or empty"}\n\n'
             f"From: {m['from']}\n\n{m['body'][:2500]}"), purpose=f"delight? {m['id']}", json_mode=True, max_tokens=150)
         try:
-            d = r.json()
+            return r.json()
         except Exception:
+            return None
+
+    from .parallel import pmap
+    for m, d in zip(recent, pmap(delight, recent)):
+        name, addr = sender(m)
+        if not d:
             continue
         if not d.get("delighted"):
             continue
@@ -142,9 +152,10 @@ def _ask(client: str, addr: str, m: dict, quote: str) -> dict | None:
                             why=f"They wrote: \"{quote[:120]}\". Delivered on time, nothing owed either way.",
                             checks=["only your review link", "nothing offered in exchange", f"greets {first}"])
     if req:
-        rows = read_json(FILE, [])
-        rows.append({"client": client, "kind": "ask", "ts": now_iso(), "approval": req["id"]})
-        write_json(FILE, rows)
+        with locked():
+            rows = read_json(FILE, [])
+            rows.append({"client": client, "kind": "ask", "ts": now_iso(), "approval": req["id"]})
+            write_json(FILE, rows)
         notify.ask(req)
     return req
 

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import httpx
 
-from .store import append_audit, data_dir, journal, now_iso, read_json, write_json
+from .store import append_audit, data_dir, journal, locked, now_iso, read_json, write_json
 
 FILE = "media.json"
 SHOT = "https://image.thum.io/get/width/1200/crop/900/noanimate/{url}"
@@ -35,9 +35,10 @@ def site_of(contract_text: str) -> str:
 
 
 def record(client: str, which: str, path: Path, how: str) -> dict:
-    rows = read_json(FILE, {})
-    rows.setdefault(slug(client), {})[which] = {"path": str(path.relative_to(data_dir())), "how": how, "ts": now_iso()}
-    write_json(FILE, rows)
+    with locked():
+        rows = read_json(FILE, {})
+        rows.setdefault(slug(client), {})[which] = {"path": str(path.relative_to(data_dir())), "how": how, "ts": now_iso()}
+        write_json(FILE, rows)
     append_audit("media", client=client, which=which, how=how)
     journal(f"Saved the '{which}' picture for {client} ({how})")
     return rows[slug(client)]

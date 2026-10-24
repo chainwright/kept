@@ -183,17 +183,25 @@ class Router:
                      thinking=t.thinking, prompt_tokens=pin, completion_tokens=pout,
                      usd=round(usd, 6), ms=ms, finish=finish,
                      reasoning=reasoning[:1500] if task == "judge" else None)
-        if finish == "length" and not text.strip():
-            raise ValueError(f"{tier} ran out of tokens before answering ({pout} used)")
-        if json_mode and not _retry:
+        cut_off = finish == "length"
+        bad_json = False
+        if json_mode:
             try:
                 parse_json(text)
-            except Exception as e:
-                # eval run 2: Ultra's overload decision came back as broken JSON once in a few runs;
-                # one more try is cheaper than losing the decision. The bad reply stays in the audit.
-                append_audit("llm_retry", task=task, tier=tier, purpose=purpose, error=str(e)[:200])
-                return self.ask(task, messages, purpose=purpose, max_tokens=max_tokens, temperature=temperature,
-                                json_mode=True, tier=tier, _retry=True)
+            except Exception:
+                bad_json = True
+        if (cut_off and (json_mode or not text.strip())) or bad_json:
+            if not _retry:
+                # The recorded demo run showed what "broken JSON" from Ultra really was: its reasoning
+                # used the whole budget (3,900 of 3,900 tokens) and the answer was cut off. Retrying
+                # with the same budget failed the same way, so the retry gets twice the room to think.
+                append_audit("llm_retry", task=task, tier=tier, purpose=purpose,
+                             error="ran out of tokens" if cut_off else "unusable JSON")
+                return self.ask(task, messages, purpose=purpose, max_tokens=max_tokens * 2 if not t.thinking
+                                else max_tokens + THINK_ALLOWANCE, temperature=temperature,
+                                json_mode=json_mode, tier=tier, _retry=True)
+            if cut_off and not text.strip():
+                raise ValueError(f"{tier} ran out of tokens before answering ({pout} used)")
         return Reply(text, model, tier, pin, pout, usd, ms, reasoning, finish)
 
 

@@ -23,6 +23,12 @@ from .config import settings
 _lock = threading.RLock()
 
 
+def locked() -> threading.RLock:
+    """Hold this around read-modify-write of a data file. The morning loop runs jobs in parallel,
+    and two jobs appending to approvals.json at once would otherwise lose one of the writes."""
+    return _lock
+
+
 def data_dir() -> Path:
     d = settings.data_dir
     (d / "journal").mkdir(parents=True, exist_ok=True)

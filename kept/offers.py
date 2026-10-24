@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta
 from . import approvals, ledger, money
 from .agent import _abstain, _msgs, read_notes_owner
 from .llm import router
-from .store import journal, now_iso, read_json, read_notes, write_json
+from .store import journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
 from .validators import Verdict, honest_email, sendable_text, shape
 
@@ -214,8 +214,9 @@ def _draft(p: dict, d: dict, occ: dict, reasoning: str) -> dict | None:
                 "no other prices or discounts in the email", "no pressure language", "pays on time, no overdue invoices"],
         reasoning=reasoning, model_label="Nemotron Ultra")
     if req:
-        sent = read_json(FILE, [])
-        sent.append({"client": p["client"], "ts": now_iso(), "approval": req["id"], "occasion": occ["id"]})
-        write_json(FILE, sent)
+        with locked():
+            sent = read_json(FILE, [])
+            sent.append({"client": p["client"], "ts": now_iso(), "approval": req["id"], "occasion": occ["id"]})
+            write_json(FILE, sent)
         notify.ask(req)
     return req

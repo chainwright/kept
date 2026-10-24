@@ -10,7 +10,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from .store import append_audit, journal, now_iso, read_json, write_json
+from .store import append_audit, journal, locked, now_iso, read_json, write_json
 
 FILE = "ledger.json"
 RESOLUTIONS = ("done", "dropped", "handed_off")
@@ -37,7 +37,7 @@ def get(item_id: str) -> dict:
     raise LedgerError(f"no commitment {item_id}")
 
 
-def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
+def _add(text: str, *, who: str = "", due: str | None = None, source: str = "",
         origin: str = "owner", contact: str = "", direction: str = "i_owe", quote: str = "") -> dict:
     """direction: 'i_owe' (the owner promised) or 'owed_to_me' (someone promised the owner)."""
     text = text.strip()
@@ -59,7 +59,7 @@ def add(text: str, *, who: str = "", due: str | None = None, source: str = "",
     return row
 
 
-def close(item_id: str, resolution: str, note: str) -> dict:
+def _close(item_id: str, resolution: str, note: str) -> dict:
     """Close only with a reason a person can read later."""
     if resolution not in RESOLUTIONS:
         raise LedgerError(f"resolution must be one of {RESOLUTIONS}")
@@ -80,7 +80,7 @@ def close(item_id: str, resolution: str, note: str) -> dict:
     raise LedgerError(f"no commitment {item_id}")
 
 
-def touch(item_id: str, event: str) -> None:
+def _touch(item_id: str, event: str) -> None:
     rows = _all()
     for r in rows:
         if r["id"] == item_id:
@@ -108,3 +108,19 @@ def open_sorted(today: date | None = None, which: str | None = None) -> list[dic
     """Overdue first, then by due date, then oldest. which: 'i_owe', 'owed_to_me' or None for both."""
     rows = [r for r in items("open") if which is None or direction(r) == which]
     return sorted(rows, key=lambda r: (-days_overdue(r, today), r.get("due") or "9999", r["created"]))
+
+
+def add(*a, **k) -> dict:
+    with locked():
+        return _add(*a, **k)
+
+
+def close(*a, **k) -> dict:
+    with locked():
+        return _close(*a, **k)
+
+
+def touch(*a, **k) -> None:
+    with locked():
+        return _touch(*a, **k)
+

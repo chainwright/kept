@@ -15,7 +15,7 @@ from typing import Any
 from . import approvals, ledger
 from .config import ROOT
 from .llm import BudgetExceeded, router
-from .store import append_audit, journal, now_iso, read_journal, read_json, read_notes, write_json
+from .store import append_audit, journal, locked, now_iso, read_journal, read_json, read_notes, write_json
 from .tools import mail, notify
 from email.utils import parseaddr
 
@@ -42,9 +42,10 @@ def _msgs(user: str, skill_name: str | None = None) -> list[dict]:
 def _abstain(job: str, subject: str, verdict: Verdict, payload: Any = None) -> dict:
     rec = {"ts": now_iso(), "job": job, "subject": subject, "problems": verdict.problems,
            "payload": payload}
-    rows = read_json("abstained.json", [])
-    rows.append(rec)
-    write_json("abstained.json", rows[-200:])
+    with locked():
+        rows = read_json("abstained.json", [])
+        rows.append(rec)
+        write_json("abstained.json", rows[-200:])
     append_audit("abstained", job=job, subject=subject, problems=verdict.problems)
     journal(f"Held back on {job} ({subject}): " + "; ".join(verdict.problems))
     return rec
@@ -59,50 +60,63 @@ def sender(m: dict) -> tuple[str, str]:
 
 # --------------------------------------------------------------------------- inbox
 def triage_inbox() -> dict:
-    """Sort new mail (Nano) and pull out anything the owner promised (Nano + checks)."""
+    """Sort new mail (Nano) and pull out anything the owner promised (Super + checks).
+    Each email is handled on its own, so they run side by side."""
+    from .parallel import pmap
+
     seen = set(read_json("seen_mail.json", []))
     new = [m for m in mail.inbox(50) if m["id"] not in seen]
     report = {"new": len(new), "commitments": [], "abstained": 0, "labels": {}}
-    for m in new:
-        try:
-            cls = router.ask("classify", _msgs(
-                "Classify this email for a solo business owner. Reply JSON: "
-                '{"kind": "lead|client|bill|personal|noise", "needs_reply": true|false, '
-                '"one_line": "<=15 words"}\n\n'
-                f"From: {m['from']}\nSubject: {m['subject']}\n\n{m['body'][:3000]}", "triage"),
-                purpose=f"triage {m['id']}", json_mode=True, max_tokens=200).json()
-        except BudgetExceeded:
-            raise
-        except Exception as e:
-            _abstain("triage", m["subject"], Verdict(False, [f"model reply unusable: {e}"]))
+    for one in pmap(_triage_one, new):
+        if one["cls"] is None:
             report["abstained"] += 1
             continue
-        v = shape(cls, {"kind": str, "needs_reply": bool, "one_line": str})
-        v.merge(one_of(cls.get("kind"), ["lead", "client", "bill", "personal", "noise"], "kind"))
-        if not v:
-            _abstain("triage", m["subject"], v, cls)
-            report["abstained"] += 1
-            continue
-        report["labels"][m["id"]] = cls
-        pending_decision = []
-        if cls["kind"] == "client":
-            from . import scope
-            if scope.contract_for(sender(m)[1]):
-                # scope first: extra work is a decision for the owner, not a promise they've made
-                res = scope.review(m) or {}
-                report.setdefault("scope", []).append({"mail": m["id"], **res})
-                pending_decision = [r["email_quote"] for r in res.get("requests", [])
-                                    if r["verdict"] in ("out_of_scope", "unclear")
-                                    and not _owner_already_said(r.get("email_quote", ""))]
-        if cls["kind"] != "noise":
-            report["commitments"] += _extract_commitments(m, cls["kind"], skip=pending_decision)
-        seen.add(m["id"])
+        report["labels"][one["id"]] = one["cls"]
+        if one["scope"] is not None:
+            report.setdefault("scope", []).append(one["scope"])
+        report["commitments"] += one["commitments"]
+        seen.add(one["id"])
     write_json("seen_mail.json", sorted(seen))
     labels = read_json("labels.json", {})
     labels.update(report["labels"])
     write_json("labels.json", labels)
     journal(f"Triaged {report['new']} new emails, found {len(report['commitments'])} commitments")
     return report
+
+
+def _triage_one(m: dict) -> dict:
+    out = {"id": m["id"], "cls": None, "scope": None, "commitments": []}
+    try:
+        cls = router.ask("classify", _msgs(
+            "Classify this email for a solo business owner. Reply JSON: "
+            '{"kind": "lead|client|bill|personal|noise", "needs_reply": true|false, '
+            '"one_line": "<=15 words"}\n\n'
+            f"From: {m['from']}\nSubject: {m['subject']}\n\n{m['body'][:3000]}", "triage"),
+            purpose=f"triage {m['id']}", json_mode=True, max_tokens=200).json()
+    except BudgetExceeded:
+        raise
+    except Exception as e:
+        _abstain("triage", m["subject"], Verdict(False, [f"model reply unusable: {e}"]))
+        return out
+    v = shape(cls, {"kind": str, "needs_reply": bool, "one_line": str})
+    v.merge(one_of(cls.get("kind"), ["lead", "client", "bill", "personal", "noise"], "kind"))
+    if not v:
+        _abstain("triage", m["subject"], v, cls)
+        return out
+    out["cls"] = cls
+    pending_decision = []
+    if cls["kind"] == "client":
+        from . import scope
+        if scope.contract_for(sender(m)[1]):
+            # scope first: extra work is a decision for the owner, not a promise they've made
+            res = scope.review(m) or {}
+            out["scope"] = {"mail": m["id"], **res}
+            pending_decision = [r["email_quote"] for r in res.get("requests", [])
+                                if r["verdict"] in ("out_of_scope", "unclear")
+                                and not _owner_already_said(r.get("email_quote", ""))]
+    if cls["kind"] != "noise":
+        out["commitments"] = _extract_commitments(m, cls["kind"], skip=pending_decision)
+    return out
 
 
 def _owner_already_said(quote: str) -> bool:
@@ -255,42 +269,51 @@ def watch_topics(topics: list[str] | None = None) -> dict:
     topics = topics or [t.strip("- ").strip() for t in read_notes().split("## Watch")[-1].splitlines()
                         if t.strip().startswith("-")][:3]
     found = {"topics": topics, "claims": [], "dropped": 0}
-    for topic in topics:
-        try:
-            results = search.search(topic, max_results=4)
-        except Exception as e:
-            _abstain("watch", topic, Verdict(False, [f"search failed: {e}"]))
-            continue
-        if not results:
-            continue
-        sources = {r["id"]: r["content"] for r in results}
-        listing = "\n\n".join(f"[{r['id']}] {r['title']}\n{r['content'][:2500]}" for r in results)
-        try:
-            data = router.ask("plan", _msgs(
-                f"The owner follows this topic: '{topic}'. From the sources below, give at most 2 facts "
-                "that could change what a small business owner does this month (prices, rules, deadlines). "
-                "Each fact must make sense on its own, without the article, and must quote the exact words "
-                "from its source. Skip opinions and marketing. Reply JSON: "
-                '{"claims": [{"text": "...", "source": "<id in brackets>", "quote": "exact words"}]}\n\n'
-                + listing), purpose=f"watch '{topic}'", json_mode=True, max_tokens=700).json()
-        except Exception as e:
-            _abstain("watch", topic, Verdict(False, [f"model reply unusable: {e}"]))
-            continue
-        for c in (data.get("claims") or [])[:3]:
-            c["source"] = str(c.get("source", "")).strip().strip("[]").strip()
-            if c["source"] not in sources and f"web:{c['source']}" in sources:
-                c["source"] = f"web:{c['source']}"
-            v = grounded([c], sources)
-            if v:
-                url = next(r["url"] for r in results if r["id"] == c["source"])
-                found["claims"].append({"topic": topic, "text": c["text"], "url": url, "quote": c["quote"]})
-            else:
-                found["dropped"] += 1
-                _abstain("watch", c.get("text", topic)[:80], v, c)
+    from .parallel import pmap
+
+    for claims, dropped in pmap(lambda t: _watch_one(t, search), topics):
+        found["claims"] += claims
+        found["dropped"] += dropped
     write_json("watch.json", {"ts": now_iso(), **found})
     journal(f"Watched {len(topics)} topics: kept {len(found['claims'])} grounded facts, "
             f"dropped {found['dropped']} that I couldn't verify")
     return found
+
+
+def _watch_one(topic: str, search) -> tuple[list[dict], int]:
+    claims, dropped = [], 0
+    try:
+        results = search.search(topic, max_results=4)
+    except Exception as e:
+        _abstain("watch", topic, Verdict(False, [f"search failed: {e}"]))
+        return claims, dropped
+    if not results:
+        return claims, dropped
+    sources = {r["id"]: r["content"] for r in results}
+    listing = "\n\n".join(f"[{r['id']}] {r['title']}\n{r['content'][:2500]}" for r in results)
+    try:
+        data = router.ask("plan", _msgs(
+            f"The owner follows this topic: '{topic}'. From the sources below, give at most 2 facts "
+            "that could change what a small business owner does this month (prices, rules, deadlines). "
+            "Each fact must make sense on its own, without the article, and must quote the exact words "
+            "from its source. Skip opinions and marketing. Reply JSON: "
+            '{"claims": [{"text": "...", "source": "<id in brackets>", "quote": "exact words"}]}\n\n'
+            + listing), purpose=f"watch '{topic}'", json_mode=True, max_tokens=700).json()
+    except Exception as e:
+        _abstain("watch", topic, Verdict(False, [f"model reply unusable: {e}"]))
+        return claims, dropped
+    for c in (data.get("claims") or [])[:3]:
+        c["source"] = str(c.get("source", "")).strip().strip("[]").strip()
+        if c["source"] not in sources and f"web:{c['source']}" in sources:
+            c["source"] = f"web:{c['source']}"
+        v = grounded([c], sources)
+        if v:
+            url = next(r["url"] for r in results if r["id"] == c["source"])
+            claims.append({"topic": topic, "text": c["text"], "url": url, "quote": c["quote"]})
+        else:
+            dropped += 1
+            _abstain("watch", c.get("text", topic)[:80], v, c)
+    return claims, dropped
 
 
 # --------------------------------------------------------------------------- hard call
@@ -327,7 +350,7 @@ def weigh_overload() -> dict | None:
         f"name, write dates the way people do). Today is {today.isoformat()} ({today:%A}). Reply JSON: "
         '{"move_id": "<id>", "new_due": "YYYY-MM-DD", "reason": "...", '
         '"subject": "...", "body": "..."}\n\n' + listing), purpose="overload decision",
-        json_mode=True, max_tokens=900)
+        json_mode=True, max_tokens=2500)  # recorded run: Ultra thought for 3,900 tokens and was cut off
     try:
         d = r.json()
     except Exception as e:
@@ -424,18 +447,37 @@ def morning_brief() -> dict:
 
 
 def run_day() -> dict:
-    """The whole loop, as the scheduler runs it each morning."""
-    out: dict[str, Any] = {}
+    """The whole loop, as the scheduler runs it each morning.
+
+    1. read the inbox (each email in parallel): everything else depends on the ledger it fills
+    2. follow-ups, money, rescue, growth, offers and news side by side: they read the ledger and
+       the money book but don't depend on each other; one message per person is enforced
+       atomically by the approval gate
+    3. the overload call, then the brief, which reads what everyone else did
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
     from . import growth, money, offers, rescue
-    for name, fn in [("triage", triage_inbox), ("follow_ups", follow_ups), ("money", money.chase),
-                     ("rescue", rescue.plan), ("growth", growth.moments), ("offers", offers.propose),
-                     ("watch", watch_topics), ("overload", weigh_overload), ("brief", morning_brief)]:
+    out: dict[str, Any] = {}
+
+    def guarded(name, fn):
         try:
-            out[name] = fn()
+            return fn()
         except BudgetExceeded as e:
-            out[name] = f"stopped: {e}"
-            break
+            return f"stopped: {e}"
         except Exception as e:
-            out[name] = f"failed: {type(e).__name__}: {e}"
             append_audit("job_failed", job=name, error=str(e)[:300])
+            return f"failed: {type(e).__name__}: {e}"
+
+    out["triage"] = guarded("triage", triage_inbox)
+    if isinstance(out["triage"], str) and out["triage"].startswith("stopped"):
+        return out
+    middle = [("follow_ups", follow_ups), ("money", money.chase), ("rescue", rescue.plan),
+              ("growth", growth.moments), ("offers", offers.propose), ("watch", watch_topics)]
+    with ThreadPoolExecutor(max_workers=len(middle)) as ex:
+        futures = {name: ex.submit(guarded, name, fn) for name, fn in middle}
+        for name, f in futures.items():
+            out[name] = f.result()
+    for name, fn in [("overload", weigh_overload), ("brief", morning_brief)]:
+        out[name] = guarded(name, fn)
     return out

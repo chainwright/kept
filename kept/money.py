@@ -20,7 +20,7 @@ from datetime import date, datetime, timedelta
 from . import approvals
 from .agent import _abstain, _msgs, read_notes_owner
 from .llm import router
-from .store import journal, now_iso, read_json, write_json
+from .store import journal, locked, now_iso, read_json, write_json
 from .tools import notify
 from .validators import Verdict, honest_email, sendable_text, shape
 
@@ -177,8 +177,9 @@ def chase(today: date | None = None) -> list[dict]:
 
 
 def mark_reminded(invoice: str, step: str) -> None:
-    book = load()
-    for inv in book["invoices"]:
-        if str(inv["number"]) == str(invoice):
-            inv.setdefault("reminders", []).append({"step": step, "ts": now_iso()})
-    write_json(FILE, book)
+    with locked():
+        book = load()
+        for inv in book["invoices"]:
+            if str(inv["number"]) == str(invoice):
+                inv.setdefault("reminders", []).append({"step": step, "ts": now_iso()})
+        write_json(FILE, book)

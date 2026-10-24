@@ -19,7 +19,7 @@ from pathlib import Path
 from . import approvals, calibration, ledger
 from .agent import _abstain, _msgs, read_notes_owner, sender
 from .llm import router
-from .store import data_dir, journal, now_iso, read_json, read_notes, write_json
+from .store import data_dir, journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
 from .validators import Verdict, grounded, honest_email, one_of, sendable_text, shape
 
@@ -86,10 +86,11 @@ def review(m: dict) -> dict | None:
                                                 "reason", "hours_low", "hours_high", "price")})
     extras = [c for c in checked if c["verdict"] == "out_of_scope"]
     proposal = _offer(m, name, addr, checked, extras, r.reasoning, agreement) if extras else None
-    rows = read_json("scope.json", [])
-    rows.append({"ts": now_iso(), "mail": m["id"], "client": name, "subject": m["subject"],
-                 "requests": checked, "approval": proposal["id"] if proposal else None, "model": r.model})
-    write_json("scope.json", rows[-100:])
+    with locked():
+        rows = read_json("scope.json", [])
+        rows.append({"ts": now_iso(), "mail": m["id"], "client": name, "subject": m["subject"],
+                     "requests": checked, "approval": proposal["id"] if proposal else None, "model": r.model})
+        write_json("scope.json", rows[-100:])
     journal(f"Scope check on '{m['subject']}' from {name}: "
             + ", ".join(f"{c['request']} -> {c['verdict']}" for c in checked))
     return {"requests": checked, "proposal": proposal}

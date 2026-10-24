@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, Callable
 
-from .store import append_audit, journal, now_iso, read_json, write_json
+from .store import append_audit, journal, locked, now_iso, read_json, write_json
 
 FILE = "approvals.json"
 
@@ -52,7 +52,7 @@ def get(aid: str) -> dict:
     raise GateError(f"no approval {aid}")
 
 
-def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] | None = None,
+def _propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] | None = None,
             ledger_id: str | None = None, reasoning: str = "", model_label: str = "") -> dict | None:
     """Queue an action. Returns the request (nothing has happened yet), or None if another
     message to the same person is already waiting for the owner."""
@@ -82,7 +82,7 @@ def propose(kind: str, args: dict, *, summary: str, why: str, checks: list[str] 
     return req
 
 
-def decide(aid: str, yes: bool, *, by: str = "owner") -> dict:
+def _decide(aid: str, yes: bool, *, by: str = "owner") -> dict:
     rows = _all()
     for a in rows:
         if a["id"] == aid:
@@ -100,7 +100,7 @@ def decide(aid: str, yes: bool, *, by: str = "owner") -> dict:
     raise GateError(f"no approval {aid}")
 
 
-def execute(aid: str) -> dict:
+def _execute(aid: str) -> dict:
     rows = _all()
     for a in rows:
         if a["id"] != aid:
@@ -129,3 +129,19 @@ def run_unguarded(kind: str, args: dict) -> Any:
         append_audit("gate_blocked", action=kind, reason="unguarded call to a guarded action")
         raise GateError(f"'{kind}' can only run after approval")
     return handler(args)
+
+
+def propose(*a, **k):
+    with locked():
+        return _propose(*a, **k)
+
+
+def decide(*a, **k):
+    with locked():
+        return _decide(*a, **k)
+
+
+def execute(*a, **k):
+    with locked():
+        return _execute(*a, **k)
+
