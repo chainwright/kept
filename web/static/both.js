@@ -215,7 +215,7 @@
   // ------------------------------------------------------------------ talking to Kept (hands busy)
   // The browser does speech-to-text and text-to-speech; Kept's server decides what the words mean.
   // Whether Alex said Yes is read by code from the words (kept/voice.py), never by a model.
-  const VOICE = { pending: null, onYes: {}, busy: false };
+  const VOICE = { pending: null, onYes: {}, busy: false, noMic: false };
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   function vlog(who, text) {
     $("#v-log").append(h("li", { class: who === "Alex" ? "v-alex" : "v-kept" }, h("span", { class: "v-who" }, who === "Alex" ? "Alex said" : "Kept"), text));
@@ -258,14 +258,17 @@
     await speak(r.say);
     VOICE.busy = false;
     // Kept asked something ("Shall I send it?"): listen for the answer once, hands-free
-    if ((listenAfter || /\?$/.test(r.say)) && r.pending_id && SR) {
-      try { const ans = await hear(); if (ans) await turn(ans); } catch (e) { vlog("Kept", e.message); }
+    // (silence or a blocked microphone just ends it: the buttons and the typing box still work)
+    if ((listenAfter || /\?$/.test(r.say)) && r.pending_id && SR && !VOICE.noMic) {
+      try { const ans = await hear(); if (ans) await turn(ans); }
+      catch (e) { if (/blocked/.test(e.message)) VOICE.noMic = true; }
     }
   }
   $("#v-mic").addEventListener("click", async () => {
     if (VOICE.busy) return;
     speechSynthesis && speechSynthesis.cancel && speechSynthesis.cancel();
-    try { const said = await hear(); if (said) await turn(said); } catch (e) { toast(e.message, "err"); $("#v-text").focus(); }
+    try { VOICE.noMic = false; const said = await hear(); if (said) await turn(said); }
+    catch (e) { toast(e.message, "err"); $("#v-text").focus(); }
   });
   document.querySelectorAll("#voice [data-say]").forEach((b) => b.addEventListener("click", () => turn(b.dataset.say)));
   $("#v-form").addEventListener("submit", (ev) => { ev.preventDefault(); const t = $("#v-text").value.trim(); $("#v-text").value = ""; turn(t); });
