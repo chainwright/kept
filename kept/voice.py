@@ -24,7 +24,8 @@ _NO = re.compile(r"\b(no|nope|not|don't|dont|do not|wait|hold|stop|cancel|later|
                  r"decline|change|edit|but|instead|hang on)\b")
 _BRIEF = re.compile(r"\b(my (?:morning|day|plan)|plan for today|today'?s plan|brief me|morning brief|"
                     r"what(?:'s| is| do i have)? (?:on )?(?:for )?today|how(?:'s| is) (?:my )?(?:day|today))\b")
-_NEXT = re.compile(r"\b(next|what'?s waiting|what is waiting|anything (?:else|new|waiting)|needs my yes|pending)\b")
+_NEXT = re.compile(r"\b(next|what'?s waiting|what is waiting|anything (?:else|new|waiting)|needs my yes|pending|"
+                   r"approve|approval|sign off|my ok|my okay)\b")
 _AGAIN = re.compile(r"\b(read (?:it|that|me)|again|repeat|say that)\b")
 
 
@@ -52,7 +53,10 @@ def spoken(a: dict) -> str:
     """One waiting item, as Kept would say it out loud."""
     if a["kind"] == "send_email":
         who = _first(a["args"].get("to", ""))
-        return f"{a['summary']}. Here is the email to {who}: {a['args'].get('body', '').strip()} Shall I send it?"
+        body = re.sub(r"\s*\n\s*", " ", a["args"].get("body", "").strip())
+        if body and body[-1] not in ".!?":
+            body += "."   # the sign-off ('Alex') shouldn't run into the question
+        return f"{a['summary'].rstrip('.')}. Here is the email to {who}: {body} Shall I send it?"
     return f"{a['summary']}. {a.get('why', '')} Shall I go ahead?"
 
 
@@ -100,7 +104,8 @@ def _handle(said: str, pending_id: str | None = None) -> dict:
             # a spoken no only holds the draft ("hold on" isn't "throw it away"); it stays on screen
             append_audit("voice_held", id=pending_id)
             return {**out, "decided": "held", "say": "Okay, I'm holding it. Nothing was sent."}
-        if a and not question(said) and not _BRIEF.search(low) and not _NEXT.search(low):
+        answered = bool(_YES.search(f" {low} ") or _NO.search(f" {low} "))   # a yes/no word, but mixed
+        if a and answered and not question(said) and not _BRIEF.search(low) and not _NEXT.search(low):
             return {**out, "pending_id": a["id"], "say": "I didn't send it. Say yes to send it, or no to hold it."}
     if _BRIEF.search(low):
         b = read_json("brief.json", None)
@@ -108,16 +113,49 @@ def _handle(said: str, pending_id: str | None = None) -> dict:
             lines = [p["text"] for p in b["plan"]][:3]
             gap = next((l["text"] for l in b.get("lines", []) if "short" in l["text"].lower()), "")
             return {**out, "say": "Today: " + " ".join(lines) + (f" And: {gap}" if gap else "")}
-    if _NEXT.search(low) and (not question(said) or re.search(r"waiting|needs my yes|pending", low)):
+    if _NEXT.search(low) and (not question(said) or re.search(r"waiting|needs my yes|pending|approv|sign off", low)):
         waiting = [w for w in approvals.pending() if w["id"] != pending_id] or approvals.pending()
         if not waiting:
             return {**out, "say": "Nothing is waiting for you."}
         a = waiting[0]
         return {**out, "pending_id": a["id"], "say": spoken(a), "left": len(approvals.pending())}
+    kind = "question" if question(said) and not _HELLO.match(low) else intent(said)
+    if kind == "brief":
+        return _handle("what's my plan for today", None) | {"heard": said}
+    if kind == "waiting":
+        return _handle("what's waiting", pending_id) | {"heard": said}
+    if re.match(r"(thanks|thank you|cheers|great|perfect|cool)\b", low) and not question(said):
+        return {**out, "say": "Anytime."}
+    if kind != "question":
+        hi = "Hi Alex. " if _HELLO.match(low) else ""
+        return {**out, "say": hi + HELP}
     ans = memory_qa.ask(said)
     if ans.get("verified"):
         return {**out, "say": ans["answer"], "evidence": ans.get("evidence", []), "model": ans.get("model")}
-    return {**out, "say": "I couldn't check that against your records, so I won't guess.", "problems": ans.get("problems")}
+    return {**out, "say": "I couldn't find that in your records, so I won't guess.", "problems": ans.get("problems")}
+
+
+HELP = ("I can read you what's waiting for your yes, tell you your plan for today, "
+        "or answer questions about your clients and money. What do you need?")
+_HELLO = re.compile(r"(hi|hello|hey|good (morning|afternoon|evening)|kept|alex)\b")
+
+
+def intent(said: str) -> str:
+    """Free speech that matched no fixed phrase: Nemotron Nano sorts it. It only picks what to
+    read out; it can never approve anything (that path above is code only)."""
+    from .agent import _msgs
+    from .llm import router
+    try:
+        r = router.ask("classify", _msgs(
+            "Alex, a kitchen contractor, said this to his assistant out loud. What does he want? "
+            'Reply JSON: {"intent": "brief" (his plan or schedule for today), "waiting" (drafts or messages '
+            'waiting for his approval), "question" (a question about his clients, promises, invoices or money), '
+            'or "other" (a greeting, small talk, or unclear)}\n\n' + f'He said: "{said}"'),
+            purpose="voice intent", json_mode=True, max_tokens=40)
+        k = str(r.json().get("intent", "")).strip().lower()
+    except Exception:
+        k = ""
+    return k if k in ("brief", "waiting", "question", "other") else ("question" if question(said) else "other")
 
 
 def question(said: str) -> bool:

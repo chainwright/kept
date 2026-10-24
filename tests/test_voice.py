@@ -83,3 +83,43 @@ def test_whats_waiting_reads_the_one_on_screen_first(fake):
 def test_dates_and_numbers_are_said_the_way_a_person_says_them():
     assert voice.speakable("Cash will be short $116 on 2026-11-01. Invoice #118.") == \
         "Cash will be short $116 on Sunday, November 1. Invoice number 118."
+
+
+def test_the_read_out_ends_the_email_before_asking():
+    a = {"kind": "send_email", "summary": "Reply to Maria", "args": {"to": "maria@x.example", "body": "Hi Maria,\n\nDone.\n\nAlex"}}
+    assert voice.spoken(a).endswith("Hi Maria, Done. Alex. Shall I send it?")
+
+
+def test_a_greeting_gets_a_hello_and_what_kept_can_do(fake):
+    fake([("He said", {"intent": "other"})])
+    out = voice.handle("Hello Alex how are you I need your help")
+    assert out["say"].startswith("Hi Alex.") and "what's waiting" in out["say"]
+
+
+def test_free_speech_is_sorted_by_nano_into_a_fixed_action(fake):
+    from kept.store import write_json
+    write_json("brief.json", {"plan": [{"text": "Send Maria the revised quote."}], "lines": []})
+    fb = fake([("He said", {"intent": "brief"})])
+    out = voice.handle("so what am I doing with myself")
+    assert out["say"].startswith("Today: Send Maria")
+    assert "Nano" in fb.calls[0][0]
+
+
+def test_nano_can_route_but_never_approve(fake):
+    a = _waiting()
+    fake([("He said", {"intent": "waiting"})])
+    voice.handle("tell me what you've got for me", None)
+    assert approvals.get(a["id"])["status"] == "pending"
+
+
+def test_hello_while_a_draft_waits_is_a_hello_not_a_refusal(fake):
+    a = _waiting()
+    fake([("He said", {"intent": "other"})])
+    out = voice.handle("hello", a["id"])
+    assert out["say"].startswith("Hi Alex.") and approvals.get(a["id"])["status"] == "pending"
+
+
+@pytest.mark.parametrize("said", ["what do I need to approve?", "anything I need to approve", "what's waiting?"])
+def test_ways_of_asking_whats_waiting(fake, said):
+    a = _waiting()
+    assert voice.handle(said)["pending_id"] == a["id"]
