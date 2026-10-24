@@ -1679,6 +1679,7 @@
         h("div", { class: "t-body" }, m.body)))));
   }
 
+  const twelve = (t) => { const [hh, mm] = String(t || "").split(":").map(Number); return isFinite(hh) ? `${hh > 12 ? hh - 12 : hh}:${String(mm || 0).padStart(2, "0")} ${hh >= 12 ? "pm" : "am"}` : ""; };
   function renderCalendar(st) {
     const evs = st.calendar || [];
     const visits = evs.filter((e) => e.kind === "visit");
@@ -1691,7 +1692,7 @@
       const site = es.find((e) => e.kind === "site");
       for (const v of es.filter((e) => e.kind === "visit").sort((a, b) => String(a.time).localeCompare(String(b.time))))
         rows.push(h("li", { class: `c-visit${v.booked && (Date.now() - new Date(v.booked)) < 3600e3 ? " c-new" : ""}` },
-          h("span", { class: "c-day" }, `${fmtDay(day)} · ${v.time}`), h("span", { class: "c-what" }, `Measuring visit: ${v.who}`, h("span", { class: "muted" }, ` — ${v.what || ""}`))));
+          h("span", { class: "c-day" }, `${fmtDay(day)} · ${twelve(v.time)}`), h("span", { class: "c-what" }, `Measuring visit: ${v.who}`, h("span", { class: "muted" }, ` — ${v.what || ""}`))));
       if (site) rows.push(h("li", null, h("span", { class: "c-day" }, fmtDay(day)), h("span", { class: "muted" }, site.what)));
     }
     fill($("#cal-list"), rows.length ? rows : h("li", null, h("span", { class: "muted" }, "Nothing booked.")));
