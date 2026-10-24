@@ -45,6 +45,12 @@ def check(draft: str, to_name: str = "") -> dict:
     for p in found[:5]:
         v = shape(p, {"text": str, "quote": str})
         if v:
+            # Nano sometimes quotes only the time words ("by Friday"); the promise text itself is a
+            # fine quote when it appears verbatim in the draft. Either way the words must be there.
+            tries = [p["quote"], p["text"]]
+            ok = next((q for q in tries if grounded([{"source": "draft", "quote": q}], {"draft": draft})), None)
+            if ok:
+                p["quote"] = ok
             v.merge(grounded([{"source": "draft", "quote": p["quote"]}], {"draft": draft}))
             v.merge(plausible_due(p.get("due")))
         if not v:

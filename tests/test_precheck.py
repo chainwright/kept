@@ -75,3 +75,10 @@ def test_code_resolves_weekday_words_not_the_model(fake, monkeypatch, monday_nov
                                                "quote": "I'll send you my rates and a rough timeline by Friday"}]})])
     p = pc.check(DRAFT, "Dev")["promises"][0]
     assert p["due"] == "2026-10-30" and p["model_due"] == "2026-10-27"
+
+
+def test_short_quote_falls_back_to_the_promise_text_if_it_is_in_the_draft(fake):
+    fake([("is about to send", {"promises": [{"text": "I'll send you my rates and a rough timeline by Friday",
+                                               "due": None, "when_words": "by Friday", "quote": "by Friday"}]})])
+    p = precheck.check(DRAFT, "Dev")["promises"]
+    assert len(p) == 1 and p[0]["quote"].startswith("I'll send you my rates")
