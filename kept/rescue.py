@@ -18,7 +18,7 @@ import statistics
 from datetime import date, datetime, timedelta
 
 from . import approvals, ledger, money
-from .agent import _abstain, _msgs, read_notes_owner
+from .agent import _abstain, _msgs, business, note, read_notes_owner
 from .llm import router
 from .store import journal, now_iso, read_json, read_notes, write_json
 from .tools import notify
@@ -74,7 +74,7 @@ def find_prospects(limit: int = 3) -> list[dict]:
     if not city:
         return []
     try:
-        results = search.search(f"new small business opening {city} 2026 cafe OR bakery OR clinic OR studio",
+        results = search.search(note("Look for new clients", f"new small business opening {city}").replace("{city}", city),
                                 max_results=6, days=60)
     except Exception as e:
         _abstain("prospects", city, Verdict(False, [f"search failed: {e}"]))
@@ -84,8 +84,8 @@ def find_prospects(limit: int = 3) -> list[dict]:
     sources = {r["id"]: r["content"] for r in results}
     listing = "\n\n".join(f"[{r['id']}] {r['title']}\n{r['content'][:2000]}" for r in results)
     r = router.ask("plan", _msgs(
-        f"{read_notes_owner()} builds websites for small local businesses in {city}. From these pages, pick "
-        f"up to {limit} specific businesses that are new or changing and plausibly need a website. For each, "
+        f"{read_notes_owner()} runs {business()} in {city}. From these pages, pick up to {limit} specific "
+        f"businesses or people that plausibly need {note('What new clients need', 'this kind of work')} soon. For each, "
         "quote the exact words that show it, and write one friendly first line Alex could open with. "
         'Reply JSON: {"prospects": [{"business": "...", "why": "...", "source": "<id>", "quote": "exact words", '
         '"opener": "..."}]}\n\n' + listing), purpose="find prospects", json_mode=True, max_tokens=900)

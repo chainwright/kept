@@ -82,6 +82,35 @@
   <div class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></div>
 
   <main id="main" tabindex="-1">
+    <!-- who Kept works for, and how to play a client -->
+    <section class="meet" id="meet" aria-labelledby="h-meet">
+      <div class="meet-card">
+        <div class="meet-who">
+          <span class="monogram" aria-hidden="true">AR</span>
+          <div>
+            <p class="meet-eyebrow">Meet the owner Kept works for</p>
+            <h2 id="h-meet">Alex Rivera, web designer in Portland, Oregon</h2>
+            <p>Works alone, building websites for local small businesses: cafes, bakeries, clinics, yoga studios, shops.
+              Kept is Alex's assistant. It reads Alex's email, keeps every promise in view, and looks after Alex's time and money.</p>
+          </div>
+        </div>
+        <dl class="meet-services">
+          <dt>Website, 4 to 6 pages</dt><dd>from $2,400 · 3 to 4 weeks</dd>
+          <dt>Add-ons: ordering, booking, blog, gift cards</dt><dd>$85 an hour, after a scoping call</dd>
+          <dt>Care plan</dt><dd>$120 a month</dd>
+          <dt>Intro call</dt><dd>20 minutes, free</dd>
+        </dl>
+      </div>
+      <div class="meet-try">
+        <p class="meet-eyebrow">Be one of Alex's clients</p>
+        <h2>Write to Alex. Kept answers live.</h2>
+        <p>Ask for a site for your business, ask what something costs, or play one of Alex's clients. Kept reads it on
+          NVIDIA Nemotron, checks it, and drafts Alex's reply for you to approve. Pick an idea:</p>
+        <div class="meet-ideas" id="meet-ideas"></div>
+        <a class="btn btn-primary" href="#write" id="meet-go">Write your own email</a>
+      </div>
+    </section>
+
     <!-- the core ideas, with live numbers -->
     <section class="principles" aria-label="Kept at a glance">
       <a class="principle p-word" href="#word">
@@ -142,9 +171,7 @@
             <p><strong>In real use</strong> Kept connects to your own inbox, sorts new mail every hour and runs the full morning
               loop at 7:30 before you're up. Everything it learns stays in plain files you can read: the promise ledger,
               a daily journal, every model call.</p>
-            <p><strong>Try it as a client:</strong> use <a href="#write">Write to Alex</a> and send Alex an email as yourself or as
-              anyone in <a href="#clients">Alex's clients</a>. Kept handles it live, drafts Alex's reply, and waits for your
-              Yes. Then write back and keep the conversation going. Nothing ever leaves this demo.</p>
+            <p>Anything Kept sends in this demo goes to an outbox. Nothing leaves.</p>
           </div>
         </section>
 

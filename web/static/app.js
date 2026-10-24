@@ -1456,7 +1456,18 @@
       body: "Hi Alex, so sorry again. Our office manager is back, we will pay invoice #118 next Wednesday.\n\nPriya" },
     { label: "Lucia is delighted", who: "lucia", subject: "Thank you!",
       body: "Alex, since the new shop page went live our online orders doubled. Customers say it's so easy to use. Thank you!\n\nLucia" },
+    { label: "Ask what a booking page costs", who: "new", name: "", email: "", subject: "Online booking",
+      body: "Hi Alex, I run a small physio clinic and we already have a website. Could you add online booking to it? What would that cost, and when could you start?\n\nThanks" },
+    { label: "Jordan moves the launch call", who: "jordan", subject: "Launch call",
+      body: "Hi Alex, sorry, can we move our launch call to Thursday afternoon? And is the contact form fixed yet?\n\nJordan" },
   ];
+  function applyExample(ex) {
+    $("#w-who").value = ex.who; whoChanged();
+    if (ex.who === "new") { $("#w-name").value = ex.name || ""; $("#w-email").value = ex.email || ""; }
+    $("#w-subject").value = ex.subject; $("#w-body").value = ex.body;
+    $("#write").scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+    setTimeout(() => (ex.who === "new" && !ex.name ? $("#w-name") : $("#w-body")).focus({ preventScroll: true }), 400);
+  }
   function whoOptions() {
     const sel = $("#w-who");
     const cur = sel.value;
@@ -1473,11 +1484,14 @@
       : p ? `${p.about}.` : "";
   }
   $("#w-who").addEventListener("change", whoChanged);
-  fill($("#w-examples"), W_EXAMPLES.map((ex) => h("button", { type: "button", onclick: () => {
-    $("#w-who").value = ex.who; whoChanged();
-    if (ex.who === "new") { $("#w-name").value = ex.name; $("#w-email").value = ex.email; }
-    $("#w-subject").value = ex.subject; $("#w-body").value = ex.body; $("#w-body").focus();
-  } }, ex.label)));
+  fill($("#w-examples"), W_EXAMPLES.slice(0, 4).map((ex) => h("button", { type: "button", onclick: () => applyExample(ex) }, ex.label)));
+  fill($("#meet-ideas"), W_EXAMPLES.map((ex) => h("button", { type: "button", onclick: () => applyExample(ex) }, ex.label)));
+  $("#meet-go").addEventListener("click", (ev) => {
+    ev.preventDefault();
+    $("#w-who").value = "new"; whoChanged();
+    $("#write").scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+    setTimeout(() => $("#w-name").focus({ preventScroll: true }), 400);
+  });
 
   async function loadPeople() {
     try {

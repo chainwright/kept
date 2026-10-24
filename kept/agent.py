@@ -264,6 +264,17 @@ def read_notes_owner() -> str:
     return settings.owner_name
 
 
+def note(label: str, default: str = "") -> str:
+    """A '- Label: value' line from notes.md. The business itself lives in the owner's notes, not in code,
+    so the same Kept works for a web designer, a contractor or a bookkeeper."""
+    m = re.search(rf"^-?\s*{re.escape(label)}:\s*(.+)$", read_notes(), re.I | re.M)
+    return m.group(1).strip() if m else default
+
+
+def business() -> str:
+    return note("Business", "a one-person business")
+
+
 # --------------------------------------------------------------------------- topics
 def watch_topics(topics: list[str] | None = None) -> dict:
     """Tavily finds news; Super summarises; only claims that quote a fetched page survive."""

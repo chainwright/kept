@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import re
 
-from .agent import _abstain, _msgs, read_notes_owner
+from .agent import _abstain, _msgs, note, read_notes_owner
+from .agent import business as owner_business
 from .llm import router
 from .store import locked, now_iso, read_json, write_json
 from .validators import Verdict, grounded, shape
@@ -76,10 +77,11 @@ def look_up(name: str, addr: str, body: str) -> dict:
     sources = {p["id"]: p["content"] for p in pages}
     listing = "\n\n".join(f"[{p['id']}] {p['url']}\n{p['content'][:3000]}" for p in pages[:6])
     r = router.ask("plan", _msgs(
-        f"{read_notes_owner()} builds websites for small businesses and just got an email from {name} "
-        f"({business or domain}). From these pages, give up to 4 short facts that help Alex reply well: what the "
-        "business is and where, whether they have a website and what it lacks (booking, prices, mobile), how "
-        "established they look (opening date, reviews). Each fact must quote exact words from its page. "
+        f"{read_notes_owner()} runs {owner_business()} and just got an email from {name} "
+        f"({business or domain}). From these pages, give up to 4 short facts that help {read_notes_owner()} reply "
+        f"well: what the business is and where, how established it looks (opening date, size, reviews), and "
+        f"anything that bears on {note('What new clients need', 'the work they might need')}. "
+        "Each fact must quote exact words from its page. "
         'Reply JSON: {"facts": [{"text": "...", "source": "<id>", "quote": "exact words"}]}\n\n' + listing),
         purpose=f"research {addr}", json_mode=True, max_tokens=700)
     try:

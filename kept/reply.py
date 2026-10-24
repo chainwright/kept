@@ -12,7 +12,7 @@ import re
 from datetime import date
 
 from . import approvals, ledger, money, precheck
-from .agent import _abstain, _msgs, read_notes_owner, sender
+from .agent import _abstain, _msgs, business, read_notes_owner, sender
 from .llm import router
 from .store import locked, now_iso, read_json, read_notes
 from .tools import mail, notify
@@ -96,16 +96,18 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     if len(priced) > 1:
         allowed.add(sum(priced))
     allowed |= {int(i["amount"]) for i in facts["unpaid_invoices"]}
+    # published prices in Alex's notes ("from $2,400", "$120 a month") are Alex's own words too
+    allowed |= {int(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", read_notes().split("## Offers")[0])}
     convo = "\n\n".join(f"{'THEM' if t['dir'] == 'in' else owner.upper()} ({t['ts'][:10]}): {t['body'][:800]}"
                         for t in thread(addr)[-6:] if t["dir"] in ("in", "out") and t["id"] != m["id"])
     today = date.today()
     r = router.ask("draft", _msgs(
-        f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs a one-person web "
-        f"studio. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
+        f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs {business()}. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
         "don't answer, say Alex will check and come back, or ask them a short question. Never invent a total "
-        "price for a new project: give the hourly rate and offer a short call or a written quote. If extra work "
+        "price for a new project: use only the prices in Alex's services, and offer the free intro call or a "
+        "written quote. If extra work "
         "is outside the agreement, say so kindly and give the price listed below. Don't agree to a deadline "
-        "for new work that hasn't been scoped or priced yet (a new site, a new feature): offer the call or the "
+        "for new work that hasn't been scoped or priced yet: offer the call, a visit or the "
         "quote first. Small things (sending a quote, a file, a call) may get a day; name it plainly ('by "
         "Tuesday'). Greet them by first name, sign as Alex, under 140 words. "
         'Reply JSON: {"subject": "...", "body": "..."}\n\n'

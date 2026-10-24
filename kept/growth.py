@@ -21,7 +21,7 @@ import re
 from datetime import date, datetime, timedelta
 
 from . import approvals, calibration, ledger, media, money
-from .agent import _abstain, _msgs, read_notes_owner, sender
+from .agent import _abstain, _msgs, business, note, read_notes_owner, sender
 from .llm import router
 from .store import data_dir, journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import mail, notify
@@ -127,7 +127,7 @@ def _ask(client: str, addr: str, m: dict, quote: str) -> dict | None:
     r = router.ask("draft", _msgs(
         f"{client} just wrote: \"{quote}\". Write a short reply FROM {read_notes_owner()} TO {first}: thank them "
         "warmly and specifically, then ask, once and lightly, if they'd leave a short review"
-        + (f" at {link}" if link else "") + " or mention you to another business owner who needs a site. "
+        + (f" at {link}" if link else "") + f" or mention {read_notes_owner()} to someone who needs {note('What new clients need', 'the same kind of work')}. "
         f"No discount, no pressure. Greet {first}, sign as {read_notes_owner()}. Under 90 words. "
         'Reply JSON: {"subject": "...", "body": "..."}', "follow_up"), purpose=f"review ask {client}",
         json_mode=True, max_tokens=400)
@@ -171,7 +171,7 @@ def _post(client: str, m: dict) -> dict | None:
              "work": [r["text"] for r in ledger.items() if r["status"] == "done" and
                       (r.get("contact") or "").lower() == sender(m)[1]][-3:]}
     r = router.ask("draft", _msgs(
-        f"Write a short LinkedIn post (under 120 words) by {read_notes_owner()}, a solo web designer, about "
+        f"Write a short LinkedIn post (under 120 words) by {read_notes_owner()}, who runs {business()}, about "
         "finished work. Use ONLY these facts. If may_name is null, don't name the client; describe them "
         "('a local coffee shop'). If there are before and after pictures, the post introduces them in one "
         "line (they're attached). No hashtags beyond two, no emojis beyond one, no invented numbers. "

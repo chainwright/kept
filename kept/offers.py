@@ -21,7 +21,7 @@ import re
 from datetime import date, datetime, timedelta
 
 from . import approvals, ledger, money
-from .agent import _abstain, _msgs, read_notes_owner
+from .agent import _abstain, _msgs, business, read_notes_owner
 from .llm import router
 from .store import journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
@@ -52,7 +52,7 @@ def calendar(today: date) -> list[dict]:
             {"id": f"year-end-benefits-{yr}", "name": "year-end insurance benefits rush", "date": date(yr, 11, 15), "for": ["dental"]},
             {"id": f"new-year-{yr + 1}", "name": "New Year resolutions", "date": date(yr + 1, 1, 2), "for": ["fitness"]},
             {"id": f"valentines-{yr}", "name": "Valentine's Day", "date": date(yr, 2, 14), "for": ["bakery", "retail"]},
-            {"id": f"new-year-planning-{yr + 1}", "name": "new-year website refresh", "date": date(yr + 1, 1, 12), "for": ["all"]},
+            {"id": f"new-year-planning-{yr + 1}", "name": "new-year planning", "date": date(yr + 1, 1, 12), "for": ["all"]},
         ]
     return sorted([o for o in out if 10 <= (o["date"] - today).days <= 100], key=lambda o: o["date"])
 
@@ -121,7 +121,7 @@ def propose(today: date | None = None) -> dict:
         return result
     cash = money.forecast(30, today)
     resp = router.ask("judge", _msgs(
-        f"{read_notes_owner()} runs a one-person web studio (hourly rate in notes). For each past client below, "
+        f"{read_notes_owner()} runs {business()} (hourly rate in notes). For each past client below, "
         "decide whether a seasonal offer is worth making now, or not at all. Prefer a package or a priority slot "
         f"over a price cut; a discount may not exceed {r['max_discount']}% and the price may not go below "
         f"${r['min_price']}. Only offer what helps the client's own season. Cash is "
