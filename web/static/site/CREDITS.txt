@@ -1,0 +1,3 @@
+Photos on Alex's demo site, all made for this demo:
+hero-dark, walnut, marble, hinge: generated (Higgsfield, Nano Banana Pro).
+jo-before: the demo's old-kitchen photo. jo-after: an edit of jo-before (Higgsfield, Nano Banana 2.1), labelled on the page as a rendering.

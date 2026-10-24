@@ -189,6 +189,38 @@
   const announcer = $("#announcer");
   function announce(msg) { announcer.textContent = ""; setTimeout(() => { announcer.textContent = msg; }, 50); }
 
+  // ------------------------------------------------------------------ sections as tabs (Roma: a site, not one long scroll)
+  const TABS = { today: ["howto", "approvals", "today", "week"], word: ["precheck", "promises", "word", "held", "ask"],
+    clients: ["scope", "clients", "inbox"], money: ["money", "rescue"], growth: ["growth", "news"], engine: ["models", "activity"] };
+  const tabOf = (id) => Object.keys(TABS).find((t) => TABS[t].includes(id)) || null;
+  function showTab(t) {
+    if (!TABS[t]) t = "today";
+    for (const [k, ids] of Object.entries(TABS)) for (const id of ids) { const el = document.getElementById(id); if (el) el.classList.toggle("tab-off", k !== t); }
+    const cols = [...document.querySelectorAll(".layout > .col")];
+    for (const col of cols) col.classList.toggle("tab-empty", ![...col.children].some((c) => c.matches("section.card") && !c.classList.contains("tab-off")));
+    const lay = $(".layout"); if (lay) lay.classList.toggle("one-col", cols.some((c) => c.classList.contains("tab-empty")));
+    for (const a of document.querySelectorAll("#tabs a")) { const on = a.dataset.tab === t; a.classList.toggle("is-on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); }
+    store.set("kept.tab", t);
+  }
+  function initTabs() {
+    const bar = $("#tabs"); if (!bar) return;
+    const top = () => document.documentElement.style.setProperty("--topbar-h", `${($(".topbar") || {}).offsetHeight || 0}px`);
+    top(); window.addEventListener("resize", top);
+    bar.addEventListener("click", (e) => {
+      const a = e.target.closest("a[data-tab]"); if (!a) return;
+      e.preventDefault(); showTab(a.dataset.tab); history.replaceState(null, "", `#${a.getAttribute("href").slice(1)}`);
+      if (bar.getBoundingClientRect().top < 0 || window.scrollY > bar.offsetTop) bar.scrollIntoView({ block: "start" });
+    });
+    // any other link to a section (the numbers at the top, "see the rescue plan") opens its tab first
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest && e.target.closest('a[href^="#"]:not([data-tab])'); if (!a) return;
+      const t = tabOf(a.getAttribute("href").slice(1)) || tabOf((document.getElementById(a.getAttribute("href").slice(1)) || {closest: () => null}).closest("section.card")?.id);
+      if (t) showTab(t);
+    }, true);
+    const fromHash = location.hash && (tabOf(location.hash.slice(1)) || tabOf(document.getElementById(location.hash.slice(1))?.closest("section.card")?.id));
+    showTab(fromHash || store.get("kept.tab") || "today");
+  }
+
   // ------------------------------------------------------------------ collapsible cards
   function initFolds() {
     for (const card of document.querySelectorAll("section.card[data-fold]")) {
@@ -328,6 +360,7 @@
     const sub = $("#p-open-sub");
     sub.textContent = over ? `${over} overdue` : "until you close them with a note";
     sub.className = over ? "p-sub-over" : "";
+    const tn = $("#tab-n-today"); if (tn) tn.textContent = st.pending.length ? String(st.pending.length) : "";
     const pn = $("#p-pending");
     pn.textContent = st.pending.length;
     pn.classList.toggle("on", st.pending.length > 0);
@@ -801,7 +834,7 @@
     const sec = $("#rescue");
     const show = !!(r && r.needed);
     sec.hidden = !show;
-    $("#jump-rescue").hidden = !show;
+    const tm = $("#tab-n-money"); if (tm) tm.hidden = !show;
     if (!show) return;
     $("#rescue-meta").textContent = `${r.model ? shortModel(r.model) + " · " : ""}${ago(r.ts)}`;
     const gap = r.gap || {};
@@ -1782,6 +1815,7 @@
 
   // ------------------------------------------------------------------ start
   initFolds();
+  initTabs();
   refresh();
   setInterval(() => { if (!document.hidden) refresh(); }, 5000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });

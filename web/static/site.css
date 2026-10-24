@@ -1,0 +1,111 @@
+/* Alex Rivera Kitchens: Alex's own website on the client's side. Dark walnut, warm light, cream and amber.
+   Its look belongs to Alex's trade; Kept (on the right) keeps its own cool paper style. */
+.site {
+  --s-bg: #12100E; --s-surface: #1C1814; --s-raise: #241E19; --s-line: rgba(242, 232, 216, .13);
+  --s-ink: #F2E8D8; --s-muted: #B9AB97; --s-amber: #F2A33A; --s-amber-ink: #1B1209; --s-walnut: #5B3A24;
+  --s-serif: "Instrument Serif", Georgia, serif; --s-sans: "Manrope", system-ui, sans-serif; --s-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --s-r: 16px;
+}
+.site .site-frame { background: var(--s-bg); color: var(--s-ink); border-radius: var(--s-r); overflow: hidden; font-family: var(--s-sans);
+  box-shadow: 0 30px 60px -30px rgba(18, 16, 14, .55); }
+.site a { color: inherit; }
+/* nav */
+.site .site-nav { display: flex; align-items: center; gap: 18px; padding: 14px 20px; border-bottom: 1px solid var(--s-line); }
+.site .site-logo { font: 400 22px/1 var(--s-serif); white-space: nowrap; }
+.site .site-logo em { color: var(--s-amber); }
+.site .site-links { display: flex; gap: 16px; margin-left: auto; font-size: 13px; color: var(--s-muted); }
+.site .site-links a { text-decoration: none; } .site .site-links a:hover { color: var(--s-ink); }
+.site .site-phone { font: 600 13px/1 var(--s-mono); text-decoration: none; white-space: nowrap; }
+/* hero */
+.site .site-hero { position: relative; min-height: 520px; display: grid; align-items: end; }
+.site .site-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+.site .site-hero::after { content: ""; position: absolute; inset: 0; background:
+  linear-gradient(90deg, rgba(18,16,14,.92) 0%, rgba(18,16,14,.55) 48%, rgba(18,16,14,.05) 100%),
+  linear-gradient(0deg, rgba(18,16,14,.85) 0%, rgba(18,16,14,0) 45%); }
+.site .site-hero-text { position: relative; z-index: 1; padding: 64px 24px 28px; max-width: 470px; }
+.site .site-kicker { display: inline-block; margin: 0 0 14px; padding: 5px 10px; border: 1px solid var(--s-line); border-radius: 99px;
+  font: 500 11px/1 var(--s-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--s-muted); background: rgba(18,16,14,.4); }
+.site .site-h1 { font: 400 clamp(40px, 5.2vw, 62px)/.98 var(--s-serif); letter-spacing: -.01em; margin: 0 0 14px; color: var(--s-ink); }
+.site .site-h1::after { display: none !important; }
+.site .site-lede { margin: 0 0 20px; font-size: 15px; line-height: 1.55; color: #D9CDBB; max-width: 40ch; }
+.site .site-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.site .site-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--s-amber); color: var(--s-amber-ink);
+  font: 700 15px/1 var(--s-sans); padding: 15px 22px; border: 0; border-radius: 99px; text-decoration: none; cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(242,163,58,.5), 0 10px 30px -8px rgba(242,163,58,.6); transition: transform .15s ease, box-shadow .2s ease; }
+.site .site-cta:hover { transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(242,163,58,.18), 0 14px 34px -8px rgba(242,163,58,.7); }
+.site .site-cta:disabled { opacity: .6; cursor: progress; transform: none; }
+.site .site-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 14px 18px; border-radius: 99px; border: 1px solid var(--s-line);
+  text-decoration: none; font: 600 14px/1 var(--s-sans); background: rgba(242,232,216,.06); backdrop-filter: blur(6px); }
+.site .site-ghost:hover { border-color: var(--s-amber); }
+.site .site-mic { width: 10px; height: 14px; border: 2px solid currentColor; border-radius: 6px; position: relative; display: inline-block; }
+.site .site-mic::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 2px; height: 4px; margin-left: -1px; background: currentColor; }
+.site .site-glass { position: absolute; z-index: 1; right: 18px; top: 18px; display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px;
+  background: rgba(36, 30, 25, .55); border: 1px solid rgba(242,232,216,.18); backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2); }
+.site .site-glass span { font: 500 10px/1.2 var(--s-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--s-muted); }
+.site .site-glass strong { font: 600 16px/1.2 var(--s-sans); }
+/* bento of materials and prices */
+.site .site-bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 18px 18px 8px; }
+.site .site-tile { position: relative; margin: 0; border-radius: 14px; overflow: hidden; aspect-ratio: 3 / 4; border: 1px solid var(--s-line); }
+.site .site-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s ease; }
+.site .site-tile:hover img { transform: scale(1.05); }
+.site .site-tile figcaption { position: absolute; left: 8px; right: 8px; bottom: 8px; padding: 10px 12px; border-radius: 10px; display: grid; gap: 2px;
+  background: rgba(18,16,14,.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(242,232,216,.12); }
+.site .site-tile b { font: 400 19px/1.1 var(--s-serif); }
+.site .site-tile span { font: 600 13px/1.2 var(--s-sans); color: var(--s-amber); }
+.site .site-more { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.site .site-more p { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--s-surface); border: 1px solid var(--s-line); display: grid; gap: 3px; }
+.site .site-more b { font: 600 13px/1.3 var(--s-sans); } .site .site-more span { font: 600 13px/1 var(--s-sans); color: var(--s-amber); }
+.site .site-free { text-transform: uppercase; letter-spacing: .06em; }
+/* before / after */
+.site .site-work { padding: 10px 18px 6px; }
+.site .site-ba { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 4 / 3; border: 1px solid var(--s-line); user-select: none; }
+.site .site-ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.site .site-ba .site-ba-before { clip-path: inset(0 calc(100% - var(--cut)) 0 0); }
+.site .site-ba-handle { position: absolute; top: 0; bottom: 0; left: var(--cut); width: 2px; margin-left: -1px; background: var(--s-ink); pointer-events: none; }
+.site .site-ba-handle::after { content: "\2194"; position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--s-ink); color: var(--s-bg); font: 700 18px/1 var(--s-sans); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.site .site-ba input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.site .site-ba-tag { position: absolute; bottom: 10px; padding: 5px 9px; border-radius: 99px; font: 600 10px/1 var(--s-mono); letter-spacing: .1em; text-transform: uppercase;
+  background: rgba(18,16,14,.6); backdrop-filter: blur(6px); pointer-events: none; }
+.site .site-ba-l { left: 10px; } .site .site-ba-r { right: 10px; }
+.site .site-cap { margin: 8px 2px 0; font-size: 12.5px; color: var(--s-muted); }
+/* write to Alex */
+.site .site-contact { margin: 18px; padding: 22px 20px; border-radius: 16px; background: var(--s-surface); border: 1px solid rgba(242,163,58,.35);
+  box-shadow: inset 0 1px 0 rgba(242,232,216,.06), 0 0 60px -30px rgba(242,163,58,.45); }
+.site .site-h2 { font: 400 34px/1 var(--s-serif); margin: 0 0 6px; }
+.site .site-sub { margin: 0 0 14px; color: var(--s-muted); font-size: 14px; line-height: 1.5; }
+.site .site-contact .meet-ideas { margin-bottom: 12px; }
+.site .site-contact .meet-ideas button { background: transparent; color: var(--s-ink); border: 1px solid var(--s-line); border-radius: 99px; font: 500 13px/1 var(--s-sans); padding: 9px 13px; }
+.site .site-contact .meet-ideas button:hover { border-color: var(--s-amber); color: var(--s-amber); }
+.site .site-contact .field > span, .site .site-contact .b-label { color: var(--s-muted); font-family: var(--s-sans); }
+.site .site-contact .muted, .site .site-contact .foot { color: var(--s-muted); }
+.site .site-contact input, .site .site-contact select, .site .site-contact textarea { background: var(--s-bg); border: 1px solid var(--s-line); color: var(--s-ink);
+  border-radius: 10px; font-family: var(--s-sans); }
+.site .site-contact input:focus, .site .site-contact select:focus, .site .site-contact textarea:focus { outline: 2px solid var(--s-amber); outline-offset: 1px; border-color: transparent; }
+.site .site-contact input::placeholder, .site .site-contact textarea::placeholder { color: #7D7163; }
+.site .site-msg { position: relative; }
+.site .site-msg textarea { width: 100%; padding-bottom: 52px; }
+.site .site-dictate { position: absolute; left: 10px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 99px;
+  border: 1px solid rgba(242,163,58,.55); background: rgba(242,163,58,.1); color: var(--s-amber); font: 600 13px/1 var(--s-sans); cursor: pointer; }
+.site .site-dictate:hover { background: rgba(242,163,58,.18); }
+.site .site-dictate[aria-pressed="true"] { background: var(--s-amber); color: var(--s-amber-ink); }
+.site .site-dictate[aria-pressed="true"] .site-mic { animation: site-rec 1s ease-in-out infinite; }
+@keyframes site-rec { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .site .site-dictate[aria-pressed="true"] .site-mic { animation: none; } .site .site-tile img, .site .site-cta { transition: none; } }
+.site .site-send { width: 100%; margin-top: 8px; padding: 16px; font-size: 16px; }
+.site .site-thread-label { margin-top: 20px; }
+.site .thread li { background: var(--s-bg); border: 1px solid var(--s-line); color: var(--s-ink); border-radius: 12px; }
+.site .thread li.t-out { border-color: rgba(242,163,58,.45); }
+.site .thread .t-meta { color: var(--s-muted); }
+.site .w-photo-row input[type=file] { color: var(--s-muted); }
+@media (max-width: 560px) {
+  .site .site-links { display: none; }
+  .site .site-hero { min-height: 560px; }
+  .site .site-bento, .site .site-more { grid-template-columns: 1fr 1fr; }
+  .site .site-bento .site-tile:nth-child(3) { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+  .site .site-more { grid-template-columns: 1fr; }
+  .site .site-contact { margin: 12px; }
+}
+.site .site-contact { margin-top: 18px; }
+.site .site-bento { padding-top: 8px; }
+.site .site-work { padding-bottom: 18px; }

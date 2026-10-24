@@ -192,21 +192,13 @@
       </a>
     </section>
 
-    <nav class="jump" aria-label="Sections">
-      <a href="#approvals">Waiting for Yes</a>
-      <a href="#precheck">Before you send</a>
-      <a href="#today">Today</a>
-      <a href="#money">Money</a>
-      <a href="#rescue" id="jump-rescue" hidden>Rescue plan</a>
-      <a href="#promises">Promises</a>
-      <a href="#scope">Scope</a>
-      <a href="#word">Your word</a>
-      <a href="#held">Held back</a>
-      <a href="#clients">Clients</a>
-      <a href="#inbox">Inbox</a>
-      <a href="#news">News</a>
-      <a href="#growth">Offers &amp; growth</a>
-      <a href="#models">Models</a>
+    <nav class="dtabs" id="tabs" aria-label="Alex's dashboard">
+      <a href="#approvals" data-tab="today">Today<span class="dtab-n" id="tab-n-today"></span></a>
+      <a href="#promises" data-tab="word">Your word</a>
+      <a href="#scope" data-tab="clients">Clients &amp; jobs</a>
+      <a href="#money" data-tab="money">Money<span class="dtab-n dtab-n-risk" id="tab-n-money" hidden>!</span></a>
+      <a href="#growth" data-tab="growth">Growth</a>
+      <a href="#models" data-tab="engine">Under the hood</a>
     </nav>
 
     <div class="layout">
@@ -292,8 +284,8 @@
           <div class="card-body">
             <p class="lede">Every promise stays here until you say what happened: done, dropped, or handed off. Overdue first.</p>
             <div class="tabs" role="tablist" aria-label="Which promises">
-              <button role="tab" type="button" id="tab-i_owe" aria-controls="ledger-panel" aria-selected="true" data-dir="i_owe">You owe <span class="tab-n" id="n-i_owe"></span></button>
-              <button role="tab" type="button" id="tab-owed_to_me" aria-controls="ledger-panel" aria-selected="false" tabindex="-1" data-dir="owed_to_me">Owed to you <span class="tab-n" id="n-owed_to_me"></span></button>
+              <button role="tab" type="button" id="tab-i_owe" aria-controls="ledger-panel" aria-selected="true" data-dir="i_owe">You owe <span class="dtab-n" id="n-i_owe"></span></button>
+              <button role="tab" type="button" id="tab-owed_to_me" aria-controls="ledger-panel" aria-selected="false" tabindex="-1" data-dir="owed_to_me">Owed to you <span class="dtab-n" id="n-owed_to_me"></span></button>
             </div>
             <div id="ledger-panel" role="tabpanel" aria-labelledby="tab-i_owe">
               <ul class="ledger" id="ledger-list"></ul>

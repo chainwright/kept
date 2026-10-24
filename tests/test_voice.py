@@ -123,3 +123,9 @@ def test_hello_while_a_draft_waits_is_a_hello_not_a_refusal(fake):
 def test_ways_of_asking_whats_waiting(fake, said):
     a = _waiting()
     assert voice.handle(said)["pending_id"] == a["id"]
+
+
+def test_alexs_site_shows_the_first_free_visit_from_his_calendar():
+    from kept import schedule, web
+    slot = schedule.free_slots(1)
+    assert web.next_visit() == {"label": slot[0]["label"] if slot else None}

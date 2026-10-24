@@ -1045,3 +1045,19 @@ section[id], #write { scroll-margin-top: 150px; }
 .w-empty { border: var(--bw) dashed var(--line-strong); padding: 14px; margin: 0; }
 .dash-banner { margin: 18px 0 16px; padding: 12px 16px; border: var(--bw) dashed var(--line-strong); background: var(--surface); }
 .dash-banner p { margin: 0; }
+
+/* sections as tabs: one part of Alex's day at a time */
+.dtabs { position: sticky; top: var(--topbar-h, 0px); z-index: 15; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 0 var(--sp-4); padding: 8px 0 0; background: var(--bg); border-bottom: var(--bw) solid var(--line-strong); }
+.dtabs a { flex: none; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink-2);
+  font: 600 13px/1 var(--mono, "IBM Plex Mono", monospace); letter-spacing: .04em; text-transform: uppercase;
+  padding: 11px 14px; border: var(--bw) solid transparent; border-bottom: 0; margin-bottom: calc(-1 * var(--bw)); }
+.dtabs a:hover { color: var(--ink); }
+.dtabs a.is-on { color: var(--ink); background: var(--surface); border-color: var(--line-strong); border-bottom: var(--bw) solid var(--surface); }
+.dtab-n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-size: 11px; letter-spacing: 0; }
+.dtab-n:empty { display: none; }
+.dtab-n-risk { background: var(--risk); }
+.tab-off { display: none !important; }
+.layout.one-col { grid-template-columns: minmax(0, 1fr); }
+.layout > .col.tab-empty { display: none; }
+@media (max-width: 860px) { .dtabs { top: 0; } }

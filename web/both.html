@@ -10,7 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;600;700&family=Caveat:wght@500;600&display=swap">
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Manrope:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/static/both.css">
+  <link rel="stylesheet" href="/static/site.css">
 </head>
 <body class="both">
   <header class="b-top">
@@ -24,55 +26,78 @@
   </header>
 
   <main class="b-grid" id="main">
-    <!-- the client's side -->
-    <section class="b-side b-client" aria-labelledby="h-client">
-      <p class="b-eyebrow">1 · The client's side</p>
-      <h1 id="h-client" class="b-h">You write to Alex</h1>
-      <p class="b-sub">This is what a client sees: Alex's business, a place to write (with a photo), and the conversation.</p>
-
-      <div class="b-card b-biz">
-        <div class="b-biz-head">
-          <span class="monogram" aria-hidden="true">AR</span>
-          <div>
-            <strong>Alex Rivera Kitchens</strong>
-            <span class="muted">Portland, Oregon · one person, a van and a workshop</span>
-          </div>
-        </div>
-        <dl class="meet-services">
-          <dt>Full kitchen, out with the old</dt><dd>from $14,000</dd>
-          <dt>New cabinet fronts on the old boxes</dt><dd>from $4,500</dd>
-          <dt>New countertop · backsplash</dt><dd>from $2,800 · $1,200</dd>
-          <dt>Small repairs: handles, hinges, drawers</dt><dd>$85/hour, 2-hour min.</dd>
-          <dt>Measuring visit</dt><dd>free</dd>
-        </dl>
-      </div>
-
-      <div class="b-card">
-        <p class="b-label">Try an example, or write your own</p>
-        <div class="meet-ideas" id="ideas"></div>
-        <form id="f" class="preform" autocomplete="off">
-          <label class="field"><span>Write as</span><select id="who"></select></label>
-          <p class="foot muted" id="who-about"></p>
-          <div class="w-new" id="newbox">
-            <label class="field"><span>Your name</span><input id="name" maxlength="60" placeholder="Jo Rivera"></label>
-            <label class="field"><span>Your email <span class="muted">(nothing is sent)</span></span><input id="email" maxlength="120" placeholder="jo@example.com"></label>
-          </div>
-          <label class="field"><span>Subject</span><input id="subject" maxlength="120" placeholder="Our kitchen"></label>
-          <label class="field"><span>Message</span><textarea id="body" rows="5" maxlength="2000" placeholder="Hi Alex, …" required></textarea></label>
-          <div class="field w-photo"><span>Photo <span class="muted">(optional: your kitchen, a broken hinge…)</span></span>
-            <div class="w-photo-row">
-              <input id="file" type="file" accept="image/jpeg,image/png,image/webp">
-              <img id="thumb" alt="" hidden>
-              <button type="button" class="btn btn-quiet btn-small" id="clear" hidden>Remove</button>
+    <!-- the client's side: Alex's own website -->
+    <section class="b-side b-client site" aria-labelledby="h-client">
+      <p class="b-eyebrow">1 · The client's side: Alex's website</p>
+      <div class="site-frame">
+        <nav class="site-nav" aria-label="Alex Rivera Kitchens">
+          <span class="site-logo">Alex Rivera <em>Kitchens</em></span>
+          <span class="site-links"><a href="#site-work">Work</a><a href="#site-prices">Prices</a><a href="#write-alex">Contact</a></span>
+          <a class="site-phone" href="#write-alex">(503) 555-0148</a>
+        </nav>
+        <header class="site-hero">
+          <img class="site-hero-img" src="/static/site/hero-dark.jpg" alt="A walnut kitchen at dusk with warm light under the cabinets">
+          <div class="site-hero-text">
+            <p class="site-kicker">Portland, Oregon · since 2014</p>
+            <h1 id="h-client" class="site-h1">Kitchens with a craftsman's hands.</h1>
+            <p class="site-lede">One carpenter, a van and a workshop in Sellwood. Whole kitchens, new fronts on old boxes, counters, and the small fixes nobody else wants.</p>
+            <div class="site-actions">
+              <a class="site-cta" href="#write-alex">Book a free measuring visit</a>
+              <a class="site-ghost" href="#write-alex" data-dictate-link><span class="site-mic" aria-hidden="true"></span>Or just say it</a>
             </div>
           </div>
-          <button class="btn btn-primary" type="submit" id="send">Send to Alex</button>
-        </form>
-      </div>
-
-      <div class="b-card">
-        <p class="b-label">Your conversation with Alex</p>
-        <ul class="thread" id="client-thread"><li class="muted b-empty">Nothing yet. Send Alex a message.</li></ul>
+          <div class="site-glass" aria-live="polite"><span>Next free visit</span><strong id="site-next">Mon 5:30 pm</strong></div>
+        </header>
+        <section class="site-contact" id="write-alex" aria-label="Write to Alex">
+          <h2 class="site-h2">Write to Alex</h2>
+          <p class="site-sub">Write, attach a photo, or just say it. Alex is often on a ladder; his assistant Kept makes sure you hear back.</p>
+          <div class="meet-ideas" id="ideas"></div>
+          <form id="f" class="preform" autocomplete="off">
+            <label class="field"><span>Write as</span><select id="who"></select></label>
+            <p class="foot muted" id="who-about"></p>
+            <div class="w-new" id="newbox">
+              <label class="field"><span>Your name</span><input id="name" maxlength="60" placeholder="Jo Rivera"></label>
+              <label class="field"><span>Your email <span class="muted">(nothing is sent)</span></span><input id="email" maxlength="120" placeholder="jo@example.com"></label>
+            </div>
+            <label class="field"><span>Subject</span><input id="subject" maxlength="120" placeholder="Our kitchen"></label>
+            <div class="field"><span>Message</span>
+              <div class="site-msg">
+                <textarea id="body" rows="5" maxlength="2000" placeholder="Hi Alex, …" required aria-label="Message"></textarea>
+                <button type="button" class="site-dictate" id="dictate" aria-pressed="false"><span class="site-mic" aria-hidden="true"></span><span id="dictate-label">Say it instead</span></button>
+              </div>
+            </div>
+            <div class="field w-photo"><span>Photo <span class="muted">(optional: your kitchen, a broken hinge…)</span></span>
+              <div class="w-photo-row">
+                <input id="file" type="file" accept="image/jpeg,image/png,image/webp">
+                <img id="thumb" alt="" hidden>
+                <button type="button" class="btn btn-quiet btn-small" id="clear" hidden>Remove</button>
+              </div>
+            </div>
+            <button class="site-cta site-send" type="submit" id="send">Send to Alex</button>
+          </form>
+          <p class="b-label site-thread-label">Your conversation with Alex</p>
+          <ul class="thread" id="client-thread"><li class="muted b-empty">Nothing yet. Send Alex a message.</li></ul>
+        </section>
+        <section class="site-bento" id="site-prices" aria-label="Prices">
+          <figure class="site-tile"><img src="/static/site/walnut.jpg" alt=""><figcaption><b>Full kitchen</b><span>from $14,000</span></figcaption></figure>
+          <figure class="site-tile"><img src="/static/site/marble.jpg" alt=""><figcaption><b>Countertop</b><span>from $2,800</span></figcaption></figure>
+          <figure class="site-tile"><img src="/static/site/hinge.jpg" alt=""><figcaption><b>Small repairs</b><span>$85/h · 2 h min.</span></figcaption></figure>
+          <div class="site-more">
+            <p><b>New fronts on the old boxes</b><span>from $4,500</span></p>
+            <p><b>Backsplash</b><span>from $1,200</span></p>
+            <p><b>Measuring visit</b><span class="site-free">free</span></p>
+          </div>
+        </section>
+        <section class="site-work" id="site-work" aria-label="Before and after">
+          <div class="site-ba" id="site-ba" style="--cut:50%">
+            <img src="/static/site/jo-after.jpg" alt="The same kitchen redone in walnut with quartz counters">
+            <img class="site-ba-before" src="/static/site/jo-before.jpg" alt="A tired 1990s oak kitchen with a damaged floor">
+            <span class="site-ba-tag site-ba-l">Before</span><span class="site-ba-tag site-ba-r">After</span>
+            <span class="site-ba-handle" aria-hidden="true"></span>
+            <input type="range" min="0" max="100" value="50" aria-label="Slide between before and after" id="site-ba-range">
+          </div>
+          <p class="site-cap">A 1990s kitchen like Jo's, redone in walnut and quartz (a rendering from her photo). Drag to compare.</p>
+        </section>
       </div>
     </section>
 

@@ -284,9 +284,35 @@
     } catch { /* not critical */ }
   }
 
+  // ------------------------------------------------------------------ Alex's site: before/after, next visit, dictation
+  const ba = $("#site-ba-range");
+  if (ba) ba.addEventListener("input", () => $("#site-ba").style.setProperty("--cut", `${ba.value}%`));
+  api("GET", "/api/next_visit").then((r) => {
+    if (r && r.label) $("#site-next").textContent = r.label.replace(/^(\w{3})\w*, /, "$1, ").replace(" at ", " · ");
+  }).catch(() => {});
+  // a client can say the message instead of typing it: the words land in the box, to read over before sending
+  let dictating = null;
+  function stopDictation() { if (dictating) { try { dictating.stop(); } catch { /* already stopped */ } } }
+  $("#dictate").addEventListener("click", () => {
+    if (dictating) { stopDictation(); return; }
+    if (!SR) { toast("Speaking a message needs Chrome, Edge or Safari. You can type it instead.", "err"); $("#body").focus(); return; }
+    const box = $("#body"), base = box.value.trim() ? box.value.trim() + " " : "";
+    const r = new SR(); dictating = r;
+    r.lang = "en-US"; r.interimResults = true; r.continuous = true;
+    r.onresult = (e) => { let t = ""; for (const res of e.results) t += res[0].transcript; box.value = base + t.trim(); };
+    r.onerror = (e) => { if (e.error === "not-allowed") toast("The microphone is blocked for this page. You can type instead.", "err"); };
+    r.onend = () => { dictating = null; $("#dictate").setAttribute("aria-pressed", "false"); $("#dictate-label").textContent = "Say it instead"; box.focus(); };
+    $("#dictate").setAttribute("aria-pressed", "true"); $("#dictate-label").textContent = "Listening… tap to stop";
+    r.start();
+  });
+  document.querySelectorAll("[data-dictate-link]").forEach((a) => a.addEventListener("click", (e) => {
+    e.preventDefault(); $("#write-alex").scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => $("#dictate").click(), 500);
+  }));
+
   // ------------------------------------------------------------------ send
   $("#f").addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    stopDictation();
     const body = $("#body").value.trim();
     if (!body) { $("#body").focus(); return; }
     const who = current();

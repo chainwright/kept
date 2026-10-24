@@ -81,7 +81,7 @@ def _page(name: str):
     """Pages name their scripts and styles with this build's stamp, so a redeploy never meets a stale cache."""
     from fastapi.responses import HTMLResponse
     html = (WEB / name).read_text()
-    for asset in ("app.js", "app.css", "both.js", "both.css"):
+    for asset in ("app.js", "app.css", "both.js", "both.css", "site.css"):
         html = html.replace(f'/static/{asset}"', f'/static/{asset}?v={_BUILD}"')
     return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
 
@@ -271,6 +271,14 @@ class Letter(BaseModel):
     name: str = ""
     email: str = ""
     image: str = ""  # optional photo as a data: URL
+
+
+@app.get("/api/next_visit")
+def next_visit():
+    """The first free measuring time in Alex's calendar, for the 'Next free visit' badge on Alex's site."""
+    from . import schedule
+    slots = schedule.free_slots(1)
+    return {"label": slots[0]["label"] if slots else None}
 
 
 @app.get("/api/people")
