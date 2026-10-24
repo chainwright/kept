@@ -90,7 +90,16 @@ def restore(today: date | None = None) -> dict:
             target.mkdir(parents=True, exist_ok=True)
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        if f.suffix in (".json", ".jsonl", ".md", ".txt") and f.name != META:
+        if f.name == "audit.jsonl":
+            # mark the recorded morning's calls, so they don't count against today's budget
+            lines = []
+            for line in shift_text(f.read_text(), days, recorded).splitlines():
+                if line.strip():
+                    rec = json.loads(line)
+                    rec["recorded"] = True
+                    lines.append(json.dumps(rec, ensure_ascii=False))
+            target.write_text("\n".join(lines) + "\n")
+        elif f.suffix in (".json", ".jsonl", ".md", ".txt") and f.name != META:
             target.write_text(shift_text(f.read_text(), days, recorded))
         else:
             shutil.copy2(f, target)

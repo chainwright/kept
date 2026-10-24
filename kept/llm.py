@@ -160,8 +160,9 @@ class Router:
     @staticmethod
     def spent_today() -> float:
         today = now().date().isoformat()
+        # calls in the recorded demo morning were paid for when it was recorded, not today
         return sum(r.get("usd", 0.0) for r in read_audit(5000)
-                   if r.get("kind") == "llm" and r.get("ts", "").startswith(today))
+                   if r.get("kind") == "llm" and r.get("ts", "").startswith(today) and not r.get("recorded"))
 
     def ask(self, task: str, messages: list[dict], *, purpose: str, max_tokens: int = 800,
             temperature: float = 0.2, json_mode: bool = False, tier: str | None = None,
