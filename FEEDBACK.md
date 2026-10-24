@@ -20,9 +20,11 @@ builder actually goes through. Times are from our notes on Oct 24, 2026.
   screen (address + card) before anything else. Builders who expect "free credits" are surprised
   here. A line on the Devpost resources page ("you'll need to add a card; it's a $0 authorization")
   would remove the surprise.
-- **The promo-code page didn't render its form for us.** The "Fill out this form" link from the
-  Devpost resources opened nebius.com/promo-code, which showed a newsletter sign-up but no promo
-  field. We couldn't tell whether the code had been applied.
+- **The promo-code form is easy to miss.** The "Fill out this form" link opens nebius.com/promo-code,
+  where the first thing that renders is a newsletter sign-up; the real promo form loads later inside
+  an embedded frame further down. On our first visit we gave up thinking the page was broken. Once
+  found, it worked: "Form submitted. The promo code will be emailed to you." It would help if the
+  console simply had a "Redeem a code" box next to the trial balance.
 - **Two different "verify your email" flows** (Builders Program and Token Factory) arrive with the
   same subject line. Different subjects would help.
 - The billing form clears street, city and postal code when you change the country, and only

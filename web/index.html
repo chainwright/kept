@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kept</title>
-  <meta name="description" content="Kept: an always-on operator for a one-person business. Every promise kept visible, every model answer checked, nothing sent without your Yes.">
+  <meta name="description" content="Kept guards a one-person business's word, time and money. Every promise kept visible, every model answer checked, nothing sent without your Yes.">
   <meta name="color-scheme" content="light dark">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,8 +18,8 @@
     <div class="topbar-inner">
       <div class="brand">
         <span class="wordmark" aria-label="Kept">Kept<span class="wordmark-dot" aria-hidden="true">.</span></span>
-        <span class="owner" id="owner-line">for your business</span>
         <span class="badge badge-demo" id="demo-badge" hidden title="Demo mode: outgoing mail is saved to an outbox, never sent">Demo</span>
+        <span class="tagline">Guards your word, your time and your money.</span>
       </div>
 
       <div class="spend" id="spend" title="Model spend today against the daily budget">
@@ -38,10 +38,18 @@
             <svg class="ico ico-sm" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="menu-pop" id="jobs-menu" role="menu" hidden>
+            <p class="menu-group" aria-hidden="true">Your word</p>
             <button role="menuitem" type="button" data-job="triage"><strong>Sort the inbox</strong><span>Nano labels mail and pulls out promises</span></button>
             <button role="menuitem" type="button" data-job="follow_ups"><strong>Draft follow-ups</strong><span>Super writes replies for due promises</span></button>
-            <button role="menuitem" type="button" data-job="watch"><strong>Check the news</strong><span>Web search, only quoted facts survive</span></button>
             <button role="menuitem" type="button" data-job="overload"><strong>Weigh the week</strong><span>Ultra picks one deadline to move</span></button>
+            <button role="menuitem" type="button" data-job="learn"><strong>Learn from your history</strong><span>Ultra proposes a rule; code recounts the evidence</span></button>
+            <p class="menu-group" aria-hidden="true">Your money</p>
+            <button role="menuitem" type="button" data-job="money"><strong>Chase unpaid invoices</strong><span>Friendly, firm, final: one step at a time</span></button>
+            <button role="menuitem" type="button" data-job="rescue"><strong>Plan a cash rescue</strong><span>Ultra ranks the fastest honest ways to close a gap</span></button>
+            <button role="menuitem" type="button" data-job="offers"><strong>Consider seasonal offers</strong><span>Only when the moment and the person are right</span></button>
+            <button role="menuitem" type="button" data-job="growth"><strong>Look for happy clients</strong><span>Ask for a review only at the right moment</span></button>
+            <p class="menu-group" aria-hidden="true">Your day</p>
+            <button role="menuitem" type="button" data-job="watch"><strong>Check the news</strong><span>Web search, only quoted facts survive</span></button>
             <button role="menuitem" type="button" data-job="brief"><strong>Write the brief</strong><span>Super writes today, rules add what's overdue</span></button>
             <hr id="reset-sep" hidden>
             <button role="menuitem" type="button" id="demo-reset" hidden><strong>Reset demo data</strong><span>Back to the seeded week</span></button>
@@ -62,8 +70,12 @@
   <div class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></div>
 
   <main id="main" tabindex="-1">
-    <!-- the four ideas, with live numbers -->
-    <section class="principles" aria-label="How Kept works">
+    <!-- the core ideas, with live numbers -->
+    <section class="principles" aria-label="Kept at a glance">
+      <a class="principle p-word" href="#word">
+        <span class="p-num" id="p-word">–</span>
+        <span class="p-text"><strong>promises on time</strong><span id="p-word-sub">from your own history</span></span>
+      </a>
       <a class="principle" href="#promises">
         <span class="p-num" id="p-open">0</span>
         <span class="p-text"><strong>promises kept in view</strong><span id="p-open-sub">until you close them with a note</span></span>
@@ -71,6 +83,10 @@
       <a class="principle p-ask" href="#approvals">
         <span class="p-num" id="p-pending">0</span>
         <span class="p-text"><strong>waiting for your Yes</strong><span>nothing reaches a person without it</span></span>
+      </a>
+      <a class="principle p-cash" href="#money">
+        <span class="p-num" id="p-cash">–</span>
+        <span class="p-text"><strong id="p-cash-label">lowest balance, 30 days</strong><span id="p-cash-sub">from invoices and bills</span></span>
       </a>
       <a class="principle p-held" href="#held">
         <span class="p-num" id="p-held">0</span>
@@ -82,70 +98,170 @@
       </a>
     </section>
 
+    <nav class="jump" aria-label="Sections">
+      <a href="#approvals">Waiting for Yes</a>
+      <a href="#precheck">Before you send</a>
+      <a href="#today">Today</a>
+      <a href="#money">Money</a>
+      <a href="#rescue" id="jump-rescue" hidden>Rescue plan</a>
+      <a href="#promises">Promises</a>
+      <a href="#scope">Scope</a>
+      <a href="#word">Your word</a>
+      <a href="#held">Held back</a>
+      <a href="#inbox">Inbox</a>
+      <a href="#news">News</a>
+      <a href="#growth">Offers &amp; growth</a>
+      <a href="#models">Models</a>
+    </nav>
+
     <div class="layout">
       <div class="col col-main">
-        <section class="card card-approvals" id="approvals" aria-labelledby="h-approvals">
+        <section class="card card-approvals o-1" id="approvals" aria-labelledby="h-approvals">
           <div class="card-head">
             <h2 id="h-approvals">Waiting for your Yes</h2>
             <span class="count" id="approvals-count"></span>
           </div>
-          <p class="lede">Anything that reaches another person waits here. Kept drafted it and checked it; you decide.</p>
-          <div id="approvals-list"></div>
-          <details class="sub" id="decided-wrap" hidden>
-            <summary>Recently decided <span class="muted" id="decided-count"></span></summary>
-            <ul class="plain" id="decided-list"></ul>
-          </details>
+          <div class="card-body">
+            <p class="lede">Anything that reaches another person, or changes how Kept behaves, waits here. Kept drafted it and checked it; you decide.</p>
+            <div id="approvals-list"></div>
+            <details class="sub" id="decided-wrap" hidden>
+              <summary>Recently decided <span class="muted" id="decided-count"></span></summary>
+              <ul class="plain" id="decided-list"></ul>
+            </details>
+          </div>
         </section>
 
-        <section class="card" id="today" aria-labelledby="h-today">
+        <section class="card o-3" id="today" aria-labelledby="h-today" data-fold>
           <div class="card-head">
             <h2 id="h-today">Today</h2>
             <span class="meta" id="brief-meta"></span>
           </div>
-          <div id="brief"></div>
+          <div class="card-body"><div id="brief"></div></div>
         </section>
 
-        <section class="card" id="promises" aria-labelledby="h-promises">
+        <section class="card card-money o-4" id="money" aria-labelledby="h-money" data-fold>
+          <div class="card-head">
+            <h2 id="h-money">Money, next 30 days</h2>
+            <span class="meta" id="money-meta"></span>
+          </div>
+          <div class="card-body">
+            <p class="lede">Each invoice is expected on the day that client usually pays, not on its due date.</p>
+            <div id="cash-callout"></div>
+            <div class="chart" id="cash-chart"></div>
+            <details class="sub" id="cash-events-wrap">
+              <summary>Every money event in the forecast <span class="muted" id="cash-events-count"></span></summary>
+              <ul class="plain events" id="cash-events"></ul>
+            </details>
+            <h3 class="h3">Invoices</h3>
+            <div id="invoices"></div>
+          </div>
+        </section>
+
+        <section class="card card-rescue o-5" id="rescue" aria-labelledby="h-rescue" hidden data-fold>
+          <div class="card-head">
+            <h2 id="h-rescue">Rescue plan</h2>
+            <span class="meta" id="rescue-meta"></span>
+          </div>
+          <div class="card-body"><div id="rescue-body"></div></div>
+        </section>
+
+        <section class="card o-6" id="promises" aria-labelledby="h-promises" data-fold>
           <div class="card-head">
             <h2 id="h-promises">Promises</h2>
             <span class="count" id="promises-count"></span>
           </div>
-          <p class="lede">Every promise stays here until you say what happened: done, dropped, or handed off. Overdue first.</p>
-          <ul class="ledger" id="ledger-list"></ul>
-
-          <form class="addform" id="add-form" autocomplete="off">
-            <h3 class="h3">Add a promise</h3>
-            <div class="fields">
-              <label class="field field-wide"><span>What did you promise?</span>
-                <input name="text" required maxlength="300" placeholder="Send Maria the revised quote">
-              </label>
-              <label class="field"><span>To whom</span>
-                <input name="who" maxlength="120" placeholder="Maria Lopez">
-              </label>
-              <label class="field"><span>Due <span class="muted">(optional)</span></span>
-                <input name="due" type="date">
-              </label>
-              <button class="btn btn-secondary" type="submit">Add promise</button>
+          <div class="card-body">
+            <p class="lede">Every promise stays here until you say what happened: done, dropped, or handed off. Overdue first.</p>
+            <div class="tabs" role="tablist" aria-label="Which promises">
+              <button role="tab" type="button" id="tab-i_owe" aria-controls="ledger-panel" aria-selected="true" data-dir="i_owe">You owe <span class="tab-n" id="n-i_owe"></span></button>
+              <button role="tab" type="button" id="tab-owed_to_me" aria-controls="ledger-panel" aria-selected="false" tabindex="-1" data-dir="owed_to_me">Owed to you <span class="tab-n" id="n-owed_to_me"></span></button>
             </div>
-          </form>
+            <div id="ledger-panel" role="tabpanel" aria-labelledby="tab-i_owe">
+              <ul class="ledger" id="ledger-list"></ul>
+            </div>
 
-          <details class="sub" id="closed-wrap" hidden>
-            <summary>Closed recently <span class="muted" id="closed-count"></span></summary>
-            <ul class="plain" id="closed-list"></ul>
-          </details>
+            <form class="addform" id="add-form" autocomplete="off">
+              <h3 class="h3">Add a promise</h3>
+              <div class="fields">
+                <label class="field field-wide"><span>What was promised?</span>
+                  <input name="text" required maxlength="300" placeholder="Send Maria the revised quote">
+                </label>
+                <label class="field"><span>Who</span>
+                  <input name="who" maxlength="120" placeholder="Maria Lopez">
+                </label>
+                <label class="field"><span>Due <span class="muted">(optional)</span></span>
+                  <input name="due" type="date">
+                </label>
+                <label class="field"><span>Direction</span>
+                  <select name="direction">
+                    <option value="i_owe">I owe them</option>
+                    <option value="owed_to_me">They owe me</option>
+                  </select>
+                </label>
+                <button class="btn btn-secondary" type="submit">Add promise</button>
+              </div>
+            </form>
+
+            <details class="sub" id="closed-wrap" hidden>
+              <summary>Closed recently <span class="muted" id="closed-count"></span></summary>
+              <ul class="plain" id="closed-list"></ul>
+            </details>
+          </div>
         </section>
 
-        <section class="card" id="inbox" aria-labelledby="h-inbox">
+        <section class="card o-7" id="scope" aria-labelledby="h-scope" data-fold>
+          <div class="card-head">
+            <h2 id="h-scope">Scope</h2>
+            <span class="meta" id="scope-meta"></span>
+          </div>
+          <div class="card-body">
+            <p class="lede">For clients with a signed agreement, Kept checks each request against it. Every verdict quotes the agreement; when two reads disagree, it says "unclear" and leaves it to you.</p>
+            <div id="scope-list"></div>
+          </div>
+        </section>
+
+        <section class="card o-10" id="inbox" aria-labelledby="h-inbox" data-fold data-folded>
           <div class="card-head">
             <h2 id="h-inbox">Inbox</h2>
             <span class="count" id="inbox-count"></span>
           </div>
-          <ul class="mail" id="inbox-list"></ul>
+          <div class="card-body"><ul class="mail" id="inbox-list"></ul></div>
         </section>
       </div>
 
       <div class="col col-side">
-        <section class="card card-held" id="held" aria-labelledby="h-held">
+        <section class="card card-precheck o-2" id="precheck" aria-labelledby="h-precheck">
+          <div class="card-head">
+            <h2 id="h-precheck">Before you send</h2>
+            <span class="meta">Nano finds promises · code checks your record</span>
+          </div>
+          <div class="card-body">
+            <p class="lede">Paste a reply you're about to send. Kept finds every promise in it and checks each date against how you've actually done before.</p>
+            <form id="pre-form" class="preform" autocomplete="off">
+              <label class="field"><span>Your reply</span>
+                <textarea id="pre-text" name="text" rows="5" required maxlength="4000" placeholder="Hi Maria, thanks for the call! I'll send the revised quote by Friday."></textarea>
+              </label>
+              <label class="field"><span>To <span class="muted">(optional)</span></span>
+                <input id="pre-to" name="to" maxlength="120" placeholder="Maria Lopez">
+              </label>
+              <div class="pre-actions">
+                <button class="btn btn-primary" type="submit" id="pre-btn">Check promises</button>
+                <button class="btn btn-quiet btn-small" type="button" id="pre-example">Use an example</button>
+              </div>
+            </form>
+            <div id="pre-out" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="card o-8" id="word" aria-labelledby="h-word" data-fold>
+          <div class="card-head">
+            <h2 id="h-word">Your word</h2>
+            <span class="meta">plain arithmetic over your closed promises</span>
+          </div>
+          <div class="card-body"><div id="word-body"></div></div>
+        </section>
+
+        <section class="card card-held o-9" id="held" aria-labelledby="h-held" data-fold>
           <div class="card-head">
             <h2 id="h-held">
               <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -153,48 +269,67 @@
             </h2>
             <span class="count" id="held-count"></span>
           </div>
-          <p class="lede">Every model answer is checked by code. When a check fails, Kept holds back and tells you why, instead of guessing.</p>
-          <ul class="held" id="held-list"></ul>
+          <div class="card-body">
+            <p class="lede">Every model answer is checked by code. When a check fails, Kept holds back and tells you why, instead of guessing.</p>
+            <ul class="held" id="held-list"></ul>
+          </div>
         </section>
 
-        <section class="card" id="ask" aria-labelledby="h-ask">
+        <section class="card o-11" id="ask" aria-labelledby="h-ask" data-fold>
           <div class="card-head"><h2 id="h-ask">Ask Kept</h2></div>
-          <p class="lede">About your own week. Answers come only from Kept's records, and each quote is checked.</p>
-          <form id="ask-form" class="askform" autocomplete="off">
-            <label class="sr-only" for="ask-q">Your question</label>
-            <input id="ask-q" name="question" required maxlength="500" placeholder="What did I promise Maria?">
-            <button class="btn btn-secondary" type="submit" id="ask-btn">Ask</button>
-          </form>
-          <div id="ask-out" aria-live="polite"></div>
+          <div class="card-body">
+            <p class="lede">About your own week. Answers come only from Kept's records, and each quote is checked.</p>
+            <form id="ask-form" class="askform" autocomplete="off">
+              <label class="sr-only" for="ask-q">Your question</label>
+              <input id="ask-q" name="question" required maxlength="500" placeholder="What did I promise Maria?">
+              <button class="btn btn-secondary" type="submit" id="ask-btn">Ask</button>
+            </form>
+            <div id="ask-out" aria-live="polite"></div>
+          </div>
         </section>
 
-        <section class="card" id="news" aria-labelledby="h-news">
+        <section class="card o-12" id="news" aria-labelledby="h-news" data-fold data-folded>
           <div class="card-head">
             <h2 id="h-news">In the news</h2>
             <span class="meta" id="news-meta"></span>
           </div>
-          <div id="news-list"></div>
+          <div class="card-body"><div id="news-list"></div></div>
         </section>
 
+        <section class="card o-13" id="growth" aria-labelledby="h-growth" data-fold>
+          <div class="card-head">
+            <h2 id="h-growth">Offers &amp; growth</h2>
+          </div>
+          <div class="card-body">
+            <p class="lede">No cold blasts, no discounts by reflex. Kept asks only when the moment and the person are right, and shows who it left alone and why.</p>
+            <div id="growth-body"></div>
+            <h3 class="h3">Before &amp; after photos</h3>
+            <div id="media-body"></div>
+          </div>
+        </section>
       </div>
     </div>
 
     <div class="wide">
-      <section class="card" id="models" aria-labelledby="h-models">
+      <section class="card" id="models" aria-labelledby="h-models" data-fold>
         <div class="card-head">
           <h2 id="h-models">Models</h2>
           <span class="meta">NVIDIA Nemotron via Nebius Token Factory</span>
         </div>
-        <div class="tiers" id="tiers"></div>
-        <div class="budget" id="budget"></div>
-        <h3 class="h3">Recent calls</h3>
-        <div class="table-wrap" id="calls-wrap" tabindex="0" role="region" aria-label="Recent model calls">
-          <table class="calls">
-            <thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">What for</th><th scope="col" class="why-col">Why this size</th><th scope="col" class="num tok-col">Tokens</th><th scope="col" class="num">Latency</th><th scope="col" class="num">Cost</th></tr></thead>
-            <tbody id="calls-body"></tbody>
-          </table>
+        <div class="card-body">
+          <div class="tiers" id="tiers"></div>
+          <div class="budget" id="budget"></div>
+          <details class="sub" id="calls-details" open>
+            <summary>Recent calls <span class="muted" id="calls-count"></span></summary>
+            <div class="table-wrap" id="calls-wrap" tabindex="0" role="region" aria-label="Recent model calls">
+              <table class="calls">
+                <thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">What for</th><th scope="col" class="why-col">Why this size</th><th scope="col" class="num tok-col">Tokens</th><th scope="col" class="num">Latency</th><th scope="col" class="num">Cost</th></tr></thead>
+                <tbody id="calls-body"></tbody>
+              </table>
+            </div>
+            <p class="empty" id="calls-empty" hidden></p>
+          </details>
         </div>
-        <p class="empty" id="calls-empty" hidden></p>
       </section>
 
       <section class="card" id="activity" aria-labelledby="h-activity">
@@ -207,7 +342,7 @@
   </main>
 
   <footer class="foot">
-    <p>Kept proposes, code verifies, you decide. Everything it knows lives in plain files you can open.</p>
+    <p>Kept proposes, code verifies, you decide. Everything it knows lives in plain files you can open. <span id="owner-line"></span></p>
   </footer>
 
   <dialog id="close-dialog" aria-labelledby="close-title">
