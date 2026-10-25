@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from . import agent, approvals, calibration, checkins, followups, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, BudgetExceeded, router
-from .store import read_audit, read_json
+from .store import append_audit, read_audit, read_json
 from .tools import mail, notify  # noqa: F401  (registers actions)
 
 WEB = ROOT / "web"
@@ -63,6 +63,22 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Kept", lifespan=lifespan)
+
+
+@app.exception_handler(BudgetExceeded)
+async def _budget(_, e: BudgetExceeded):
+    """Any page that asks a model when the day's budget is spent gets the same plain answer."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse({"detail": f"{e}. The demo has a small daily model budget; try again tomorrow."}, status_code=429)
+
+
+@app.exception_handler(Exception)
+async def _any(_, e: Exception):
+    """Never a bare 'Internal Server Error': say what happened, and that nothing was sent."""
+    from fastapi.responses import JSONResponse
+    append_audit("web_error", error=f"{type(e).__name__}: {e}"[:300])
+    return JSONResponse({"detail": f"Kept hit a problem ({type(e).__name__}); nothing was sent. Try again in a moment."},
+                        status_code=500)
 if (WEB / "static").exists():
     app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
 
