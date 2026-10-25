@@ -4,7 +4,24 @@
 checks its own work, and does nothing that reaches another person until you say Yes.**
 
 Built for the Nebius × NVIDIA Global AI Hackathon, Personal AI track.
-Runs on **Nebius Token Factory** with **NVIDIA Nemotron 3** (Nano, Super and Ultra).
+Runs on **Nebius Token Factory** with **NVIDIA Nemotron**: Nemotron 3 Nano, Super and Ultra, and
+Nemotron 3.5 Super VL for photos, each routed to the work it's right for.
+
+**Try it:** https://kept-operator.netlify.app (wakes the free server, then opens the demo) ·
+**Video (3 min):** https://youtu.be/QisO-J2thng
+
+![Both sides: Alex's kitchen website on the left, Alex's phone with Kept on the right](docs/both-sides.jpg)
+
+The demo follows Alex, a one-person kitchen contractor in Portland (made up). On the left you're a
+client on Alex's own website: write, attach a photo of your kitchen, or just say it. On the right is
+Alex's phone: what Nemotron saw in the photo, the job, a preliminary estimate worked out by code from
+Alex's price guide, free measuring times from his calendar, and the reply, waiting for Alex's **Yes**
+(press it, or say "yes, send it"). Alex's full dashboard is one click away.
+
+**Measured on the live models, graded by code:** 40 messages contractors really get (kitchen jobs,
+other trades, four languages, off-topic chat, rudeness, haggling, an attempt to override the rules,
+returning clients), 3 runs in a row, 120 / 120 right and 390 / 390 checks; Alex's whole morning,
+45 runs in a row, 1240 / 1240 checks; 167 unit and regression tests.
 
 ---
 
@@ -28,8 +45,7 @@ If you work alone, your business runs on promises. "I'll send the quote by Thurs
 check and get back to you." Each one is small. Together they decide whether clients trust you.
 They also live in five places at once: the inbox, a notes app, a sticky note, your head.
 
-We run a small agency where agents have been doing this kind of daily work for months. Two
-lessons from that shaped Kept:
+Two lessons from running a small business with AI assistants shaped Kept:
 
 1. **An assistant that sometimes invents things is worse than none.** You stop trusting it, and
    then you check everything twice.
@@ -80,12 +96,30 @@ free measuring times from the calendar, books the one the client picks, and offe
 computed from the same estimate when the client says it's too much (`kept/intake.py`,
 `kept/estimate.py`, `kept/schedule.py`, `kept/vision.py`).
 
+**Asking, remembering, staying on topic.** The reply asks only for what's missing, at most two
+things (rough sizes, photos from two or three angles, the part of town, the timing). A returning
+client is recognised from Alex's records (when they first wrote, about what, the estimate, a visit
+booked) and the reply picks up where they left off; a familiar name from a new address is shown to
+Alex and never merged on its own. A lead who went quiet for a week after an estimate gets one gentle
+check-in, on Yes (`kept/followups.py`). Off-topic chat and other trades (a running toilet, a roof)
+get a short, honest answer with no prices or visit times; people Alex already deals with never do.
+
+**Talk to Kept.** Alex is up a ladder, so voice works both ways (`kept/voice.py`). A client can say
+the message instead of typing it. Alex taps "Read it to me", hears the draft and says "yes, send it".
+Whether that was a Yes is decided by code from the words, never by a model: "yes, but...", "don't send
+it" or mumbling sends nothing and Kept asks again, and a spoken No only holds the draft. Free speech
+("so what am I doing today?") is sorted by Nemotron Nano into a fixed set of things Kept can read out;
+questions about the week get the same quote-checked answers as typing. The browser does the speech
+(Web Speech API); Nemotron does the meaning.
+
 **Answering someone who writes in.** A new email is sorted, checked against the agreement, its
 promises recorded, and, for a stranger, the business is looked up on the web (Tavily Search, and
 Tavily Extract on their own site) while the email is read. Super then drafts Alex's reply from facts
 code gathered: the thread so far, Alex's rate, scope prices, unpaid invoices, open promises both ways.
-Code checks the reply (the right name, only prices from Alex's records, no past dates) and runs every
-promised date through Before you send. The reply waits for Yes; the conversation continues from there.
+Code checks the reply (the right name; only prices from Alex's records, this estimate or their own
+email; every visit time named is one the calendar offered; the reply is in the client's language;
+weekdays match their dates; no written quote promised by a date before the visit; a date later than
+the one the client asked for is said out loud) and runs every promised date through Before you send. The reply waits for Yes; the conversation continues from there.
 
 ## Propose, verify, or abstain
 
@@ -97,6 +131,9 @@ promised date through Before you send. The reply waits for Yes; the conversation
 | Morning brief | every reference must exist; every overdue promise must be mentioned | bad references removed; missing promises added by rule |
 | "Move this deadline" decision | must pick one of this week's promises; new date sane; real email address | no request; reason shown |
 | Answer about your week | every quote must appear in the cited ledger row or journal | shown as **Not verified** |
+| Reply to a client | prices, visit times, language, weekdays, deadlines, off-topic promises (see above) | retried twice with the checks' own words, then held back |
+| A spoken "yes" | read by code from the words; anything mixed or unclear | nothing is sent; Kept asks again |
+| A business behind a stranger's email | looked up only if the email itself names it; facts must quote a page that names it | no lookup, or the fact is dropped |
 
 None of these checks ask a model whether it did well. They are plain code (`kept/validators.py`),
 and the tests in `tests/` show each one catching a bad output.
@@ -123,12 +160,15 @@ kind of work, and every call is logged with its tier, reason, tokens, latency an
 | sorting mail, spotting promises in a draft | **Nemotron 3 Nano** (reasoning off) | cheap and fast; runs on every email |
 | extracting promises, planning the day, drafting, summarising news | **Nemotron 3 Super** | someone will read it, so quality matters |
 | scope, overload, learned rules, rescue ranking, offers | **Nemotron 3 Ultra** | rare, and a wrong call costs trust or money |
+| reading a client's photo | **Nemotron 3.5 Super VL** (reasoning off) | the room, the damage, the style to match, rough sizes; about 8 s |
+| sorting free speech to Kept | **Nemotron 3 Nano** | picks what to read out; it can never approve anything |
 
 Model IDs are discovered from `/v1/models` at start-up. A daily budget (default $1.00) stops
 calls before they happen once it's reached.
 
-A full demo morning is about 40-43 calls (14 Nano, 19-21 Super, 7-8 Ultra) and costs $0.05-0.07,
-measured by `eval/run_eval.py` on the live models.
+A full demo morning is 46-59 calls and costs $0.065-0.11 (median $0.077), measured over dozens of runs
+by `eval/run_eval.py` on the live models. Answering one client email with a photo takes 15-35 seconds
+and costs under a cent.
 
 ## Memory you can read
 
@@ -151,23 +191,32 @@ markdown, and Kept's behaviour changes with it, without touching code.
 ## Run it
 
 ```bash
-cp .env.example .env          # add NEBIUS_API_KEY (and TAVILY_API_KEY for news)
+cp .env.example .env          # add NEBIUS_API_KEY (and TAVILY_API_KEY for the web lookups)
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/uvicorn kept.web:app --port 8000
-# open http://localhost:8000 and press "Run morning loop"
+# http://localhost:8000            both sides: write to Alex as a client, answer as Alex
+# http://localhost:8000/dashboard  Alex's dashboard; press "Run morning loop" for a live morning
 ```
+
+Or with Docker: `docker build -t kept . && docker run -p 8000:8000 -e NEBIUS_API_KEY=... kept`.
 
 The morning loop runs its independent parts in parallel (the emails, then follow-ups, money,
 rescue, growth, offers and news side by side, then the overload call and the brief); writes to the
 shared files are serialised, and the one-message-per-person rule is enforced atomically. A full
-demo morning takes about two minutes.
+demo morning takes one to two and a half minutes.
 
 Demo mode (`KEPT_DEMO=1`, the default) opens on a recorded live morning (`demo_snapshot/`, dates
 moved forward by whole weeks) and lets a visitor write to Alex as a client. It loads a made-up week for Alex, a one-person kitchen contractor
 in Portland: nine emails, two signed agreements, a calendar, a money book, a price guide and eight
 weeks of history. Sample photos (`demo_media/`) were generated for the demo.
-Tests: `.venv/bin/python -m pytest -q`. Live evaluation (costs model credits):
-`.venv/bin/python eval/run_eval.py --runs 5` grades each full day with 24 checks written in code.
+Tests: `.venv/bin/python -m pytest -q` (167). Live evaluation on Nemotron (costs model credits, about
+$0.10 a run), every check written in code:
+
+```bash
+.venv/bin/python eval/run_eval.py --runs 5        # Alex's whole morning, 30 checks per run
+.venv/bin/python eval/run_clients.py --runs 3     # Jo's kitchen from photo to booked visit, Maria, Priya
+.venv/bin/python eval/run_messages.py             # 40 real-world client messages (eval/messages.json)
+```
 
 ## What live testing taught us
 
@@ -187,6 +236,15 @@ Our first runs on the real models went badly, and we kept the evidence because i
   Its next decision moved the only promise without one, and its reasoning is saved next to it.
 - **Two contradicting emails waited for approval** ("it's coming today" and "can we move it to
   Monday?"). Fix: a promise that already has a message waiting is off-limits to other jobs.
+
+- **A homeowner became a shop.** Jo wrote from jo@riverahome.example; the model read "Rivera Home" into
+  the address, Tavily found a real store by that name, and Jo got no estimate. Fix: a business is looked
+  up only if the email itself names it.
+- **Alex's accountant was told "I specialize in kitchens".** The off-topic rule saw no kitchen words.
+  Fix: only possible new clients can be off-topic; anyone in Alex's promises, invoices or contracts gets
+  a real answer.
+- **A passed date slipped through.** The model wrote "October\u202f23" with a narrow no-break space and
+  the date check looked for an ordinary one. Fix: every check reads plain spaces first.
 
 Each of these has a regression test in `tests/`.
 

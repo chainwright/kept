@@ -1,15 +1,17 @@
 [
  {
-  "ts": "2026-10-24T16:22:48+00:00",
-  "job": "watch",
-  "subject": "The CCB Pre‑Exam Training is a two‑day course that covers Oregon Construction La",
+  "ts": "2026-10-25T01:49:55+00:00",
+  "job": "prospects",
+  "subject": "Fremont Garage",
   "problems": [
-   "claim 1: the quoted words are not in source 'web:ad34a04e'"
+   "claim 1: the quoted words are not in source 'web:a707a237'"
   ],
   "payload": {
-   "text": "The CCB Pre‑Exam Training is a two‑day course that covers Oregon Construction Law, employees, subcontractors, the Oregon Code, safety, environmental issues, building envelope, bids and estimates.",
-   "source": "web:ad34a04e",
-   "quote": "CCB Pre-Exam Training This 2-day course covers: Oregon Construction Law, Employees, Subcontractors; Oregon Code, Safety, Environmental Issues, Building Envelope; Bids & Estimates"
+   "business": "Fremont Garage",
+   "why": "Described as a community dining and gathering space that will host multiple food carts, indicating a need for a shared kitchen or staff kitchenette.",
+   "source": "web:a707a237",
+   "quote": "Fremont Garage, a community dining and gathering space along Northeast Fremont.",
+   "opener": "Hey, I saw Fremont Garage is preparing to welcome eight food carts—awesome! I’m Alex, and I specialize in outfitting shared kitchen spaces for cart pods; can I show you how we can streamline your setup?"
   }
  }
 ]

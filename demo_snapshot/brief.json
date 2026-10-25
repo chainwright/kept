@@ -1,38 +1,38 @@
 {
- "headline": "Morning brief for 2026-10-24",
+ "headline": "Alex's morning brief for 2026-10-24",
  "lines": [
   {
-   "ref": "df5479b4",
-   "text": "Send Maria the revised quote."
+   "ref": "656dd6a7",
+   "text": "Send Maria the revised quote"
   },
   {
    "ref": null,
-   "text": "Cash will be short $116 on 2026-11-01."
+   "text": "Cash short on 2026-11-01 by $116."
   },
   {
-   "ref": "7cec0b5c",
-   "text": "Priya owes payment for invoice #118."
+   "ref": "6e1f7e14",
+   "text": "Priya Shah owes payment for invoice #118"
   },
   {
    "ref": null,
-   "text": "12 messages wait for your Yes."
+   "text": "12 messages await your Yes."
   }
  ],
  "plan": [
   {
-   "ref": "df5479b4",
-   "text": "Send Maria the revised quote."
+   "ref": "656dd6a7",
+   "text": "Send Maria the revised quote"
   },
   {
-   "ref": "75000251",
-   "text": "Send Sam Okafor the Q3 receipts."
+   "ref": "49bfc706",
+   "text": "Send Sam Okafor the Q3 receipts"
   },
   {
-   "ref": "7cec0b5c",
-   "text": "Follow up with Priya for payment of invoice #118."
+   "ref": "0e0794a0",
+   "text": "Fix the leak under the new sink for Jordan Kim"
   }
  ],
  "date": "2026-10-24",
  "model": "nvidia/nemotron-3-super-120b-a12b",
- "ts": "2026-10-24T16:23:42+00:00"
+ "ts": "2026-10-25T01:50:41+00:00"
 }

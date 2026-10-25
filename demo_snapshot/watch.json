@@ -1,5 +1,5 @@
 {
- "ts": "2026-10-24T16:22:48+00:00",
+ "ts": "2026-10-25T01:49:54+00:00",
  "topics": [
   "Lumber and cabinet prices in the Pacific Northwest",
   "Oregon contractor license and permit rules",
@@ -8,34 +8,40 @@
  "claims": [
   {
    "topic": "Lumber and cabinet prices in the Pacific Northwest",
-   "text": "Several mills across the Pacific Northwest have announced temporary curtailments, pulling supply out of the market right as freight and transportation costs are also creeping higher.",
-   "url": "https://bldrsupply.com/framing-lumber-prices-are-rising-why-eastern-washington-builders-should-lock-in-now",
-   "quote": "Several mills across the Pacific Northwest have announced temporary curtailments, pulling supply out of the market right as freight and transportation costs are also creeping higher."
+   "text": "Kitchen remodel costs in Lake Oswego, OR range from $45,000 to $95,000 in 2026.",
+   "url": "https://serdenco.com/kitchens/lake-oswego-or",
+   "quote": "A kitchen remodel in Lake Oswego, OR typically costs $45,000–$95,000 in 2026,"
   },
   {
    "topic": "Lumber and cabinet prices in the Pacific Northwest",
-   "text": "Aspen White, 15 piece set, $4700.00.",
-   "url": "https://www.facebook.com/groups/257210470414960/posts/1100808226055176",
-   "quote": "Aspen White, 15 piece set, $4700.00."
+   "text": "Refreshes start at about $25,000 and open‑plan custom kitchens exceed $95,000.",
+   "url": "https://serdenco.com/kitchens/lake-oswego-or",
+   "quote": "with refreshes from about $25,000 and open-plan custom kitchens above $95,000."
   },
   {
    "topic": "Oregon contractor license and permit rules",
-   "text": "If you submit a timely and complete renewal or reassignment application, your existing Oregon permit remains valid until the agency takes final action.",
-   "url": "https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=C7dUDVbjAN5YS3RwtfTLW7WgD0vs52Iv6uVHr9jaNyRVykWz92Us!1626920300?ruleVrsnRsn=340745",
-   "quote": "(b) If a timely and complete renewal or reassignment application has been submitted, the existing permit will remain in effect until final action has been taken"
+   "text": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre‑license exam.",
+   "url": "https://clients.oregonsbdc.org/workshop.aspx?ekey=150460037",
+   "quote": "Contractor license applicants must obtain a CCB license within two years of passing the Oregon pre-license exam."
+  },
+  {
+   "topic": "Oregon contractor license and permit rules",
+   "text": "Renewing an Oregon LLC costs $100 each year.",
+   "url": "https://portlandpeakseo.com/oregon-business-license-guide",
+   "quote": "$100 a year to renew"
   },
   {
    "topic": "Home renovation demand in Portland",
-   "text": "About 150 low‑income residents of Franklin Towers must relocate due to renovation.",
-   "url": "https://www.instagram.com/p/Deo8kj4CPcd",
-   "quote": "approximately 150 LOW-INCOME RESIDENTS are being told they must relocate."
+   "text": "AI agents identified $22.3 million in siding replacement opportunity in one county, indicating rising renovation demand that could affect pricing.",
+   "url": "https://www.naw.org/mdm/article/from-order-takers-to-demand-generators-building-materials-next-shift",
+   "quote": "$22.3 million in opportunity"
   },
   {
    "topic": "Home renovation demand in Portland",
-   "text": "High demand for contractors and ongoing material pressures are affecting Portland renovation markets.",
-   "url": "https://www.facebook.com/newscentermaine/posts/residents-face-mixed-emotions-as-they-prepare-to-leave-their-home-for-renovation/1557982993026711",
-   "quote": "High demand for contractors and ongoing material"
+   "text": "Residents of Franklin Towers in Portland are being relocated for renovations, suggesting imminent construction activity that may affect scheduling and rules.",
+   "url": "https://www.mainepublic.org/maine/2026-10-18/residents-of-franklin-towers-in-portland-being-relocated-for-renovations",
+   "quote": "being relocated for renovations"
   }
  ],
- "dropped": 1
+ "dropped": 0
 }

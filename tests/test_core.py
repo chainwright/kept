@@ -129,7 +129,7 @@ def test_broken_json_is_retried_once(fake):
 def test_broken_json_twice_is_returned_for_the_caller_to_abstain(fake):
     fb = fake([("pick", "{'move': 1e}")])
     r = router.ask("judge", [{"role": "user", "content": "pick one"}], purpose="t", json_mode=True)
-    assert len(fb.calls) == 2
+    assert len(fb.calls) == 3   # twice with room to think, then once without reasoning
     with pytest.raises(Exception):
         r.json()
 
@@ -163,3 +163,29 @@ def test_grounded_quote_with_a_gap_needs_every_piece_on_the_page():
     assert grounded([ok], page)
     assert not grounded([bad], page)
     assert not grounded([{"source": "web:a", "quote": "... ... ..."}], page)
+
+
+def test_a_cited_source_in_angle_brackets_is_found_and_used():
+    """Live, Oct 24: the model cited '<web:2444e422>'; the check failed it, and after that was fixed the
+    lookup that followed still used the raw id and crashed the topic watch."""
+    from kept.validators import grounded, source_id
+    sources = {"web:2444e422": "Bossa opened on Alberta St in May."}
+    assert source_id("<web:2444e422>", sources) == "web:2444e422"
+    assert source_id("[2444E422]", sources) == "web:2444e422"
+    assert grounded([{"source": "<web:2444e422>", "quote": "Bossa opened on Alberta St"}], sources)
+
+
+def test_a_model_that_thinks_until_it_runs_out_answers_without_thinking(fake, monkeypatch):
+    """Live, Oct 24: Super used its whole budget reasoning, twice, and a client got no reply at all."""
+    from kept import llm
+    calls = []
+
+    def complete(model, messages, max_tokens, temperature, json_mode, thinking=True):
+        calls.append(thinking)
+        if thinking:
+            return "", 100, max_tokens, "...", "length"
+        return '{"ok": true}', 100, 10, "", "stop"
+    fb = fake([])
+    monkeypatch.setattr(fb, "complete", complete)
+    r = llm.router.ask("draft", [{"role": "user", "content": "x"}], purpose="t", json_mode=True)
+    assert r.json() == {"ok": True} and calls == [True, True, False]

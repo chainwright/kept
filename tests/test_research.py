@@ -3,7 +3,7 @@ from kept.seed import seed
 
 
 def test_personal_and_demo_addresses_are_not_looked_up():
-    assert research.own_domain("jo@gmail.com") is None
+    assert research.own_domain("jo@example.com") is None
     assert research.own_domain("maria@sunrisebakery.example") is None
     assert research.own_domain("sam@pipsoriginal.com") == "pipsoriginal.com"
 
@@ -22,9 +22,9 @@ def test_only_quoted_facts_from_pages_naming_the_business_survive(fake, monkeypa
               {"text": "Opened in May, books by phone", "source": "web:a", "quote": "books by phone only"},
               {"text": "Has online booking", "source": "web:b", "quote": "with online booking"},
               {"text": "Has 500 reviews", "source": "web:a", "quote": "500 five-star reviews"}]})])
-    out = research.look_up("Jo", "jo@gmail.com", "I run Happy Paws Grooming in Portland")
+    out = research.look_up("Jo", "jo@example.com", "I run Happy Paws Grooming in Portland")
     assert [f["text"] for f in out["facts"]] == ["Opened in May, books by phone"]
-    assert research.known("jo@gmail.com")["business"] == "Happy Paws Grooming"
+    assert research.known("jo@example.com")["business"] == "Happy Paws Grooming"
 
 
 def test_the_part_of_the_page_about_the_business_reaches_the_model():

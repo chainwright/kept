@@ -96,9 +96,18 @@ def not_our_trade(subject: str, body: str) -> bool:
 
 
 def _known(addr: str, this_id: str) -> bool:
-    """Someone Alex has already talked to: a 'thanks!' from them is a client being polite, not off-topic."""
+    """Someone Alex already deals with: they've written before, or they're in his promises, invoices or contracts.
+    Their 'thanks!' or 'please send the Q3 receipts' is never off-topic (live, Oct 24: Alex's accountant asked
+    for receipts and got 'I specialize in kitchens')."""
+    from . import ledger, money
     from .reply import thread
-    return any(t["id"] != this_id and t["dir"] in ("in", "out") for t in thread(addr))
+    from .scope import contract_for
+    a = addr.lower()
+    return (any(t["id"] != this_id and t["dir"] in ("in", "out") for t in thread(addr))
+            # rows read from this very email don't count: they were just written from the stranger's own words
+            or any((r.get("contact") or "").lower() == a and r.get("source") != this_id for r in ledger.items())
+            or any(i["contact"].lower() == a for i in money.load()["invoices"])
+            or bool(contract_for(addr)))
 
 
 def is_off_topic(job: str, subject: str, body: str, photo: bool) -> bool:
@@ -109,7 +118,8 @@ def is_off_topic(job: str, subject: str, body: str, photo: bool) -> bool:
 COMMERCIAL = re.compile(r"\b(cafe|café|coffee|restaurant|bakery|bar|clinic|dental|office|shop|store|boutique|salon|studio|gym)\b", re.I)
 
 
-def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: dict | None = None) -> dict:
+def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: dict | None = None,
+           kind: str = "lead") -> dict:
     from . import estimate
 
     name, addr = sender(m)
@@ -162,10 +172,12 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
         r"дорого|не потянем|нет таких денег", m["body"], re.I))
     out = {"job": job, "what": d.get("what", "") or "", "price_objection": objection,
            "verified_business": verified_biz}
-    if not picked and not has_contract and not_our_trade(m.get("subject", ""), m["body"]):
+    # a stranger is anyone Alex doesn't already deal with (Kept's sorter may call small talk "personal")
+    stranger = kind != "bill" and not has_contract and not _known(addr, m["id"])
+    if not picked and stranger and not_our_trade(m.get("subject", ""), m["body"]):
         out["not_our_trade"] = True
         return out
-    if is_off_topic(job, m.get("subject", ""), said, bool(photo)) and not picked and not has_contract and not _known(addr, m["id"]):
+    if is_off_topic(job, m.get("subject", ""), said, bool(photo)) and not picked and stranger:
         out["off_topic"] = True
         return out
     if picked:

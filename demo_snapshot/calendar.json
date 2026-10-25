@@ -53,26 +53,6 @@
   }
  ],
  "offered": {
-  "dev@patelfamily.example": [
-   {
-    "date": "2026-10-26",
-    "time": "17:30",
-    "label": "Monday, Oct 26 at 5:30 pm",
-    "for": "measuring visit"
-   },
-   {
-    "date": "2026-10-27",
-    "time": "16:30",
-    "label": "Tuesday, Oct 27 at 4:30 pm",
-    "for": "measuring visit"
-   },
-   {
-    "date": "2026-10-28",
-    "time": "16:30",
-    "label": "Wednesday, Oct 28 at 4:30 pm",
-    "for": "measuring visit"
-   }
-  ],
   "sam@okaforcpa.example": [
    {
     "date": "2026-10-26",
@@ -93,24 +73,24 @@
     "for": "visit"
    }
   ],
-  "jordan@kimfamily.example": [
+  "dev@patelfamily.example": [
    {
     "date": "2026-10-26",
     "time": "17:30",
     "label": "Monday, Oct 26 at 5:30 pm",
-    "for": "repair visit"
+    "for": "measuring visit"
    },
    {
     "date": "2026-10-27",
     "time": "16:30",
     "label": "Tuesday, Oct 27 at 4:30 pm",
-    "for": "repair visit"
+    "for": "measuring visit"
    },
    {
     "date": "2026-10-28",
     "time": "16:30",
     "label": "Wednesday, Oct 28 at 4:30 pm",
-    "for": "repair visit"
+    "for": "measuring visit"
    }
   ]
  }

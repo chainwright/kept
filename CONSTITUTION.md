@@ -19,8 +19,14 @@ What the models may do, and what only code may do. Every rule below is enforced 
 7. **Disagreement means "unclear".** The signed agreement is read twice by Nemotron Ultra at two
    temperatures; if the readings disagree, Kept doesn't charge and doesn't promise.
 8. **When a check fails, Kept says so.** It holds back, writes the reason under Held back, and doesn't guess.
-   A reply gets one second try with the checks' own words, then it stops.
+   A reply gets two more tries with the checks' own words, then it stops.
 9. **One message to a person at a time.** A newer email from them makes an unsent draft stale; it is marked
    replaced, never deleted.
-10. **The owner's data stays the owner's.** Plain files they can read (ledger, journal, audit of every model
+10. **A spoken Yes is heard by code, not a model.** "yes, send it" sends the one draft that was on screen or
+    read out; "yes, but...", "don't send it" or anything unclear sends nothing and Kept asks again; a spoken No
+    only holds the draft. A model may sort free speech into what to read out; it can never approve.
+11. **Kept answers people honestly or not at all.** Only possible new clients can be off-topic; they get a short
+    answer with no prices or visit times and no promise to look anything up. People the owner already deals
+    with always get a real answer. A familiar name from a new address is shown to the owner, never merged.
+12. **The owner's data stays the owner's.** Plain files they can read (ledger, journal, audit of every model
     call); Nebius Token Factory with zero data retention; learned rules go into the owner's own copy of a skill.

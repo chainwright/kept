@@ -282,9 +282,12 @@ def next_visit():
 
 
 @app.get("/api/people")
-def people():
+def people(mine: str = ""):
+    """Alex's demo clients, plus only the new contacts this visitor wrote as (their browser passes them):
+    another visitor's name and email never show up in someone else's list."""
     from . import tryit
-    return tryit.client_base()
+    own = {e.strip().lower() for e in mine.split(",") if e.strip()}
+    return [p for p in tryit.client_base() if p["key"] != "new" or p["email"].lower() in own]
 
 
 @app.get("/api/thread")

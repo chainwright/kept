@@ -51,7 +51,7 @@ builder actually goes through. Times are from our notes on Oct 24, 2026.
   in the quickstart ("Nemotron 3 reasons by default; budget for it or switch it off") would have
   saved us an hour. The `/no_think` system prompt and `reasoning_effort: low` did not help.
 
-**An outage the status page didn't show.** On Oct 24 from about 12:45 to 12:58 UTC, on and off, chat completions
+**An outage the status page didn't show.** On Oct 24 from about 12:45 to 12:58 UTC, chat completions
 for all three Nemotron sizes returned `503 Service Temporarily Unavailable` (an nginx page) on and off,
 while `/v1/models` answered 200 and status.nebius.com showed Token Factory as operational. Our trial
 balance was fine. Kept handled it the way we'd hoped: each job failed on its own, nothing was invented,
@@ -88,9 +88,11 @@ returned nothing (same lesson as Nano: `enable_thinking: false` gave a clean JSO
 8 seconds), and we couldn't find its price on the model catalog page, so our cost display assumes
 Super's price for it.
 
-**Cost and speed.** A full morning for a one-person business is about 40-43 calls (14 Nano,
-19-21 Super, 7-8 Ultra) and costs $0.05-0.07. It takes 3-6 minutes end to end, which is fine for a job that runs before
-the owner wakes up.
+**Cost and speed.** A full morning for a one-person business is 46-59 calls and costs $0.065-0.11
+(median $0.077 over dozens of graded runs). With the independent parts running side by side it takes one
+to two and a half minutes, which is fine for a job that runs before the owner wakes up. Over two days we
+made a few thousand calls across 45 graded mornings and hundreds of graded client emails; apart from
+the short 503 window above, Token Factory never failed us.
 
 
 ## Would we build with it again?

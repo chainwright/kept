@@ -22,7 +22,7 @@ from .agent import _abstain, _msgs, business, note, read_notes_owner
 from .llm import router
 from .store import journal, now_iso, read_json, read_notes, write_json
 from .tools import notify
-from .validators import Verdict, dollar_amounts, grounded, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, grounded, honest_email, sendable_text, shape, source_id
 
 DORMANT_DAYS = 21
 
@@ -96,9 +96,7 @@ def find_prospects(limit: int = 3) -> list[dict]:
         return []
     out = []
     for p in items[:limit]:
-        p["source"] = str(p.get("source", "")).strip().strip("[]")
-        if p["source"] not in sources and f"web:{p['source']}" in sources:
-            p["source"] = f"web:{p['source']}"
+        p["source"] = source_id(p.get("source"), sources)
         v = shape(p, {"business": str, "quote": str, "opener": str})
         if v:
             v.merge(grounded([p], sources))
@@ -228,9 +226,11 @@ def _ad_plan(gap: dict, today: date) -> dict | None:
         f"{read_notes_owner()} runs {business()} and will be ${gap['gap']:.0f} short on {gap['date']} "
         f"({gap['because']}). Write a short local ad for a before/after photo of finished work"
         + (f" ({client})" if client else " (don't name the client)") + ": a headline under 8 words and two sentences "
-        "of text, plain and specific, inviting people to send a photo of their kitchen for a free estimate. Then one "
-        f"sentence for {read_notes_owner()} on why a small boost makes sense now. Use only these numbers: the gap "
-        f"${gap['gap']:.0f}, the budget ${rules['per_day']} a day for {rules['days']} days (${total}), a typical job "
+        "of text, plain and specific, inviting people to send a photo of their kitchen for a free estimate. The headline "
+        "and text are what strangers see: never mention Alex's cash, the gap, the ad budget or a typical job price, and no "
+        "urgency ('limited time', 'act now', 'today only'). Then one sentence FOR "
+        f"{read_notes_owner()} ONLY (why_now) on why a small boost makes sense now; there you may use the gap "
+        f"${gap['gap']:.0f}, the budget ${rules['per_day']} a day for {rules['days']} days (${total}) and a typical job "
         f"about ${proj:,}. Reply JSON: " + '{"headline": "...", "text": "...", "why_now": "..."}'),
         purpose="ad plan for a slow month", json_mode=True, max_tokens=400)
     try:
@@ -242,9 +242,14 @@ def _ad_plan(gap: dict, today: date) -> dict | None:
     if v:
         allowed = {int(round(gap["gap"])), rules["per_day"], total, proj}
         said = " ".join([d["headline"], d["text"], d["why_now"]])
+        public = f"{d['headline']} {d['text']}"
         amounts = dollar_amounts(said)
         if amounts - allowed:
             v.add(f"numbers that aren't Alex's: {sorted(amounts - allowed)}")
+        if dollar_amounts(public):
+            v.add("the ad strangers see shows money (Alex's gap, budget or prices); keep numbers in the note for Alex")
+        if re.search(r"short(fall)?\b|\bgap\b|budget|cash|limited[- ‑]time|act now|today only|hurry|don'?t miss", public, re.I):
+            v.add("the ad strangers see talks about Alex's money or pushes urgency")
         if not client and any(c.lower() in said.lower() for c in [p for p in pairs]):
             v.add("names a client who didn't agree to be named")
     if not v:

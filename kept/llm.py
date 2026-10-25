@@ -166,7 +166,7 @@ class Router:
 
     def ask(self, task: str, messages: list[dict], *, purpose: str, max_tokens: int = 800,
             temperature: float = 0.2, json_mode: bool = False, tier: str | None = None,
-            _retry: bool = False) -> Reply:
+            _retry: bool = False, _think: bool | None = None) -> Reply:
         tier = tier or ROUTES[task]
         t = TIERS[tier]
         if self.spent_today() >= settings.daily_budget_usd:
@@ -174,16 +174,17 @@ class Router:
                          reason=f"daily budget ${settings.daily_budget_usd:.2f} reached")
             raise BudgetExceeded(f"daily model budget ${settings.daily_budget_usd:.2f} reached")
         model = self.model_for(tier)
+        think = t.thinking if _think is None else _think
         # thinking tiers need room to reason *and* answer
-        budget = max_tokens + (THINK_ALLOWANCE if t.thinking else 0)
+        budget = max_tokens + (THINK_ALLOWANCE if think else 0)
         t0 = time.time()
-        out = self._backend().complete(model, messages, budget, temperature, json_mode, t.thinking)
+        out = self._backend().complete(model, messages, budget, temperature, json_mode, think)
         text, pin, pout = out[:3]
         reasoning, finish = (out[3], out[4]) if len(out) >= 5 else ("", "stop")
         ms = int((time.time() - t0) * 1000)
         usd = pin / 1e6 * t.usd_in_per_m + pout / 1e6 * t.usd_out_per_m
         append_audit("llm", task=task, tier=tier, model=model, why=t.why, purpose=purpose,
-                     thinking=t.thinking, prompt_tokens=pin, completion_tokens=pout,
+                     thinking=think, prompt_tokens=pin, completion_tokens=pout,
                      usd=round(usd, 6), ms=ms, finish=finish,
                      reasoning=reasoning[:1500] if task == "judge" else None)
         cut_off = finish == "length"
@@ -203,6 +204,12 @@ class Router:
                 return self.ask(task, messages, purpose=purpose, max_tokens=max_tokens * 2 if not t.thinking
                                 else max_tokens + THINK_ALLOWANCE, temperature=temperature,
                                 json_mode=json_mode, tier=tier, _retry=True)
+            if think and (cut_off or bad_json):
+                # live, Oct 24: Super reasoned through 6,700 tokens twice and never answered; a person was
+                # waiting, so the last try answers without the long think (the checks still apply)
+                append_audit("llm_retry", task=task, tier=tier, purpose=purpose, error="answering without reasoning")
+                return self.ask(task, messages, purpose=purpose, max_tokens=max_tokens, temperature=temperature,
+                                json_mode=json_mode, tier=tier, _retry=True, _think=False)
             if cut_off and not text.strip():
                 raise ValueError(f"{tier} ran out of tokens before answering ({pout} used)")
         return Reply(text, model, tier, pin, pout, usd, ms, reasoning, finish)

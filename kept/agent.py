@@ -19,7 +19,7 @@ from .store import append_audit, journal, locked, now_iso, read_journal, read_js
 from .tools import mail, notify
 from email.utils import parseaddr
 
-from .validators import Verdict, grounded, honest_email, one_of, plausible_due, sendable_text, shape
+from .validators import Verdict, grounded, honest_email, one_of, plausible_due, sendable_text, shape, source_id
 
 SYSTEM = ("You are Kept, an operator for a one-person business. You are careful and plain-spoken. "
           "You never invent facts. When asked for JSON, reply with JSON only.")
@@ -325,9 +325,7 @@ def _watch_one(topic: str, search) -> tuple[list[dict], int]:
         _abstain("watch", topic, Verdict(False, [f"model reply unusable: {e}"]))
         return claims, dropped
     for c in (data.get("claims") or [])[:3]:
-        c["source"] = str(c.get("source", "")).strip().strip("[]").strip()
-        if c["source"] not in sources and f"web:{c['source']}" in sources:
-            c["source"] = f"web:{c['source']}"
+        c["source"] = source_id(c.get("source"), sources)
         v = grounded([c], sources)
         if v:
             url = next(r["url"] for r in results if r["id"] == c["source"])

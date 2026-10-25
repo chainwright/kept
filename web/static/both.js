@@ -74,8 +74,12 @@
       : p ? `Playing ${p.name}: ${p.about}.` : "";
     loadClientThread();
   }
+  // the new contacts this browser wrote as; other visitors' names and emails are never listed here
+  const MINE_KEY = "kept.mine";
+  const mine = () => { try { return JSON.parse(localStorage.getItem(MINE_KEY) || "[]"); } catch { return []; } };
+  const addMine = (e) => { try { localStorage.setItem(MINE_KEY, JSON.stringify([...new Set([...mine(), e])].slice(-20))); } catch { /* private mode */ } };
   async function loadPeople(keep) {
-    PEOPLE = await api("GET", "/api/people");
+    PEOPLE = await api("GET", `/api/people?mine=${encodeURIComponent(mine().join(","))}`);
     const sel = $("#who");
     fill(sel, h("option", { value: "new" }, "Me, a new client"),
       h("optgroup", { label: "Or play one of Alex's clients" }, PEOPLE.map((p) => h("option", { value: whoValue(p) }, `${p.name}${p.key === "new" ? " (new)" : ""}`))));
@@ -347,6 +351,7 @@
       if (window.innerWidth < 960) $("#alex-out").scrollIntoView({ behavior: "smooth", block: "start" });
       $("#body").value = ""; setPhoto("");
       const addr = (String(r.mail.from).match(/<([^>]+)>/) || [])[1];
+      if (who.who === "new" && addr) addMine(addr);
       await loadPeople(who.who === "new" ? `new:${addr}` : who.who);
       loadCalendar();
     } catch (e) {

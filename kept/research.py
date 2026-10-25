@@ -16,7 +16,7 @@ from .agent import _abstain, _msgs, note, read_notes_owner
 from .agent import business as owner_business
 from .llm import router
 from .store import locked, now_iso, read_json, write_json
-from .validators import Verdict, grounded, shape
+from .validators import Verdict, grounded, shape, source_id
 
 FILE = "research.json"
 FREEMAIL = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com", "aol.com", "proton.me",
@@ -96,9 +96,7 @@ def look_up(name: str, addr: str, body: str) -> dict:
         _abstain("research", addr, Verdict(False, [f"model reply unusable: {e}"]))
         return _save(addr, out)
     for f in facts[:4]:
-        f["source"] = str(f.get("source", "")).strip().strip("[]")
-        if f["source"] not in sources and f"web:{f['source']}" in sources:
-            f["source"] = f"web:{f['source']}"
+        f["source"] = source_id(f.get("source"), sources)
         v = shape(f, {"text": str, "quote": str})
         if v:
             v.merge(grounded([f], sources))

@@ -192,7 +192,7 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "", i
         # a delighted client already gets the thank-you (with the review link) from growth
         from .intake import assess
         from .scope import contract_for
-        plan = assess(m, photo, has_contract=bool(contract_for(addr)), web=found)
+        plan = assess(m, photo, has_contract=bool(contract_for(addr)), web=found, kind=label.get("kind") or "lead")
         from .reply import draft_reply
         reply_out = draft_reply(m, label, one["scope"], web=found, photo=photo, plan=plan, memory=memory)
 

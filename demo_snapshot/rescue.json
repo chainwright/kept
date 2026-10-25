@@ -1,5 +1,5 @@
 {
- "ts": "2026-10-24T16:23:02+00:00",
+ "ts": "2026-10-25T01:50:14+00:00",
  "needed": true,
  "gap": {
   "date": "2026-11-01",
@@ -14,29 +14,29 @@
    "amount": 850,
    "days_to_cash": 3,
    "detail": "due 2026-10-22, expected 2026-11-03 at this client's usual pace",
-   "action": "Follow up with Priya Shah to collect overdue invoice #118",
-   "why": "Expected payment in 3 days ($850) covers the $116 shortfall quickly."
+   "action": "Email Priya Shah a polite reminder and ask for payment today",
+   "why": "Overdue invoice of $850 expected in 3 days, fastest and largest cash inflow before Nov 1"
   },
   {
-   "id": "offer:6f3d6bad",
+   "id": "offer:2d8867a4",
    "type": "extra work waiting for your Yes",
    "who": "maria@lopezhome.example",
-   "amount": 510,
+   "amount": 255,
    "days_to_cash": 10,
-   "detail": "Offer Maria Lopez the extra work for $510",
-   "action": "Accept Maria Lopez's extra work offer for $510",
-   "why": "Cash in 10 days, providing a reliable backup if invoice delays."
+   "detail": "Offer Maria Lopez the extra work for $255",
+   "action": "Reply yes to Maria Lopez and schedule the extra work",
+   "why": "Extra work pays $255 in 10 days, secures cash well before the Nov 1 shortfall"
   },
   {
-   "id": "lead:f838a952",
+   "id": "lead:9995657d",
    "type": "open lead waiting on you",
    "who": "Dev Patel",
    "amount": 1125,
    "days_to_cash": 21,
    "detail": "Send Dev Patel the rates and a rough timeline",
    "contact": "dev@patelfamily.example",
-   "action": "Send Dev Patel rates and a rough timeline for the project",
-   "why": "Potential $1,125 in 21 days builds next month's revenue."
+   "action": "Send Dev Patel the rates and a rough timeline",
+   "why": "Open lead worth $1,125 with 21 days to cash, builds pipeline for next month"
   },
   {
    "id": "revive:h001",
@@ -46,8 +46,8 @@
    "days_to_cash": 30,
    "contact": "hannah@weisshome.example",
    "detail": "Send Hannah the estimate for a kitchen remodel (54 days ago)",
-   "action": "Send Hannah Weiss the kitchen remodel estimate",
-   "why": "Quoted 54 days ago, $1,125 in 30 days adds pipeline."
+   "action": "Email Hannah Weiss the kitchen remodel estimate",
+   "why": "Quoted but never hired, $1,125 potential in 30 days, revives past opportunity"
   },
   {
    "id": "revive:h002",
@@ -57,69 +57,52 @@
    "days_to_cash": 30,
    "contact": "omar@haddadhome.example",
    "detail": "Send Omar rates and a timeline for his kitchen (48 days ago)",
-   "action": "Send Omar Haddad rates and timeline for his kitchen",
-   "why": "Quoted 48 days ago, $1,125 in 30 days adds pipeline."
+   "action": "Email Omar Haddad rates and timeline for his kitchen",
+   "why": "Similar revive, $1,125 in 30 days, adds to next‑month pipeline"
   },
   {
    "id": "prospect:0",
    "type": "new local business (lead card)",
-   "who": "Hawkeye & Huckleberry",
+   "who": "Sure Shot Burgers",
    "amount": 1125,
    "days_to_cash": 45,
-   "detail": "They are launching their first Oregon restaurant in Portland, which requires a new kitchen build‑out.",
-   "action": "Reach out to Hawkeye & Huckleberry about kitchen build‑out",
-   "why": "New restaurant lead, $1,125 in 45 days expands future work."
+   "detail": "Planning to become a sit‑down restaurant, so they will need a functional kitchen for table service.",
+   "action": "Reach out to Sure Shot Burgers with a kitchen build‑out proposal",
+   "why": "New local business lead, $1,125 in 45 days, long‑term pipeline"
   },
   {
    "id": "prospect:1",
    "type": "new local business (lead card)",
-   "who": "The Malarkey",
+   "who": "JinJu Patisserie",
    "amount": 1125,
    "days_to_cash": 45,
-   "detail": "The new wood‑fired steak and seafood grill is opening as a sit‑down restaurant and will need a full kitchen installation.",
-   "action": "Contact The Malarkey about full kitchen installation",
-   "why": "New grill restaurant lead, $1,125 in 45 days expands future work."
-  },
-  {
-   "id": "prospect:2",
-   "type": "new local business (lead card)",
-   "who": "Alberta Donut Cafe",
-   "amount": 1125,
-   "days_to_cash": 45,
-   "detail": "Permits show a doughnut shop remodel with new panel and appliances, indicating a kitchen/counter upgrade is needed soon.",
-   "action": "Contact Alberta Donut Cafe about kitchen/counter upgrade",
-   "why": "Permit indicates near-term need, $1,125 in 45 days expands future work."
+   "detail": "A James Beard award‑winning bakery returning this fall at a new location, requiring a new bakery‑grade kitchen build‑out.",
+   "action": "Contact JinJu Patisserie with a bakery‑grade kitchen proposal",
+   "why": "Award‑winning bakery returning, $1,125 in 45 days, strategic long‑term lead"
   }
  ],
  "prospects": [
   {
-   "business": "Hawkeye & Huckleberry",
-   "why": "They are launching their first Oregon restaurant in Portland, which requires a new kitchen build‑out.",
-   "quote": "the first Oregon restaurant from celebrity chef Brian Malarkey and his brother, James Malarkey.",
-   "opener": "Hi there, I heard you’re bringing Hawkeye & Huckleberry to Portland—congrats on the exciting launch!",
-   "url": "https://pdx.eater.com/restaurant-news/108793/biggest-new-restaurant-bar-openings-portland-oregon-summer-2026"
+   "business": "Sure Shot Burgers",
+   "why": "Planning to become a sit‑down restaurant, so they will need a functional kitchen for table service.",
+   "quote": "Sure Shot Burgers will soon be a sit-down restaurant.",
+   "opener": "Hi there, I heard Sure Shot Burgers is transitioning to a sit‑down spot—congrats! I’m Alex, a kitchen remodel specialist, and I’d love to help you get the kitchen ready for the new service.",
+   "url": "https://pdx.eater.com/restaurant-news/107746/portland-oregon-biggest-new-restaurant-openings-spring-2026"
   },
   {
-   "business": "The Malarkey",
-   "why": "The new wood‑fired steak and seafood grill is opening as a sit‑down restaurant and will need a full kitchen installation.",
-   "quote": "Promising to be as much of a visual feast (with an eclectic interior design scheme) as an edible one, this new wood-fired steak and seafood grill comes from Central Oregon-born celebrity chef Brian Malarkey and his brother James,",
-   "opener": "Hello! Congrats on the upcoming Malarkey steakhouse—looks like a fantastic addition to Portland’s dining scene.",
-   "url": "https://pdx.eater.com/openings/109228/portland-area-new-restaurant-bar-openings-july-2026"
-  },
-  {
-   "business": "Alberta Donut Cafe",
-   "why": "Permits show a doughnut shop remodel with new panel and appliances, indicating a kitchen/counter upgrade is needed soon.",
-   "quote": "Doughnut shop remodel with new panel and appliances",
-   "opener": "Hey! Excited to hear about the Alberta Donut Cafe’s upcoming remodel—let’s make that kitchen shine.",
-   "url": "https://bridgetownbites.com/2026/09/08/alberta-donut-cafe-will-open-on-ne-alberta-street-in-portland-oregon"
+   "business": "JinJu Patisserie",
+   "why": "A James Beard award‑winning bakery returning this fall at a new location, requiring a new bakery‑grade kitchen build‑out.",
+   "quote": "James Beard award-winning Portland patisserie JinJu is back this fall at a new address.",
+   "opener": "Congrats on JinJu’s comeback this fall! I’m Alex, a kitchen remodel pro, and I’d love to help you design a bakery‑ready space that matches your award‑winning pastries.",
+   "url": "https://pdx.eater.com/restaurant-news/109690/anticipated-new-portland-restaurant-openings-fall-2026"
   }
  ],
  "closes_gap_at": "invoice:118",
  "drafts": [
-  "f9d31406",
-  "11504d71"
+  "a087e4d1",
+  "cc1e377f"
  ],
  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
- "reasoning": "We need to rank candidates by how likely and how fast they bring money, and pick steps that close the gap first (i.e., cover the $116 shortfall on 2026-11-01), then ones that build next month. Use only candidate ids given; don't invent amounts. Reply JSON with steps array, each step: id, action (one line), why (one line). We must not invent amounts, but we can reference the amounts given. The gap is $116. The fastest and most likely to bring money: overdue invoice (invoice:118) amount 850, days_to_cash 3, expected 2026-11-03 (after the due date). That's after the shortfall date (2026-11-01). But it's only 3 days to cash, but expected 2026-11-03, which is 2 days after the shortfall. However, it's the fastest. Next, extra work waiting for your Yes (offer:6f3d6bad) amount 510, days_to_cash 10. That would bring cash in 10 days, around 2026-11-11. That also covers gap. Then leads with longer days. So steps to close gap first: prioritize invoice:118 (collect overdue invoice), then offer:6f3d6bad (accept extra work). Then build next month: lead:f838a952 (send rates), revive:h001, revive:h002, prospects. But we need to rank by likelihood and speed. Likelihood: overdue invoice is likely (client usual pace). Extra work waiting for yes is also likely if Alex says yes. Lead waiting on you: Dev Patel, days 21, amount 1125. Revives: 30 days. Prospects: 45 days. So order: invoice:118, offer:6f3d6bad, lead:f838a952, revive:h001, revive:h002, prospect:0, prospect:1, prospect:2. But we only need steps that close the gap first, then ones that build next month. Probably include all but prioritized. The instruction: \"Rank the candidates below by how likely and how fast they bring money, and pick the steps that close the gap first, then the ones that build next month.\" So we should output steps in that order. Each step: action what Alex does, why. Use one line each.\n\nWe must not invent amounts, but can mention the amount from candidate. That's okay.\n\nLet's craft steps:\n\n1. id: \"invoice:118\", action: \"Follow up with Priya Shah to collect overdue invoice #118\", why: \"Expected payment in 3 days ($850) covers the $116 shortfall quickly.\"\n2. id: \"offer:6f3d6bad\", action: \"Accept Maria Lopez's extra work offer for $510\", why: \"Cash in 10 days, providing a reliable backup if invoice delays.\"\n3. id: \"lead:f838a952\", action: \"Send Dev Patel rates and a rough timeline for the project\", why: \"Potential $1,125 in 21 days builds next month's revenue.\"\n4. id: \"revive:h001\", action: \"Send Hannah Weiss the kitchen remodel estimate\", why: \"Quoted 54 days ago, $1,125 in 30 days adds pipeline.\"\n5. id: \"revive:h002\", action: \"Send Omar Haddad rates and timeline for his kitchen\", why: \"Quoted 48 days ago, $1,125 in 30 days adds pipeline.\"\n6. id: \"prospect:0\", action: \"Reach out to Hawkeye & Huckleberry about kitchen build‑out\", why: \"New restaurant lead, $1,125 in 45 days expands future work.\"\n7. id: \"prospect:1\", action: \"Contact The Malarkey about full kitchen installation\", why: \"New g",
- "ad": "6d3e839f"
+ "reasoning": "We need to rank candidates by how likely and how fast they bring money, and pick steps that close the gap first (the $116 shortfall on 2026-11-01), then ones that build next month. Use only candidate ids given; don't invent amounts. Reply JSON with steps array, each with id, action, why.\n\nWe have a shortfall of $116 on 2026-11-01. Need to close gap first. Candidates with amounts and days_to_cash. We need to consider likelihood and speed. Overdue invoice (invoice:118) amount 850, days_to_cash 3, due 2026-10-22, expected 2026-11-03. That's after the shortfall date (Nov 1). But days_to_cash 3 from now? Today is 2026-10-15? Actually current date is 2026-10-15. So days_to_cash 3 means around Oct 18. That would be before Nov 1. So invoice:118 can bring $850 quickly, likely. Extra work waiting for your Yes (offer:2d8867a4) amount 255, days_to_cash 10, so around Oct 25. That also before Nov 1. Lead:9995657d amount 1125, days_to_cash 21 -> around Nov 5, after shortfall. Revive h001 and h002 days_to_cash 30 -> mid-Nov. Prospects 45 days -> late Nov.\n\nThus to close gap first, we need steps that bring money before Nov 1. The fastest and most likely: invoice:118 (overdue invoice) and offer:2d8867a4 (extra work). Both can bring money before Nov 1. The invoice is larger amount, but days_to_cash 3. The offer is 10 days. Both are likely. So steps: first, follow up on overdue invoice (invoice:118) to collect payment. Second, accept extra work from Maria (offer:2d8867a4). Then for next month building, we can pursue lead:9995657d (send rates), revive:h001, revive:h002, prospects.\n\nWe need to rank by likelihood and speed. So order: invoice:118, offer:2d8867a4, lead:9995657d, revive:h001, revive:h002, prospect:0, prospect:1.\n\nBut we only need to pick steps that close the gap first, then ones that build next month. So include all? The instruction: \"Rank the candidates below by how likely and how fast they bring money, and pick the steps that close the gap first, then the ones that build next month.\" So we should output steps in that order. Probably include all candidates but ordered. However \"pick the steps that close the gap first, then the ones that build next month.\" Could be only those needed to close gap (invoice and offer) then next month builders (lead, revive, prospects). But we can include all ranked.\n\nWe must not invent amounts. Use given amounts. Provide action one line, why one line.\n\nLet's craft steps:\n\n1. id: \"invoice:118\", action: \"Email Priya Shah a polite reminder and ask for payment today\", why: \"Overdue invoice of $850 expected in 3 days, fastest and largest cash inflow before Nov 1\"\n\n2. id: \"offer:2d8867a4\", action: \"Reply yes to Maria Lopez and schedule the extra work\", why: \"Extra work pays $255 in 10 days, secures cash well before the Nov 1 shortfall\"\n\n3. id: \"lead:9995657d\", action: \"Send Dev Patel the rates and a rough timeline\", why: \"Open lead worth $1,125 with 21 days to cash, builds pipeline for next month\"\n\n4. id: \"revive:h001\", action: \"E",
+ "ad": "44e150ae"
 }

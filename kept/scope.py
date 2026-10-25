@@ -21,7 +21,7 @@ from .agent import _abstain, _msgs, read_notes_owner, sender
 from .llm import router
 from .store import data_dir, journal, locked, now_iso, read_json, read_notes, write_json
 from .tools import notify
-from .validators import Verdict, grounded, honest_email, one_of, sendable_text, shape
+from .validators import Verdict, calendar_line, grounded, honest_email, iso_dates, one_of, plain, sendable_text, shape, wrong_weekdays
 
 VERDICTS = ("in_scope", "out_of_scope", "unclear", "already_promised")
 
@@ -152,6 +152,7 @@ def _offer(m, name, addr, checked, extras, reasoning, agreement="") -> dict | No
     lines = "\n".join(f"- {e['request']}: ${e['price']} (about {e['hours_low']}-{e['hours_high']} hours)" for e in extras)
     covered = "\n".join(f"- {c['request']}" for c in checked if c["verdict"] == "in_scope") or "- (nothing else)"
     r = router.ask("draft", _msgs(
+        f"Today is {today:%A, %B} {today.day}; the next two weeks: {calendar_line(today)}. Write dates the way people do. "
         f"Write a short, friendly email FROM {read_notes_owner()} TO {name}. Confirm the covered items will be "
         "done as part of the agreement. For the extra items, explain in one sentence that they're outside what "
         "you agreed, and offer each at the price below, written once as a plain number like $300. Ask if "
@@ -167,7 +168,12 @@ def _offer(m, name, addr, checked, extras, reasoning, agreement="") -> dict | No
         return None
     v = shape(d, {"subject": str, "body": str})
     if v:
+        d["body"] = plain(d["body"])
         v.merge(sendable_text(d["body"]))
+        for w in wrong_weekdays(d["body"], today):
+            v.add(f"gets a weekday wrong: {w}")
+        if iso_dates(d["body"]):
+            v.add("writes a date as 2026-10-23 instead of the way people do")
         v.merge(honest_email(d["body"], recipient_first=first, owner_first=read_notes_owner().split(" ")[0], today=today))
         for e in extras:  # the price in the email must be the price code computed
             if f"${e['price']}" not in d["body"].replace(",", ""):

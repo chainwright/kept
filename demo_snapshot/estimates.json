@@ -1,0 +1,12 @@
+{
+ "dev@patelfamily.example": {
+  "low": 14000,
+  "high": 14000,
+  "mid": 14000,
+  "lines": [],
+  "used": {},
+  "sizes_from": "Alex's starting price",
+  "job": "full_kitchen",
+  "ts": "2026-10-25T01:50:17+00:00"
+ }
+}

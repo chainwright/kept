@@ -48,6 +48,15 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[“”\"'’‘]", "", s)).strip().lower()
 
 
+def source_id(raw, sources: dict) -> str:
+    """The id a model cited, as Kept stored it: models write '[web:1a2b]', '<web:1a2b>', '1a2b' or 'WEB:1A2B'."""
+    sid = str(raw or "").strip().strip("[]<>").strip()
+    for cand in (sid, f"web:{sid}", sid.lower(), f"web:{sid.lower()}"):
+        if cand in sources:
+            return cand
+    return sid
+
+
 def grounded(claims: Iterable[dict], sources: dict[str, str]) -> Verdict:
     """Every claim must point at a source we actually fetched, and quote it.
 
@@ -59,11 +68,7 @@ def grounded(claims: Iterable[dict], sources: dict[str, str]) -> Verdict:
     v = Verdict(True)
     for i, c in enumerate(claims):
         # models write "[web:1a2b]" when the listing showed the id in brackets; same source
-        sid, quote = str(c.get("source", "")).strip().strip("[]").strip(), str(c.get("quote", ""))
-        if sid not in sources and f"web:{sid}" in sources:  # the model dropped the prefix
-            sid = f"web:{sid}"
-        if sid not in sources and sid.lower() in sources:  # "[LEDGER:7CEC0B5C]"
-            sid = sid.lower()
+        sid, quote = source_id(c.get("source"), sources), str(c.get("quote", ""))
         if sid not in sources:
             v.add(f"claim {i + 1} cites '{sid}', which Kept never fetched")
             continue
@@ -129,7 +134,16 @@ _MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun",
                                        "nov", "dec"], start=1)}
 
 
+_ODD_SPACES = re.compile(r"[\u00a0\u2000-\u200b\u202f\u205f\u3000]")
+
+
+def plain(text: str) -> str:
+    """Models write 'October\u202f23' and '5:30\u00a0pm'; every check reads ordinary spaces."""
+    return _ODD_SPACES.sub(" ", text or "")
+
+
 def dates_in(text: str, today: date) -> list[date]:
+    text = plain(text)
     found = []
     for y, m, d in re.findall(r"\b(20\d\d)-(\d\d)-(\d\d)\b", text):
         try:
@@ -247,8 +261,43 @@ def times_not_offered(body: str, slots: list[dict]) -> list[str]:
         d = date.fromisoformat(s["date"])
         offered.add((_WD[d.weekday()], s["time"]))
     bad = []
-    for wd, hh, mm, ap in _TIME_NAMED.findall(body or ""):
+    for wd, hh, mm, ap in _TIME_NAMED.findall(plain(body)):
         h = int(hh) % 12 + (12 if ap.lower() == "pm" else 0)
         if (wd.lower(), f"{h:02d}:{int(mm or 0):02d}") not in offered:
             bad.append(f"{wd} {hh}:{mm or '00'} {ap}")
     return bad
+
+
+_MONTH_N = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+_WD_DATE = re.compile(r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s+(?:the\s+)?"
+                      r"(?:(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})|(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?"
+                      r"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|(20\d\d-\d\d-\d\d))", re.I)
+
+
+def wrong_weekdays(text: str, today: date) -> list[str]:
+    """'Sunday, Oct 26' when Oct 26 is a Monday. Models guess weekdays; code knows them."""
+    bad = []
+    for m in _WD_DATE.finditer(plain(text)):
+        wd = m.group(1).lower()
+        try:
+            if m.group(6):
+                d = date.fromisoformat(m.group(6))
+            else:
+                mon = (m.group(2) or m.group(5)).lower()[:3]
+                d = date(today.year, _MONTH_N[mon], int(m.group(3) or m.group(4)))
+        except ValueError:
+            continue
+        if d.strftime("%A").lower() != wd:
+            bad.append(f"{m.group(0)} (it's a {d:%A})")
+    return bad
+
+
+def iso_dates(text: str) -> list[str]:
+    """'2026-10-26' in a letter to a person reads like a database; people write 'Monday, Oct 26'."""
+    return re.findall(r"\b20\d\d-\d\d-\d\d\b", text or "")
+
+
+def calendar_line(today: date, days: int = 14) -> str:
+    """The next two weeks, spelled out, so a model never has to work out a weekday."""
+    from datetime import timedelta
+    return "; ".join(f"{d:%a %b} {d.day}" for d in (today + timedelta(days=i) for i in range(days)))

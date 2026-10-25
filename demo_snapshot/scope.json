@@ -1,16 +1,16 @@
 [
  {
-  "ts": "2026-10-24T16:22:31+00:00",
+  "ts": "2026-10-25T01:49:30+00:00",
   "mail": "demo:6",
   "client": "Jordan Kim",
   "subject": "Walkthrough + dishwasher leak",
   "requests": [
    {
-    "request": "Fix the leak under the new sink that drips when the dishwasher runs",
-    "email_quote": "It still drips into the cabinet when the dishwasher runs.",
+    "request": "Fix leak under the new sink",
+    "email_quote": "last week you mentioned you'd fix the leak under the new sink this week. Is that still the plan? It still drips into the cabinet when the dishwasher runs.",
     "verdict": "in_scope",
     "agreement_quote": "Fixing leaks or defects in the delivered work for 60 days after completion.",
-    "reason": "The agreement covers fixing leaks in delivered work for 60 days after completion, and the leak is under the new sink installed as part of the project.",
+    "reason": "The leak under the new sink is a defect in the delivered work covered by the 60-day warranty.",
     "hours_low": 0,
     "hours_high": 0,
     "price": null
@@ -20,7 +20,37 @@
   "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
  },
  {
-  "ts": "2026-10-24T16:22:33+00:00",
+  "ts": "2026-10-25T01:49:37+00:00",
+  "mail": "demo:1",
+  "client": "Maria Lopez",
+  "subject": "Re: kitchen remodel",
+  "requests": [
+   {
+    "request": "quartz countertop option",
+    "email_quote": "quartz countertop option",
+    "verdict": "unclear",
+    "agreement_quote": "Laminate countertops (quartz quoted separately on request).",
+    "reason": "two independent reads disagreed (out_of_scope vs not listed); your call",
+    "hours_low": 8,
+    "hours_high": 16,
+    "price": null
+   },
+   {
+    "request": "outlet on island side",
+    "email_quote": "could the island have an outlet on the side? We'd like to plug in the mixer there.",
+    "verdict": "out_of_scope",
+    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile, electrical work or new outlets, appliances, flooring, painting.",
+    "reason": "The agreement explicitly lists electrical work or new outlets as not included.",
+    "hours_low": 2,
+    "hours_high": 4,
+    "price": 255
+   }
+  ],
+  "approval": "2d8867a4",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ {
+  "ts": "2026-10-25T01:49:41+00:00",
   "mail": "demo:8",
   "client": "Maria Lopez",
   "subject": "Two small things",
@@ -29,41 +59,21 @@
     "request": "Tile the backsplash behind the stove",
     "email_quote": "could you also tile the backsplash behind the stove?",
     "verdict": "out_of_scope",
-    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile",
+    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile, electrical work or new outlets, appliances, flooring, painting.",
     "reason": "The agreement explicitly lists backsplash tile as not included and to be quoted separately.",
-    "hours_low": 4,
-    "hours_high": 8,
-    "price": 510
+    "hours_low": 3,
+    "hours_high": 6,
+    "price": 385
    },
    {
-    "request": "Fix the new pantry door that doesn't close properly",
+    "request": "Fix the pantry door that doesn't close properly",
     "email_quote": "the new pantry door doesn't close all the way, it bounces back open.",
-    "verdict": "unclear",
+    "verdict": "in_scope",
     "agreement_quote": "Adjusting cabinet doors and drawers so they close properly, for 30 days after install.",
-    "reason": "The agreement covers adjusting cabinet doors and drawers, but does not explicitly mention pantry doors, leaving it unclear if this door is included.",
+    "reason": "The agreement includes adjusting cabinet doors so they close properly for 30 days after install, and the pantry door is a cabinet door.",
     "hours_low": 0,
     "hours_high": 0,
     "price": null
-   }
-  ],
-  "approval": "6f3d6bad",
-  "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
- },
- {
-  "ts": "2026-10-24T16:22:34+00:00",
-  "mail": "demo:1",
-  "client": "Maria Lopez",
-  "subject": "Re: kitchen remodel",
-  "requests": [
-   {
-    "request": "Add an electrical outlet on the side of the kitchen island",
-    "email_quote": "could the island have an outlet on the side? We'd like to plug in the mixer there.",
-    "verdict": "out_of_scope",
-    "agreement_quote": "Not included (quoted separately if wanted): backsplash tile, electrical work or new outlets, appliances, flooring, painting.",
-    "reason": "The agreement explicitly excludes electrical work and new outlets from the included work.",
-    "hours_low": 2,
-    "hours_high": 4,
-    "price": 255
    }
   ],
   "approval": null,

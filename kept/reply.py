@@ -16,7 +16,8 @@ from .agent import _abstain, _msgs, business, read_notes_owner, sender
 from .llm import router
 from .store import journal, locked, now_iso, read_json, read_notes
 from .tools import mail, notify
-from .validators import Verdict, dollar_amounts, honest_email, language_of, sendable_text, shape, times_not_offered
+from .validators import (Verdict, calendar_line, dates_in, dollar_amounts, honest_email, iso_dates, language_of, plain,
+                         sendable_text, shape, times_not_offered, wrong_weekdays)
 
 
 def _rate() -> int | None:
@@ -28,7 +29,8 @@ def _names_a_slot(body: str, slots: list[dict]) -> bool:
     """An offered time is named if its weekday is there (English), or its day of the month and its
     hour are (any language: "26 октября в 17:30")."""
     from datetime import date as _date
-    body = re.sub(r"\b(\d{1,2})\s?h\s?(\d{2})\b", r"\1:\2", body)   # French "17 h 30" is 17:30
+    from .validators import plain
+    body = re.sub(r"\b(\d{1,2})\s?h\s?(\d{2})\b", r"\1:\2", plain(body))   # French "17 h 30" is 17:30
     low = body.lower()
     for s in slots:
         d = _date.fromisoformat(s["date"])
@@ -138,7 +140,8 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     convo = "\n\n".join(f"{'THEM' if t['dir'] == 'in' else owner.upper()} ({t['ts'][:10]}): {t['body'][:800]}"
                         for t in thread(addr)[-6:] if t["dir"] in ("in", "out") and t["id"] != m["id"])
     today = date.today()
-    prompt = (f"Today is {today.isoformat()} ({today:%A}). You draft replies for {owner}, who runs {business()}. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
+    prompt = (f"Today is {today:%A, %B} {today.day}, {today.year}. The next two weeks: {calendar_line(today)}. "
+        f"Write dates the way people do ('Monday, Oct 26'), never as 2026-10-26. You draft replies for {owner}, who runs {business()}. Write {owner}'s reply to {name} <{addr}>. Use ONLY these facts; if they ask something the facts "
         "don't answer, say Alex will check and come back, or ask them a short question. Never invent a total "
         "price for a new project: use only the prices in Alex's services, and offer the free intro call or a "
         "written quote. If extra work "
@@ -178,7 +181,7 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         v = shape(e, {"subject": str, "body": str})
         dates = []
         if v:
-            body = e["body"].replace("**", "").strip()  # an email is plain text
+            body = plain(e["body"]).replace("**", "").strip()  # an email is plain text, with ordinary spaces
             if body and not re.search(rf"\b{re.escape(owner.split(' ')[0])}\b", body[-60:]):
                 body += f"\n\n{owner.split(' ')[0]}"   # a short note still ends with Alex's name
             v.merge(sendable_text(body, max_chars=1200))
@@ -189,8 +192,21 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
             # a quote Alex already owes them (Maria's revised quote) has its own date, checked by Before you send
             owes_a_quote = any(re.search(r"\b(quote|estimate)\b", t, re.I) for t in facts["alex_owes_them"])
             if not (plan or {}).get("booked_label") and not (plan or {}).get("on_site") and not owes_a_quote \
-                    and QUOTE_BY_DAY.search(body):
+                    and QUOTE_BY_DAY.search(plain(body)):
                 v.add("the reply promises a written quote by a set day before the measuring visit; offer the visit first")
+            for w in wrong_weekdays(body, today):
+                v.add(f"the reply gets a weekday wrong: {w}")
+            if iso_dates(body):
+                v.add(f"write dates the way people do (e.g. 'Monday, Oct 26'), not {iso_dates(body)[0]}")
+            asked_by = [d for d in dates_in(m["body"], today) if d >= today]
+            if asked_by and not re.search(r"sorry|apolog|late|after the|instead of|is that ok|would that work|works for you|"
+                                          r"hope that'?s ok|a (day|couple of days) later|can'?t make", body, re.I):
+                from .validators import resolve_when
+                promised = [resolve_when(x, today) for x in re.findall(r"\bby\s+(\w+(?:\s+\w+)?)", body, re.I)]
+                later = [d for d in promised if d and d > max(asked_by)]
+                if later:
+                    v.add(f"they asked for it by {max(asked_by):%A, %b} {max(asked_by).day}; the reply moves it to "
+                          f"{later[0]:%A, %b} {later[0].day} without saying so. Say it plainly and ask if that works")
             wrong = times_not_offered(body, (plan or {}).get("slots") or []) if (plan or {}).get("slots") else []
             if wrong:
                 v.add(f"the reply names visit times Alex's calendar didn't offer: {', '.join(wrong)}")
@@ -210,7 +226,6 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
                     v.add(f"the reply leaves out what the next step needs: {' or '.join(options)}")
             if v:
                 # every date Alex commits to goes through Before you send
-                from .validators import dates_in
                 given = {d.isoformat() for t in thread(addr) if t["dir"] == "out" for d in dates_in(t["body"], today)}
                 pc = precheck.check(body, name, already_promised=given)
                 for p in pc.get("promises", []):
@@ -285,7 +300,7 @@ def answer_new(mail_ids: list[str] | None = None) -> dict:
     def one(item):
         m, lab = item
         addr = sender(m)[1]
-        plan = assess(m, None, has_contract=bool(contract_for(addr)), web=known(addr))
+        plan = assess(m, None, has_contract=bool(contract_for(addr)), web=known(addr), kind=lab.get("kind") or "lead")
         return draft_reply(m, lab, scopes.get(m["id"]), web=known(addr), plan=plan, supersede_old=False)
 
     done = pmap(one, todo)

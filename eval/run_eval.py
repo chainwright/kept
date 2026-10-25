@@ -134,6 +134,13 @@ def grade(k) -> dict:
     calls = [a for a in store.read_audit(5000) if a["kind"] == "llm"]
     usd = sum(a["usd"] for a in calls)
     c["new_lead_answered"] = any(a["args"].get("to") == "dev@patelfamily.example" for a in emails)
+    # people Alex already deals with get a real answer, never the "I specialize in kitchens" line for strangers
+    c["known_people_answered_on_topic"] = not any(
+        a["args"].get("to", "").lower() in known_addrs and re.search(r"I speciali[sz]e in|easiest way to start", a["args"].get("body", ""))
+        for a in emails)
+    from kept.validators import iso_dates, wrong_weekdays
+    c["dates_written_right"] = not any(iso_dates(a["args"].get("body", "")) or wrong_weekdays(a["args"].get("body", ""), date.today())
+                                       for a in emails)
     c["cost_under_15_cents"] = usd < 0.15
     held = store.read_json("abstained.json", [])
     return {"checks": c, "usd": round(usd, 4), "calls": len(calls), "dishonest": dishonest,

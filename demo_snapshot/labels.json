@@ -2,7 +2,7 @@
  "demo:1": {
   "kind": "client",
   "needs_reply": true,
-  "one_line": "Client requests revised quote and outlet addition for kitchen remodel."
+  "one_line": "Client asks for revised quote with quartz countertop and island outlet."
  },
  "demo:2": {
   "kind": "lead",
@@ -12,36 +12,36 @@
  "demo:3": {
   "kind": "bill",
   "needs_reply": true,
-  "one_line": "Invoice #4412 $36.00 due 2026-10-26"
+  "one_line": "Invoice #4412 for $36.00 due 2026-10-26"
  },
  "demo:4": {
   "kind": "noise",
   "needs_reply": false,
-  "one_line": "Newsletter promoting backsplash ideas and giveaway."
+  "one_line": "Newsletter promotion with giveaway announcement"
  },
  "demo:5": {
   "kind": "client",
   "needs_reply": true,
-  "one_line": "Reminder to send Q3 receipts before 2026-10-25 for filing."
+  "one_line": "Reminder to send Q3 receipts by 2026-10-25 for filing."
  },
  "demo:7": {
   "kind": "bill",
-  "needs_reply": true,
-  "one_line": "Client will pay $850 invoice #118 by 2026-10-22."
+  "needs_reply": false,
+  "one_line": "Invoice #118 ($850) due by 2026-10-22."
  },
  "demo:8": {
   "kind": "client",
   "needs_reply": true,
-  "one_line": "Maria requests tiling backsplash and pantry door repair."
+  "one_line": "Maria asks about tiling backsplash and pantry door repair."
  },
  "demo:9": {
   "kind": "client",
   "needs_reply": true,
-  "one_line": "Thank you for feedback; let's discuss future projects."
+  "one_line": "Positive feedback on recent workspace improvements from a current client."
  },
  "demo:6": {
   "kind": "client",
   "needs_reply": true,
-  "one_line": "Client requests walkthrough reschedule and leak repair confirmation."
+  "one_line": "Request to reschedule walkthrough and follow up on dishwasher leak repair."
  }
 }

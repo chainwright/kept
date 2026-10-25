@@ -22,7 +22,7 @@ def test_someone_new_has_no_memory():
 
 
 def test_same_name_from_another_address_is_flagged_never_merged():
-    hit = tryit.same_name_elsewhere("maria.l@gmail.com", "Maria Lopez")
+    hit = tryit.same_name_elsewhere("maria.l@example.com", "Maria Lopez")
     assert hit["email"] == "maria@lopezhome.example"
     assert tryit.same_name_elsewhere("maria@lopezhome.example", "Maria Lopez") is None
 
@@ -114,3 +114,47 @@ def test_more_ways_of_promising_a_quote_on_a_day():
 def test_a_typo_kitchen_is_still_a_kitchen_job():
     from kept.intake import WORD_JOBS
     assert next((j for rx, j in WORD_JOBS if rx.search("hi i ned new kichen cabnets how mch?")), None) == "full_kitchen"
+
+
+def test_a_visitor_never_sees_another_visitors_contact():
+    from kept import web
+    from kept.store import write_json
+    write_json("inbox.json", [{"id": "you:abc", "from": "Pat Real <pat.real@example.com>", "subject": "s", "date": "2026-10-24", "body": "hi"}])
+    assert not any(p["email"] == "pat.real@example.com" for p in web.people(""))
+    assert any(p["email"] == "pat.real@example.com" for p in web.people("pat.real@example.com"))
+
+
+def test_dates_written_with_odd_spaces_are_still_checked():
+    """Live, Oct 24: 'October 23' slipped a passed date into Maria's email: the check looked for a plain space."""
+    from datetime import date
+    from kept.validators import dates_in, honest_email
+    body = "Hi Maria, the revised quote will be sent by October 23, 2026.\n\nAlex"
+    assert dates_in(body, date(2026, 10, 24)) == [date(2026, 10, 23)]
+    assert honest_email(body, recipient_first="Maria", owner_first="Alex", today=date(2026, 10, 24)).problems
+
+
+def test_a_wrong_weekday_and_a_database_date_are_caught():
+    """Live, Oct 24: 'I can't do Sundays, so not 2026-10-26' (a Monday)."""
+    from datetime import date
+    from kept.validators import iso_dates, wrong_weekdays
+    today = date(2026, 10, 24)
+    assert wrong_weekdays("Can we meet Sunday, Oct 26?", today) == ["Sunday, Oct 26 (it's a Monday)"]
+    assert wrong_weekdays("Monday, Oct 26 at 5:30 pm", today) == []
+    assert wrong_weekdays("on Sunday 2026-10-26", today)
+    assert iso_dates("I'm unable to meet on 2026-10-26") == ["2026-10-26"]
+
+
+def test_someone_alex_already_deals_with_is_never_off_topic():
+    """Live, Oct 24: Alex's accountant asked for the Q3 receipts and the reply said 'I specialize in kitchens'."""
+    from kept import ledger
+    ledger.add("Send Sam Okafor the Q3 receipts", who="Sam Okafor", contact="sam@okaforcpa.example", due="2026-10-25")
+    assert intake._known("sam@okaforcpa.example", "m-new")
+    assert not intake._known("stranger@example.com", "m-new")
+
+
+def test_a_strangers_own_email_doesnt_make_them_known():
+    """Live, Oct 24: the promise read from a stranger's first email ('fix a running toilet') made them 'known'."""
+    from kept import ledger
+    ledger.add("Fix Rita's running toilet", who="Rita Moss", contact="rita.moss@example.com", source="you:abc123")
+    assert not intake._known("rita.moss@example.com", "you:abc123")
+    assert intake._known("rita.moss@example.com", "you:later")
