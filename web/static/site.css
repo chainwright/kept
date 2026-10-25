@@ -83,9 +83,9 @@
   border-radius: 10px; font-family: var(--s-sans); }
 .site .site-contact input:focus, .site .site-contact select:focus, .site .site-contact textarea:focus { outline: 2px solid var(--s-amber); outline-offset: 1px; border-color: transparent; }
 .site .site-contact input::placeholder, .site .site-contact textarea::placeholder { color: #7D7163; }
-.site .site-msg { position: relative; }
-.site .site-msg textarea { width: 100%; padding-bottom: 52px; }
-.site .site-dictate { position: absolute; left: 10px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 99px;
+.site .site-msg { display: grid; gap: 8px; justify-items: start; }
+.site .site-msg textarea { width: 100%; }
+.site .site-dictate { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 99px;
   border: 1px solid rgba(242,163,58,.55); background: rgba(242,163,58,.1); color: var(--s-amber); font: 600 13px/1 var(--s-sans); cursor: pointer; }
 .site .site-dictate:hover { background: rgba(242,163,58,.18); }
 .site .site-dictate[aria-pressed="true"] { background: var(--s-amber); color: var(--s-amber-ink); }
