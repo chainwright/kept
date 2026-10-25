@@ -97,7 +97,7 @@ def main():
     n_ok = sum(r["ok"] for r in rows)
     checks = sum(len(r["checks"]) for r in rows)
     checks_ok = sum(sum(r["checks"].values()) for r in rows)
-    out = ROOT / "eval" / "results" / f"messages-{datetime.now():%Y%m%d-%H%M}.json"
+    out = ROOT / "eval" / "results" / f"messages-{datetime.now():%Y%m%d-%H%M%S}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"messages": len(rows), "messages_ok": n_ok, "checks": checks, "checks_ok": checks_ok,
                                "usd": usd, "seconds": round(time.time() - t0, 1), "rows": rows}, indent=1, ensure_ascii=False))

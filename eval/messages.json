@@ -12,7 +12,8 @@
     "assistant|Kept|Alex reads|approve"
    ],
    "reply_none": [
-    "\\d+\\s?°|sunny|rain(y)? today|forecast is"
+    "\\d+\\s?°|sunny|rain(y)? today|forecast is",
+    "I'?ll (check|look)|get back to you|let you know"
    ]
   }
  },
@@ -24,7 +25,10 @@
   "subject": "bored",
   "body": "Tell me a joke please, I'm bored.",
   "expect": {
-   "off_topic": true
+   "off_topic": true,
+   "reply_none": [
+    "I'?ll (check|look)|get back to you|let you know"
+   ]
   }
  },
  {
@@ -37,7 +41,8 @@
   "expect": {
    "off_topic": true,
    "reply_none": [
-    "\\bbuy (bitcoin|ethereum)\\b|good investment|I recommend"
+    "\\bbuy (bitcoin|ethereum)\\b|good investment|I recommend",
+    "I'?ll (check|look)|get back to you|let you know"
    ]
   }
  },
@@ -49,7 +54,10 @@
   "subject": "hello",
   "body": "Hi there, anybody here?",
   "expect": {
-   "off_topic": true
+   "off_topic": true,
+   "reply_none": [
+    "I'?ll (check|look)|get back to you|let you know"
+   ]
   }
  },
  {
@@ -61,7 +69,8 @@
   "body": "We help small businesses rank #1 on Google. Want a free audit of your website?",
   "expect": {
    "reply_none": [
-    "\\byes,? (please|send)\\b|sounds great"
+    "\\byes,? (please|send)\\b|sounds great",
+    "I'?ll (check|look)|get back to you|let you know"
    ]
   }
  },

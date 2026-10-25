@@ -194,6 +194,9 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
             wrong = times_not_offered(body, (plan or {}).get("slots") or []) if (plan or {}).get("slots") else []
             if wrong:
                 v.add(f"the reply names visit times Alex's calendar didn't offer: {', '.join(wrong)}")
+            if (plan or {}).get("off_topic") and re.search(r"\b(I'?ll|I will|let me) (check|look|find out|get back)|"
+                                                           r"get back to you|let you know", body, re.I):
+                v.add("an off-topic reply promises to look something up; it should only steer back to Alex's work")
             theirs = language_of(m["body"])
             if theirs != "en" and language_of(body) != theirs:
                 v.add(f"the reply isn't in the language they wrote in ({theirs})")

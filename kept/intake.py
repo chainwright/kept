@@ -247,6 +247,7 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     if plan.get("off_topic"):
         return ("This message isn't about a kitchen job. Reply in two or three short, friendly sentences. Answer only "
                 "what Alex's facts answer; don't give opinions or facts on unrelated topics and don't make anything up. "
+                "Never promise to look something up, check or get back to them about an unrelated topic. "
                 "If they ask whether they're talking to a bot: Alex's assistant Kept drafts replies and Alex reads and "
                 "approves each one before it goes out. If they're rude, stay calm and polite. Then say in one sentence "
                 "what Alex does (kitchens, new cabinet fronts, counters and backsplashes, small repairs, in Portland) "
