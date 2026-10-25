@@ -1061,3 +1061,5 @@ section[id], #write { scroll-margin-top: 150px; }
 .layout.one-col { grid-template-columns: minmax(0, 1fr); }
 .layout > .col.tab-empty { display: none; }
 @media (max-width: 860px) { .dtabs { top: 0; } }
+.media-more { margin-top: 10px; }
+.media-more > summary { cursor: pointer; color: var(--ink-2); font-size: 14px; padding: 6px 0; }

@@ -403,8 +403,10 @@
         h("strong", null, "Nothing waiting. "),
         "When a promise comes due, an invoice runs late or a client is happy, Kept drafts the message, checks it, and puts it here for your Yes or No. Nothing is sent before you decide."));
     } else {
-      const LIMIT = 2;
-      const pend = [...st.pending].sort((a, b) => String(b.created).localeCompare(String(a.created)));
+      const LIMIT = 3;
+      // what a person is waiting on comes first (replies, then reminders and offers); rule changes last
+      const rank = (a) => /^Reply to /.test(a.summary || "") ? 0 : a.kind === "send_email" ? 1 : a.kind === "add_rule" ? 3 : 2;
+      const pend = [...st.pending].sort((a, b) => rank(a) - rank(b) || String(b.created).localeCompare(String(a.created)));
       const shown = showAllApprovals ? pend : pend.slice(0, LIMIT);
       const more = st.pending.length - shown.length;
       fill(list, shown.map((a) => approvalCard(a, ledger)),
@@ -1249,9 +1251,10 @@
     const clients = [...new Map([...(st.invoices || []).map((i) => [slug(i.client), i.client]),
       ...Object.keys(media).map((k) => [k, null])]).entries()];
     if (!clients.length) { fill(el, h("p", { class: "empty" }, "Clients appear here once they have an invoice.")); return; }
-    fill(el, clients.map(([sl, name]) => {
+    const has = ([sl]) => media[sl] && (media[sl].before || media[sl].after);
+    const row = ([sl, name]) => {
       const rec = media[sl] || {};
-      const display = name || sl.replace(/-/g, " ");
+      const display = name || sl.replace(/-/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
       return h("div", { class: "media-row" },
         h("strong", null, cap(display)),
         h("div", { class: "media-slots" }, ["before", "after"].map((which) => {
@@ -1262,7 +1265,12 @@
           input.addEventListener("change", () => upload(sl, which, input, display));
           return h("div", { class: "slot" }, h("label", { class: "upl" }, input, `+ Add ${which} photo`), h("span", { class: "muted" }, `No ${which} picture yet`));
         })));
-    }));
+    };
+    const withPics = clients.filter(has), without = clients.filter((c) => !has(c));
+    // clients without photos fold into one line, so the section shows work, not empty boxes
+    fill(el, withPics.map(row), without.length ? h("details", { class: "media-more" },
+      h("summary", null, `No photos yet for ${without.map(([sl, n]) => n || sl.replace(/-/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase())).join(", ")} · add them`),
+      without.map(row)) : null);
   }
   async function upload(sl, which, input, display) {
     const f = input.files && input.files[0];
