@@ -91,7 +91,7 @@ Super's price for it.
 **Cost and speed.** A full morning for a one-person business is 46-59 calls and costs $0.065-0.11
 (median $0.077 over dozens of graded runs). With the independent parts running side by side it takes one
 to two and a half minutes, which is fine for a job that runs before the owner wakes up. Over two days we
-made a few thousand calls across 45 graded mornings and hundreds of graded client emails; apart from
+made a few thousand calls across 51 graded mornings and hundreds of graded client emails; apart from
 the short 503 window above, Token Factory never failed us.
 
 

@@ -20,8 +20,8 @@ Alex's price guide, free measuring times from his calendar, and the reply, waiti
 
 **Measured on the live models, graded by code:** 40 messages contractors really get (kitchen jobs,
 other trades, four languages, off-topic chat, rudeness, haggling, an attempt to override the rules,
-returning clients), 3 runs in a row, 120 / 120 right and 390 / 390 checks; Alex's whole morning,
-45 runs in a row, 1240 / 1240 checks; 167 unit and regression tests.
+returning clients), 3 runs in a row, 120 / 120 right and 404 / 404 checks; Alex's whole morning,
+51 runs, 1419 / 1420 checks (the one miss became a fix); 167 unit and regression tests.
 
 ---
 
