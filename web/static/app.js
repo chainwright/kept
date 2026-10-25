@@ -189,7 +189,7 @@
   const announcer = $("#announcer");
   function announce(msg) { announcer.textContent = ""; setTimeout(() => { announcer.textContent = msg; }, 50); }
 
-  // ------------------------------------------------------------------ sections as tabs (Roma: a site, not one long scroll)
+  // ------------------------------------------------------------------ sections as tabs (a tester: make it a site, not one long scroll)
   const TABS = { today: ["howto", "approvals", "today", "week"], word: ["precheck", "promises", "word", "held", "ask"],
     clients: ["scope", "clients", "inbox"], money: ["money", "rescue"], growth: ["growth", "news"], engine: ["models", "activity"] };
   const tabOf = (id) => Object.keys(TABS).find((t) => TABS[t].includes(id)) || null;
