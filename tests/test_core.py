@@ -189,3 +189,18 @@ def test_a_model_that_thinks_until_it_runs_out_answers_without_thinking(fake, mo
     monkeypatch.setattr(fb, "complete", complete)
     r = llm.router.ask("draft", [{"role": "user", "content": "x"}], purpose="t", json_mode=True)
     assert r.json() == {"ok": True} and calls == [True, True, False]
+
+
+def test_a_promise_named_only_by_its_time_words_still_gets_the_track_record(fake):
+    """Live, Oct 25: 2 of 5 times Nano named the promise 'by Friday', the kind ('quote') was lost, and
+    'Before you send' showed no track record."""
+    from kept import precheck, ledger
+    from datetime import date, timedelta
+    for i in range(6):
+        d = (date.today() - timedelta(days=30 + i * 7)).isoformat()
+        r = ledger.add(f"Send the quote to client {i}", who=f"C{i}", due=d)
+        ledger.close(r["id"], "done", "sent late", )
+    fake([("promise", {"promises": [{"text": "by Friday", "quote": "I'll send the revised quote by Friday",
+                                      "due": None, "when_words": "by Friday"}]})])
+    out = precheck.check("Hi Maria, I'll send the revised quote by Friday.\n\nAlex", "Maria")
+    assert out["promises"] and "quote" in out["promises"][0]["text"].lower()

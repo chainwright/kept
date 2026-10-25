@@ -58,13 +58,20 @@ def check(draft: str, to_name: str = "", already_promised: set[str] | None = Non
         if not v:
             _abstain("precheck", str(p)[:60], v, p)
             continue
-        item = {"text": p["text"], "quote": p["quote"], "due": p.get("due"), "when_words": p.get("when_words") or ""}
+        # Nano sometimes names the promise by its time words alone ("by Friday"); the sentence around them
+        # says what was promised ("send the revised quote"), and that's what the track record is kept by
+        sentence = _sentence_with(draft, p["quote"]) or _sentence_with(draft, p.get("when_words") or "") or p["text"]
+        text = p["text"]
+        if len(text) < 25 or text.strip().lower() == (p.get("when_words") or "").strip().lower():
+            # only the time words came back: the quoted words (or their sentence) say what was promised
+            text = p["quote"] if len(p["quote"]) > len(p.get("when_words") or "") + 8 else sentence
+        item = {"text": text, "quote": p["quote"], "due": p.get("due"), "when_words": p.get("when_words") or ""}
         code_due = resolve_when(item["when_words"], today)
         if code_due and code_due.isoformat() != (item["due"] or "")[:10]:
             # the words win over the model's arithmetic
             item["model_due"], item["due"] = item["due"], code_due.isoformat()
         if item["due"] and item["due"][:10] not in (already_promised or set()):
-            item["advice"] = calibration.realistic_due(p["text"], item["due"])
+            item["advice"] = calibration.realistic_due(text, item["due"])
             busy = _load_on(item["due"][:10])
             if busy:
                 item["same_day"] = [b["text"] for b in busy]
@@ -79,6 +86,16 @@ def check(draft: str, to_name: str = "", already_promised: set[str] | None = Non
 def _weekday_words(iso: str) -> list[str]:
     d = datetime.fromisoformat(iso).date()
     return [d.strftime("%A").lower(), d.strftime("%B %-d").lower(), d.strftime("%b %-d").lower(), iso]
+
+
+def _sentence_with(draft: str, words: str) -> str:
+    """The sentence of the draft that contains these words, or ''."""
+    if not words.strip():
+        return ""
+    for sent in re.split(r"(?<=[.!?])\s+|\n+", draft):
+        if words.strip().lower() in sent.lower():
+            return sent.strip()
+    return ""
 
 
 def _rewrite(draft: str, late: list[dict]) -> dict:
