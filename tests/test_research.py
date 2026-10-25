@@ -34,3 +34,15 @@ def test_the_part_of_the_page_about_the_business_reaches_the_model():
     part = research.excerpt(page, key)
     assert "opened in 2010" in part and len(part) <= 3100
     assert research.excerpt("no mention here", key) == "no mention here"
+
+
+def test_a_business_read_into_the_email_address_is_not_looked_up(fake, monkeypatch):
+    """Live, Oct 24: 'jo@riverahome.example' became 'Rivera Home', a real shop was found, and Jo, a homeowner,
+    was treated as a commercial client. A business counts only if the email itself names it."""
+    from kept import research
+    from kept.tools import search
+    calls = []
+    monkeypatch.setattr(search, "search", lambda *a, **k: calls.append(a) or [])
+    fake([("name the business", {"business": "Rivera Home", "city": "Portland", "kind": "home goods"})])
+    out = research.look_up("Jo Rivera", "jo@riverahome.example", "Hi Alex, we just bought a house. What would a new kitchen cost?")
+    assert calls == [] and not out["facts"]

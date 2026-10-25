@@ -46,6 +46,10 @@ def look_up(name: str, addr: str, body: str) -> dict:
     except Exception:
         b = {}
     business, city = (b.get("business") or "").strip(), (b.get("city") or "").strip()
+    # a business counts only if they name it in what they wrote: the model likes to read one into the address
+    # ("jo@riverahome" -> "Rivera Home"), and a stranger's shop found that way turned a homeowner into a cafe
+    if business and _norm(business)[:14] not in _norm(f"{body} {name}"):
+        business = ""
     domain = own_domain(addr)
     out = {"ts": now_iso(), "business": business, "city": city, "kind": (b.get("kind") or "").strip(),
            "domain": domain, "facts": [], "searched": [], "found_site": None}

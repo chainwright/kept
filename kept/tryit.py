@@ -80,6 +80,44 @@ def _save_photo(mid: str, image: str):
     return Path(p)
 
 
+def remember(addr: str, who: str, before: list[dict]) -> dict | None:
+    """What Kept already knows about this person from earlier messages: when they first wrote and about
+    what, the estimate Kept worked out, a visit booked. All of it read from Alex's records, none of it guessed."""
+    from . import estimate, schedule
+    prior = [t for t in before if t["dir"] in ("in", "out")]
+    if not prior:
+        return None
+    first_in = next((t for t in prior if t["dir"] == "in"), prior[0])
+    last = prior[-1]["ts"][:10]
+    out = {"since": first_in["ts"][:10], "topic": first_in["subject"], "messages": len(prior), "last": last,
+           "days": max(0, (date.today() - date.fromisoformat(last)).days)}
+    est = estimate.last_for(addr)
+    if est and est.get("low"):
+        out["estimate"] = {"low": int(est["low"]), "high": int(est["high"]), "job": est.get("job", "")}
+    visit = next((e for e in schedule.upcoming(60) if e.get("contact") == addr.lower()), None)
+    if visit:
+        out["visit"] = f"{date.fromisoformat(visit['date']):%a %b %-d} at {schedule.clock(visit['time'])}"
+    return out
+
+
+def same_name_elsewhere(addr: str, who: str) -> dict | None:
+    """A new address with the name of someone Alex already knows. Names repeat, so Kept never merges them
+    on its own; it tells Alex, who can tell the two apart."""
+    from .agent import sender
+    from .tools import mail
+    key = who.strip().lower()
+    if not key or key == "new contact":
+        return None
+    for p in PEOPLE:
+        if p["name"].lower() == key and p["email"] != addr:
+            return {"name": p["name"], "email": p["email"], "about": p["about"]}
+    for m in mail.inbox(500):
+        n, a = sender(m)
+        if n.strip().lower() == key and a != addr:
+            return {"name": n, "email": a, "about": f"wrote on {str(m.get('date'))[:10]} about '{m['subject']}'"}
+    return None
+
+
 def _sender(key: str, name: str, email: str) -> tuple[str, str]:
     p = next((p for p in PEOPLE if p["key"] == key), None)
     if p:
@@ -102,6 +140,8 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "", i
     body = body[:MAX_BODY]
     subject = (subject or "").strip()[:120] or "(no subject)"
     who, addr = _sender(key, name, email)
+    memory = remember(addr, who, thread(addr))
+    lookalike = None if memory else same_name_elsewhere(addr, who)
     m = {"id": f"you:{uuid.uuid4().hex[:6]}", "from": f"{who} <{addr}>", "subject": subject,
          "date": date.today().isoformat(), "ts": now_iso(), "body": body}
 
@@ -146,13 +186,15 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "", i
     reply_out = None
     plan = None
     label = one["cls"] or {}
-    if label and label.get("kind") != "noise" and not (growth_out or {}).get("asks"):
+    # a person typed this to Alex: even a message the sorter calls noise gets a short, honest answer
+    # (intake marks it off-topic and the reply steers back to Alex's work); bulk mail never comes this way
+    if label and not (growth_out or {}).get("asks"):
         # a delighted client already gets the thank-you (with the review link) from growth
         from .intake import assess
         from .scope import contract_for
         plan = assess(m, photo, has_contract=bool(contract_for(addr)), web=found)
         from .reply import draft_reply
-        reply_out = draft_reply(m, label, one["scope"], web=found, photo=photo, plan=plan)
+        reply_out = draft_reply(m, label, one["scope"], web=found, photo=photo, plan=plan, memory=memory)
 
     calls = [a for a in read_audit(100000)[audit_before:] if a.get("kind") == "llm"]
     new_approvals = [a for a in approvals.recent(10000) if a["id"] not in approvals_before]
@@ -175,4 +217,6 @@ def handle(key: str, subject: str, body: str, name: str = "", email: str = "", i
         "usd": round(sum(c["usd"] for c in calls), 4),
         "seconds": round(time.time() - t0, 1),
         "thread": thread(addr),
+        "memory": memory,
+        "lookalike": lookalike,
     }

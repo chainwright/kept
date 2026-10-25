@@ -134,6 +134,14 @@
     const rows = [];
     const lab = r.label || {};
     rows.push(h("li", null, h("span", { class: "w-step" }, "Sorted (Nemotron Nano)"), h("span", null, chip(lab.kind || "?", "chip-nano"), " ", lab.one_line || "")));
+    const mem = r.memory;
+    if (mem) rows.push(h("li", null, h("span", { class: "w-step" }, `Kept remembers ${from.split("<")[0].trim().split(" ")[0]}`),
+      h("span", null, chip("returning", "chip-super"), ` First wrote ${fmtDay(mem.since)} about “${mem.topic}” · ${mem.messages} message${mem.messages === 1 ? "" : "s"} so far`,
+        mem.estimate ? ` · estimate ${usd(mem.estimate.low)} – ${usd(mem.estimate.high)}` : "", mem.visit ? ` · visit booked ${mem.visit}` : ""),
+      h("div", { class: "foot muted" }, "From Alex's own records: the thread, the estimate, the calendar. The reply picks up where they left off.")));
+    const look = r.lookalike;
+    if (look) rows.push(h("li", null, h("span", { class: "w-step" }, "Same name, different address"),
+      h("span", null, chip("check", "chip-ask"), ` Alex already knows a ${look.name} <${look.email}> (${look.about}). Names repeat, so Kept treats this as a new contact until Alex says they're the same person.`)));
     const ph = r.photo;
     if (ph && ph.seen) rows.push(h("li", null, h("span", { class: "w-step" }, "The photo, as Nemotron Super VL sees it"),
       ph.path ? h("img", { class: "w-seen-img", src: `/media/${ph.path.replace(/^media\//, "")}`, alt: "The client's photo" }) : null,
@@ -141,7 +149,11 @@
       (ph.seen.damage || []).length ? h("div", { class: "foot muted" }, "Damage: " + ph.seen.damage.join("; ")) : null,
       ph.seen.style ? h("div", { class: "foot muted" }, "Style to match: " + ph.seen.style) : null));
     const pl = r.plan;
-    if (pl && pl.job) {
+    if (pl && pl.not_our_trade) rows.push(h("li", null, h("span", { class: "w-step" }, "Not Alex's trade"),
+      h("span", null, chip("other trade", "chip-outline"), " Alex only does kitchens and cabinets. Kept says so kindly, sends them to the right trade, and gives no price or visit time.")));
+    if (pl && pl.off_topic) rows.push(h("li", null, h("span", { class: "w-step" }, "Not about a kitchen"),
+      h("span", null, chip("off-topic", "chip-outline"), " Kept answers briefly and honestly, makes nothing up, and turns the talk back to Alex's work. No prices, no visit times.")));
+    if (pl && pl.job && !pl.off_topic && !pl.not_our_trade) {
       let next = null;
       if (pl.booked_label) next = h("span", null, chip("booked", "chip-ok"), ` Measuring visit ${pl.booked_label}, now in Alex's calendar.`);
       else if (pl.payment_plan) next = h("span", null, chip("payment plan", "chip-ask"), ` ${pl.payment_plan.pct}% up front (${usd(pl.payment_plan.deposit)}), then ${pl.payment_plan.months} × ${usd(pl.payment_plan.monthly)}, on the ${usd(pl.payment_plan.total)} estimate.`);
@@ -152,6 +164,7 @@
         // a booking or a payment plan is the step that matters; the job label would only be noise there
         pl.booked_label || pl.payment_plan ? null : h("span", null, chip(JOB[pl.job] || pl.job, "chip-super"), " ", pl.what || ""),
         next ? h("div", null, next) : null,
+        (pl.ask || []).length ? h("div", { class: "foot" }, chip("asks", "chip-outline"), " Kept also asks for what's missing: " + pl.ask.join("; ")) : null,
         est ? h("div", { class: "estimate" }, h("strong", null, `Preliminary ${usd(est.low)} – ${usd(est.high)}`),
           h("span", { class: "muted" }, ` · sizes from ${est.sizes_from}`),
           h("ul", { class: "plain" }, est.lines.map((l) => h("li", null, l.unit ? `${l.what}: ${l.qty} ${l.unit} × ${usd(l.price)} = ${usd(l.total)}` : `${l.what}: ${usd(l.total)}`)))) : null));

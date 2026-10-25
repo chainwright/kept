@@ -50,6 +50,62 @@ def from_price(job: str) -> int | None:
     return None
 
 
+WORD_JOBS = [(re.compile(r"\b(hinge|handle|latch|knob|runner|drawer (fell|is loose|broke|won'?t)|door (hangs|fell|won'?t close))", re.I), "small_repair"),
+             (re.compile(r"\bback ?splash", re.I), "backsplash"),
+             (re.compile(r"\bcounter ?tops?\b|\bcounters?\b(?! ?(offer|argument))", re.I), "countertop"),
+             (re.compile(r"\b(cabinet )?fronts\b|new (cabinet )?doors\b|refac", re.I), "fronts"),
+             (re.compile(r"\b(new|whole|full|redo|remodel\w*) (a |the |our |my )?(kitchen|kich\w*|kitc\w*)\b|kitchen (remodel|renovation|update)", re.I), "full_kitchen")]
+KITCHEN_WORDS = re.compile(
+    r"kitchen|cabinet|counter|backsplash|splash|drawer|hinge|handle|door|tile|sink|faucet|remodel|renovat|repair|fix|"
+    r"broken|loose|quote|estimate|visit|measur|price|cost|wood|shelf|shelves|pantry|island|install|replace|build|"
+    r"kich|kitc|cabn|cabin|cuisine|cocina|"
+    r"кухн|шкаф|столешниц|ремонт|фасад|cocina|gabinete|reparar", re.I)
+WHERE_WORDS = re.compile(r"\b(\d{5}|street|st\.|ave|avenue|road|rd\.|blvd|lane|drive|way|place|neighbou?rhood|sellwood|alberta|"
+                         r"pearl|hawthorne|st\.? johns|ladd|richmond|irvington|division|belmont|mississippi|nw|ne|se|sw|"
+                         r"beaverton|gresham|tigard|lake oswego|milwaukie|vancouver)\b", re.I)
+WHEN_WORDS = re.compile(r"\b(when|by|before|after|month|months|week|weeks|spring|summer|fall|autumn|winter|asap|soon|"
+                        r"timeline|christmas|holiday|thanksgiving|january|february|march|april|may|june|july|august|"
+                        r"september|october|november|december|next year|this year)\b", re.I)
+
+
+def follow_up_questions(job: str, body: str, photo: bool, has_contract: bool, est_from_their_numbers: bool) -> list[str]:
+    """What Alex would still want to know, at most two, and only what's really missing: never a form to fill in."""
+    asks = []
+    if job in NEEDS_VISIT and not has_contract and not est_from_their_numbers:
+        asks.append("rough measurements if they have them: the length of each wall with cabinets and how many doors and drawers there are")
+    if not photo and job in NEEDS_VISIT:
+        asks.append("two or three photos of the kitchen from different angles (one of the whole room, one close up)")
+    elif not photo and job == "small_repair":
+        asks.append("a photo of the broken part, so Alex brings the right hardware")
+    if (job in NEEDS_VISIT or job == "small_repair") and not has_contract and not WHERE_WORDS.search(body):
+        asks.append("which part of Portland they're in (or the address), so Alex can plan the drive")
+    if job in ("full_kitchen", "fronts", "commercial") and not WHEN_WORDS.search(body):
+        asks.append("roughly when they'd like the work done")
+    return asks[:2]
+
+
+OTHER_TRADE = re.compile(r"\b(toilet|shower|bath ?tub|roof|gutter|chimney|paint(ing)?|electric(al|ian)?|wiring|breaker|outlet|"
+                         r"hvac|furnace|heater|air ?con|plumb(ing|er)|sewer|lawn|fence|deck|driveway|window pane|siding)\b", re.I)
+OUR_WORDS = re.compile(r"cabinet|vanit|counter|backsplash|drawer|hinge|shelf|shelves|pantry|island|kitchen", re.I)
+
+
+def not_our_trade(subject: str, body: str) -> bool:
+    """A job Alex doesn't do (a toilet, a roof, painting): no price, no visit, a kind 'not my trade'."""
+    t = f"{subject} {body}"
+    return bool(OTHER_TRADE.search(t)) and not OUR_WORDS.search(t)
+
+
+def _known(addr: str, this_id: str) -> bool:
+    """Someone Alex has already talked to: a 'thanks!' from them is a client being polite, not off-topic."""
+    from .reply import thread
+    return any(t["id"] != this_id and t["dir"] in ("in", "out") for t in thread(addr))
+
+
+def is_off_topic(job: str, subject: str, body: str, photo: bool) -> bool:
+    """Not about anything Alex does: a 'question' or 'other' with no kitchen words and no photo."""
+    return job in ("question", "other") and not photo and not KITCHEN_WORDS.search(f"{subject} {body}")
+
+
 COMMERCIAL = re.compile(r"\b(cafe|café|coffee|restaurant|bakery|bar|clinic|dental|office|shop|store|boutique|salon|studio|gym)\b", re.I)
 
 
@@ -85,6 +141,13 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
     if job not in JOBS:
         # e.g. 'question/other': close enough to say we don't know the job, not to throw the email away
         job = "question" if "question" in job else "other" if job else "other"
+    # the words are evidence too: "a new tile backsplash" is a backsplash job even if the model said "other"
+    said = f"{m.get('subject', '')} {m['body']}"
+    if job in ("question", "other"):
+        for rx, j in WORD_JOBS:
+            if rx.search(said):
+                job = j
+                break
     # the photo is evidence too: "what would you suggest?" next to a photo of a tired kitchen is a remodel enquiry
     if job in ("question", "other") and photo:
         job = {"full_kitchen": "full_kitchen", "refresh": "fronts", "small_repair": "small_repair"}.get(photo.get("scope"), job)
@@ -99,6 +162,12 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
         r"дорого|не потянем|нет таких денег", m["body"], re.I))
     out = {"job": job, "what": d.get("what", "") or "", "price_objection": objection,
            "verified_business": verified_biz}
+    if not picked and not has_contract and not_our_trade(m.get("subject", ""), m["body"]):
+        out["not_our_trade"] = True
+        return out
+    if is_off_topic(job, m.get("subject", ""), said, bool(photo)) and not picked and not has_contract and not _known(addr, m["id"]):
+        out["off_topic"] = True
+        return out
     if picked:
         out["booked"] = schedule.book(picked, name, addr, out["what"] or picked.get("for", "measuring visit"))
         out["booked_label"] = picked["label"]
@@ -152,6 +221,8 @@ def assess(m: dict, photo: dict | None = None, has_contract: bool = False, web: 
             slots = schedule.free_slots(3)
             schedule.offer(addr, [{**s, "for": "measuring visit"} for s in slots])
             out["slots"] = slots
+    out["ask"] = follow_up_questions(job, m["body"], bool(photo), has_contract,
+                                     bool(out.get("estimate") and out["estimate"].get("sizes_from") == "your numbers"))
     return out
 
 
@@ -167,6 +238,23 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
     job = plan.get("job")
     allowed: set[int] = set()
     must: list[str] = []
+    if plan.get("not_our_trade"):
+        return ("They ask for work Alex doesn't do (Alex builds and fixes kitchens and cabinets only). Say so kindly in "
+                "one or two sentences and suggest they look for the right tradesperson; don't name any company, give no "
+                "price and no visit times. If it's urgent or about safety (water, electricity), say to call a "
+                "specialist right away. Then one sentence on what Alex does do (kitchens, new cabinet fronts, counters, "
+                "backsplashes, cabinet repairs) in case they ever need it.", allowed, must)
+    if plan.get("off_topic"):
+        return ("This message isn't about a kitchen job. Reply in two or three short, friendly sentences. Answer only "
+                "what Alex's facts answer; don't give opinions or facts on unrelated topics and don't make anything up. "
+                "If they ask whether they're talking to a bot: Alex's assistant Kept drafts replies and Alex reads and "
+                "approves each one before it goes out. If they're rude, stay calm and polite. Then say in one sentence "
+                "what Alex does (kitchens, new cabinet fronts, counters and backsplashes, small repairs, in Portland) "
+                "and that a photo of their kitchen is the easiest way to start. No prices, no visit times.",
+                allowed, must)
+    asks = plan.get("ask") or []
+    ask_line = (" Then, kindly and in one sentence, ask for " + " and ".join(asks) + ". Don't turn it into a list of questions."
+                if asks else "")
     if plan.get("booked_label"):
         day = plan["booked_label"].split(",")[0]
         return (f"They picked a visit time: confirm it plainly ({plan['booked_label']}), and say what Alex will do "
@@ -201,7 +289,7 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
                 "possible to the style in their photo (or ask for a photo if they sent none). Since Alex is coming "
                 "anyway: if the photo shows something else worth doing (tired fronts, an old backsplash, a worn "
                 "counter), suggest ONE thing in a sentence, with its 'from' price from Alex's list, and offer to "
-                f"measure for it on the same visit. Offer these times for the repair, exactly as written: {slot_text}.",
+                f"measure for it on the same visit. Offer these times for the repair, exactly as written: {slot_text}." + ask_line,
                 allowed, must)
     if job in NEEDS_VISIT:
         fp = plan.get("from_price")
@@ -222,14 +310,11 @@ def reply_rules(plan: dict) -> tuple[str, set[int], list[str]]:
         else:
             price_line = "Don't give any price before the visit. "
         if plan.get("on_site"):
-            return ("Alex is already working at their kitchen, so offer to measure there this week. " + price_line,
+            return ("Alex is already working at their kitchen, so offer to measure there this week. " + price_line + ask_line,
                     allowed, must)
-        ask = "" if est and est["sizes_from"] == "your numbers" else (
-            "Ask for rough measurements if they can: the length of each wall with cabinets and how many doors and "
-            "drawers there are. ")
-        return (price_line + ask + f"Offer a free measuring visit at one of these times, exactly as written: {slot_text}. "
+        return (price_line + f"Offer a free measuring visit at one of these times, exactly as written: {slot_text}. "
                 "If their photo shows a way to make the kitchen nicer or easier to use (more storage, a glass or "
-                "marble-look backsplash, brighter fronts), mention one idea in a sentence.", allowed, must)
+                "marble-look backsplash, brighter fronts), mention one idea in a sentence." + ask_line, allowed, must)
     if slots:
         return ("If a visit would help, offer one of these free times, exactly as written: " + slot_text + ".",
                 allowed, [])

@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, calibration, checkins, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
+from . import agent, approvals, calibration, checkins, followups, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, BudgetExceeded, router
 from .store import read_audit, read_json
@@ -21,7 +21,7 @@ WEB = ROOT / "web"
 JOBS = {"triage": agent.triage_inbox, "follow_ups": agent.follow_ups, "watch": agent.watch_topics,
         "overload": agent.weigh_overload, "brief": agent.morning_brief, "day": agent.run_day,
         "learn": learn.propose_rules, "money": money.chase, "rescue": rescue.plan,
-        "offers": offers.propose, "growth": growth.moments, "checkins": checkins.propose}
+        "offers": offers.propose, "growth": growth.moments, "checkins": checkins.propose, "quiet_leads": followups.propose}
 _busy = threading.Lock()
 
 

@@ -50,6 +50,7 @@ def run_once() -> dict:
     c["photo_read"] = bool((r.get("photo") or {}).get("seen"))
     c["kitchen_job"] = p.get("job") in ("full_kitchen", "fronts")
     c["estimate_from_guide"] = bool(est) and est["low"] <= est["mid"] <= est["high"]
+    log["jo_first"] = {"plan": p, "photo": (r.get("photo") or {}).get("seen"), "reply": b}
     c["three_visit_times"] = len(p.get("slots") or []) == 3
     from kept.reply import _names_a_slot
     from kept.validators import dollar_amounts
@@ -92,6 +93,7 @@ def run_once() -> dict:
     # covered work is free, and extra work is offered, not announced
     c["maria_asked_not_told"] = bool(b) and bool(re.search(r"\?|let me know|would you like|shall i", b, re.I)) \
         and not re.search(r"pantry[^.]*\$\d", b, re.I)
+    log["maria"] = {"reply": b, "scope": r.get("scope"), "plan": r.get("plan")}
 
     r = tryit.handle("priya", "Re: invoice #118", "Hi Alex, so sorry again. Our office manager is back, we will pay "
                      "invoice #118 next Wednesday.\n\nPriya")
@@ -102,7 +104,7 @@ def run_once() -> dict:
     usd = sum(a["usd"] for a in calls)
     c["nothing_sent_without_yes"] = all(a["status"] in ("pending", "done", "replaced", "rejected") for a in approvals.recent(1000))
     return {"checks": c, "usd": round(usd, 4), "seconds": round(time.time() - t0, 1),
-            "log": {k: v for k, v in log.items() if not c.get("payment_plan_offered")}}
+            "log": log}
 
 
 def main():

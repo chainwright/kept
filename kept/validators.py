@@ -136,7 +136,9 @@ def dates_in(text: str, today: date) -> list[date]:
             found.append(date(int(y), int(m), int(d)))
         except ValueError:
             pass
-    for mon, d in re.findall(r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? (\d{1,2})\b", text, re.I):
+    # whole month names or their abbreviations only: Spanish "martes 27" is a Tuesday, not March 27
+    for mon, d in re.findall(r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+                             r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.? (\d{1,2})\b", text, re.I):
         try:
             found.append(date(today.year, _MONTHS[mon.lower()[:3]], int(d)))
         except ValueError:
@@ -212,3 +214,41 @@ def dollar_amounts(text: str) -> set[int]:
         except ValueError:
             pass
     return out
+
+
+_STOP = {"es": r"\b(el|la|los|las|que|para|con|por|una|gracias|hola|usted|cocina)\b",
+         "fr": r"\b(le|la|les|des|que|pour|avec|une|merci|bonjour|vous|cuisine|est)\b",
+         "de": r"\b(der|die|das|und|ist|nicht|mit|für|danke|hallo|ihre|küche)\b",
+         "pt": r"\b(o|os|que|para|com|uma|obrigad[oa]|olá|você|cozinha)\b",
+         "en": r"\b(the|and|you|your|for|with|is|are|to|of|thanks|hi)\b"}
+
+
+def language_of(text: str) -> str:
+    """A rough guess, enough to notice a reply in English to a client who wrote in French."""
+    t = text or ""
+    cyr = len(re.findall(r"[а-яёіїєґ]", t, re.I))
+    lat = len(re.findall(r"[a-z]", t, re.I))
+    if cyr > lat:
+        return "uk" if re.search(r"[іїєґ]", t, re.I) else "ru"
+    scores = {k: len(re.findall(rx, t, re.I)) for k, rx in _STOP.items()}
+    best = max(scores, key=scores.get)
+    return best if scores[best] >= 2 else "en"
+
+
+_WD = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+_TIME_NAMED = re.compile(r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s+(?:[a-z]{3,9}\.?\s+\d{1,2},?\s+)?"
+                         r"(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", re.I)
+
+
+def times_not_offered(body: str, slots: list[dict]) -> list[str]:
+    """Visit times the reply names that aren't among the ones Alex's calendar offered."""
+    offered = set()
+    for s in slots or []:
+        d = date.fromisoformat(s["date"])
+        offered.add((_WD[d.weekday()], s["time"]))
+    bad = []
+    for wd, hh, mm, ap in _TIME_NAMED.findall(body or ""):
+        h = int(hh) % 12 + (12 if ap.lower() == "pm" else 0)
+        if (wd.lower(), f"{h:02d}:{int(mm or 0):02d}") not in offered:
+            bad.append(f"{wd} {hh}:{mm or '00'} {ap}")
+    return bad

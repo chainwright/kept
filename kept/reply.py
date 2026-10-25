@@ -16,7 +16,7 @@ from .agent import _abstain, _msgs, business, read_notes_owner, sender
 from .llm import router
 from .store import journal, locked, now_iso, read_json, read_notes
 from .tools import mail, notify
-from .validators import Verdict, dollar_amounts, honest_email, sendable_text, shape
+from .validators import Verdict, dollar_amounts, honest_email, language_of, sendable_text, shape, times_not_offered
 
 
 def _rate() -> int | None:
@@ -28,6 +28,7 @@ def _names_a_slot(body: str, slots: list[dict]) -> bool:
     """An offered time is named if its weekday is there (English), or its day of the month and its
     hour are (any language: "26 октября в 17:30")."""
     from datetime import date as _date
+    body = re.sub(r"\b(\d{1,2})\s?h\s?(\d{2})\b", r"\1:\2", body)   # French "17 h 30" is 17:30
     low = body.lower()
     for s in slots:
         d = _date.fromisoformat(s["date"])
@@ -38,6 +39,12 @@ def _names_a_slot(body: str, slots: list[dict]) -> bool:
         if re.search(rf"\b{d.day}\b", body) and (s["time"] in body or f"{h12}:{mm:02d}" in body):
             return True
     return False
+
+
+_DAY = (r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|the end of|end of|"
+        r"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.? \d{1,2})")
+QUOTE_BY_DAY = re.compile(rf"\b(quote|estimate|price)\b[^.\n]{{0,60}}\b(by|before)\s+{_DAY}|\b(by|before)\s+{_DAY}[^.\n]{{0,60}}\b(quote|estimate)\b"
+                          rf"|\b(quote|estimate)\b[^.\n]{{0,25}}\bon\s+{_DAY}", re.I)
 
 
 def thread(addr: str) -> list[dict]:
@@ -94,7 +101,8 @@ def supersede(addr: str, newer: str) -> list[str]:
 
 
 def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None = None,
-                photo: dict | None = None, plan: dict | None = None, supersede_old: bool = True) -> dict:
+                photo: dict | None = None, plan: dict | None = None, supersede_old: bool = True,
+                memory: dict | None = None) -> dict:
     """Returns {"approval": ..., "held": ..., "dates": [...], "replaced": [...]}"""
     name, addr = sender(m)
     first = name.split(" ")[0]
@@ -103,6 +111,9 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     facts = facts_about(addr, name, exclude_source=m["id"])
     scope_lines = []
     allowed = {rate} if rate else set()
+    if rate:
+        mh = re.search(r"(\d+)-hour minimum", read_notes(), re.I)
+        allowed.add(rate * int(mh.group(1)) if mh else rate * 2)   # the minimum charge, from Alex's own notes
     for r in (scope_res or {}).get("requests", []):
         meaning = {"in_scope": "covered by the agreement, no extra charge, never quote a price for it",
                    "out_of_scope": "not in the agreement", "unclear": "the agreement doesn't settle it; Alex will check",
@@ -121,6 +132,9 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
     from .intake import reply_rules
     rules_text, plan_amounts, must = reply_rules(plan or {})
     allowed |= plan_amounts
+    allowed |= dollar_amounts(m["body"])   # their own numbers ("I'll only pay $500") may be repeated back to them
+    if memory and memory.get("estimate"):
+        allowed |= {memory["estimate"]["low"], memory["estimate"]["high"]}   # the estimate Kept already gave them
     convo = "\n\n".join(f"{'THEM' if t['dir'] == 'in' else owner.upper()} ({t['ts'][:10]}): {t['body'][:800]}"
                         for t in thread(addr)[-6:] if t["dir"] in ("in", "out") and t["id"] != m["id"])
     today = date.today()
@@ -140,6 +154,11 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         f"WHAT KEPT KNOWS ABOUT {name.upper()}: {facts}\n"
         + (f"\nSCOPE CHECK ON THIS EMAIL:\n" + "\n".join(scope_lines) + "\n" if scope_lines else "")
         + (f"\nEARLIER MESSAGES:\n{convo}\n" if convo else "")
+        + (f"\nTHEY'VE WRITTEN BEFORE: first on {memory['since']} about '{memory['topic']}', last {memory['days']} day(s) ago"
+           + (f"; Kept's preliminary estimate then: ${memory['estimate']['low']:,} to ${memory['estimate']['high']:,}" if memory.get('estimate') else "")
+           + (f"; a visit is booked for {memory['visit']}" if memory.get('visit') else "")
+           + ". Open by picking up where you left off, in one short natural sentence (for example, how their "
+             "thinking on it is going), then answer their new email.\n" if memory and memory.get("days", 0) >= 2 else "")
         + ("\nWHAT THE WEB SAYS ABOUT THEM (checked against the pages; mention at most one, only if it helps):\n"
            + "\n".join(f"- {f['text']}" for f in web["facts"]) + "\n" if web and web.get("facts") else "")
         + (f"\nTHEIR PHOTO, AS NEMOTRON VL SAW IT: {photo}\n" if photo else "")
@@ -160,11 +179,24 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
         dates = []
         if v:
             body = e["body"].replace("**", "").strip()  # an email is plain text
+            if body and not re.search(rf"\b{re.escape(owner.split(' ')[0])}\b", body[-60:]):
+                body += f"\n\n{owner.split(' ')[0]}"   # a short note still ends with Alex's name
             v.merge(sendable_text(body, max_chars=1200))
             v.merge(honest_email(body, recipient_first=first, owner_first=owner.split(" ")[0]))
             amounts = dollar_amounts(body)
             if amounts - allowed:
                 v.add(f"the reply names amounts that aren't in Alex's records: {sorted(amounts - allowed)}")
+            # a quote Alex already owes them (Maria's revised quote) has its own date, checked by Before you send
+            owes_a_quote = any(re.search(r"\b(quote|estimate)\b", t, re.I) for t in facts["alex_owes_them"])
+            if not (plan or {}).get("booked_label") and not (plan or {}).get("on_site") and not owes_a_quote \
+                    and QUOTE_BY_DAY.search(body):
+                v.add("the reply promises a written quote by a set day before the measuring visit; offer the visit first")
+            wrong = times_not_offered(body, (plan or {}).get("slots") or []) if (plan or {}).get("slots") else []
+            if wrong:
+                v.add(f"the reply names visit times Alex's calendar didn't offer: {', '.join(wrong)}")
+            theirs = language_of(m["body"])
+            if theirs != "en" and language_of(body) != theirs:
+                v.add(f"the reply isn't in the language they wrote in ({theirs})")
             for need in must:
                 if need == "SLOTS":
                     if not _names_a_slot(body, (plan or {}).get("slots") or []):
@@ -189,7 +221,7 @@ def draft_reply(m: dict, label: dict, scope_res: dict | None, web: dict | None =
                     else:
                         v.add("the reply promises a date Alex usually misses, and the safer wording couldn't be checked")
             e["body"] = body
-        if v or tries >= 2:
+        if v or tries >= 3:
             break
         # one second try with the checks' own words; the first failure stays in the record
         _abstain("reply", m["subject"] + " (first draft)", v, e)
