@@ -8,7 +8,7 @@ Runs on **Nebius Token Factory** with **NVIDIA Nemotron**: Nemotron 3 Nano, Supe
 Nemotron 3.5 Super VL for photos, each routed to the work it's right for.
 
 **Try it:** https://kept-operator.netlify.app (wakes the free server, then opens the demo) ·
-**Video (3 min):** https://youtu.be/QisO-J2thng
+**Video (3 min):** https://youtu.be/ULf6r347N-g
 
 ![Both sides: Alex's kitchen website on the left, Alex's phone with Kept on the right](docs/both-sides.jpg)
 
