@@ -11,10 +11,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, approvals, calibration, checkins, followups, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
+from . import agent, approvals, democlock, calibration, checkins, followups, growth, learn, ledger, media, memory_qa, money, offers, precheck, rescue, scope
 from .config import ROOT, TIERS, settings
 from .llm import ROUTES, BudgetExceeded, router
-from .store import append_audit, read_audit, read_json
+from .store import append_audit, now_iso, read_audit, read_json
 from .tools import mail, notify  # noqa: F401  (registers actions)
 
 WEB = ROOT / "web"
@@ -123,6 +123,8 @@ def state():
     calls = [a for a in audit if a["kind"] == "llm"]
     return {
         "owner": settings.owner_name, "demo": settings.demo, "snapshot": _snapshot_meta(),
+        # the demo's calendar day and clock (held on the recorded day), so the page counts from the same "today"
+        "today": democlock.DemoDate.today().isoformat(), "now": now_iso(),
         "brief": read_json("brief.json", None),
         "open": ledger.open_sorted(),
         "closed": [r for r in ledger.items() if r["status"] != "open"][-15:][::-1],
@@ -138,7 +140,7 @@ def state():
         "tiers": {k: {"model": router._resolved.get(k, t.default_model), "why": t.why,
                       "in": t.usd_in_per_m, "out": t.usd_out_per_m} for k, t in TIERS.items()},
         "routes": ROUTES,
-        "activity": [a for a in audit if a["kind"] not in ("llm",)][-40:][::-1],
+        "activity": _activity(audit),
         "busy": _busy.locked(),
         "calibration": calibration.as_json(),
         "cash": money.forecast(30),
@@ -152,6 +154,28 @@ def state():
         "calendar": _upcoming(),
         "checkins": read_json("checkins_last.json", None),
     }
+
+
+def _quiet_check(a: dict) -> bool:
+    """The demo's hourly "still on the recorded day" check, from builds that logged it every hour."""
+    return a.get("kind") == "job" and a.get("job") in ("demo_week", "demo_day") and a.get("status") == "ok" \
+        and not a.get("note")
+
+
+def _activity(audit: list[dict], limit: int = 40) -> list[dict]:
+    """What happened, newest first: no model calls (they have their own card), no routine hourly checks, and a run of
+    identical rows folded into one with a count, so one chatty job can't push everything else off the card."""
+    rows: list[dict] = []
+    for a in audit:
+        if a.get("kind") == "llm" or _quiet_check(a):
+            continue
+        key = {k: v for k, v in a.items() if k not in ("ts", "paid_day", "repeats")}
+        if rows and rows[-1]["_key"] == key:
+            rows[-1]["repeats"] = rows[-1].get("repeats", 1) + 1
+            rows[-1]["ts"] = a.get("ts", rows[-1]["ts"])
+            continue
+        rows.append({**a, "_key": key})
+    return [{k: v for k, v in r.items() if k != "_key"} for r in rows][-limit:][::-1]
 
 
 @app.post("/api/approvals/{aid}/{verdict}")

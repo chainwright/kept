@@ -232,6 +232,7 @@ textarea { resize: vertical; }
 .chip-nano { background: var(--nano-bg); color: var(--nano); }
 .chip-super, .chip-rescue { background: var(--super-bg); color: var(--super); }
 .chip-ultra { background: var(--ultra-bg); color: var(--ultra); }
+.chip-vision { background: var(--super-bg); color: var(--super); }
 .chip-outline { background: none; border-color: var(--line-strong); color: var(--ink-2); font-weight: var(--fw-medium); }
 .kind-lead { background: var(--ok-bg); color: var(--ok); }
 .kind-client { background: var(--super-bg); color: var(--super); }
@@ -563,7 +564,8 @@ pre.payload { margin: 6px 0 0; padding: 10px; background: var(--surface); border
 .slot input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; min-height: 0; padding: 0; }
 
 /* ---------------------------------------------------------------- models */
-.tiers { display: grid; gap: var(--sp-2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tiers { display: grid; gap: var(--sp-2); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .tiers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .tier { border: var(--bw) solid var(--line); border-radius: var(--r-md); padding: 10px var(--sp-3); border-left: var(--sp-1) solid var(--super); display: grid; gap: var(--sp-1); }
 .tier.nano { border-left-color: var(--nano); }
 .tier.ultra { border-left-color: var(--ultra); }
@@ -578,6 +580,7 @@ pre.payload { margin: 6px 0 0; padding: 10px; background: var(--surface); border
 .seg-nano { background: var(--nano); }
 .seg-super { background: var(--super); }
 .seg-ultra { background: var(--ultra); }
+.seg-vision { background: var(--super); opacity: 0.55; }
 #calls-details .table-wrap { margin-top: 10px; }
 .calls { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
 .calls th, .calls td { padding: 7px 10px; text-align: left; border-bottom: var(--bw) solid var(--line); vertical-align: top; }

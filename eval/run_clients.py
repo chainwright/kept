@@ -36,6 +36,8 @@ def body_of(r) -> str:
 def run_once() -> dict:
     E.fresh_modules(tempfile.mkdtemp(prefix="kept-clients-"))
     from kept import approvals, ledger, schedule, snapshot, tryit
+    from kept import democlock
+    democlock.install()  # the same frozen calendar the live demo runs on
     snapshot.restore()
     from kept import store
     audit_start = len(store.read_audit(100000))  # the recorded morning's own calls aren't this run's cost

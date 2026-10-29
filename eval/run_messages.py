@@ -72,6 +72,8 @@ def main():
         cases = [c for c in cases if c["id"] in a.only.split(",")]
     E.fresh_modules(tempfile.mkdtemp(prefix="kept-messages-"))
     from kept import approvals, snapshot, store, tryit
+    from kept import democlock
+    democlock.install()  # the same frozen calendar the live demo runs on
     snapshot.restore()
     start = len(store.read_audit(100000))
     rows, t0 = [], time.time()

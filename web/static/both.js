@@ -21,8 +21,11 @@
   const money = (n) => (Number(n) || 0) < 0.01 ? "$" + (Number(n) || 0).toFixed(4) : "$" + (Number(n) || 0).toFixed(2);
   const isoDate = (iso) => { const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
   const fmtDay = (iso) => isoDate(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  // the demo's clock: same time of day, held on the recorded day (the server sends it with /api/state)
+  let SKEW = 0, clockSynced = false;
+  const syncClock = (st) => { const n = st && st.now ? Date.parse(st.now) : NaN; SKEW = isNaN(n) ? 0 : n - Date.now(); clockSynced = true; };
   function ago(ts) {
-    const s = Math.round((Date.now() - new Date(ts)) / 1000);
+    const s = Math.round((Date.now() + SKEW - new Date(ts)) / 1000);
     if (!isFinite(s)) return "";
     if (s < 45) return "just now"; if (s < 3600) return `${Math.round(s / 60)} min ago`;
     if (s < 86400) return `${Math.round(s / 3600)} h ago`; return `${Math.round(s / 86400)} days ago`;
@@ -121,6 +124,7 @@
     if (!email) { fill(list, h("li", { class: "muted b-empty" }, "Nothing yet. Send Alex a message.")); return; }
     let t = [];
     try { t = await api("GET", `/api/thread?email=${encodeURIComponent(email)}`); } catch { return; }
+    if (!clockSynced) { try { syncClock(await api("GET", "/api/state")); } catch { /* times fall back to the real clock */ } }
     const items = [];
     for (const m of t) {
       if (m.dir === "in") items.push(h("li", { class: "t-in" }, h("div", { class: "t-meta" }, `You · ${ago(m.ts)}${m.subject ? " · " + m.subject : ""}`), h("div", { class: "t-body" }, m.body)));
@@ -295,6 +299,7 @@
   async function loadCalendar() {
     try {
       const st = await api("GET", "/api/state");
+      syncClock(st);
       const ev = (st.calendar || []).filter((e) => e.kind === "visit");
       fill($("#cal"), ev.length ? ev.map((e) => h("li", { class: "c-visit" }, h("span", { class: "c-day" }, `${fmtDay(e.date)} · ${clock(e.time)}`),
         h("span", { class: "c-what" }, `Measuring visit: ${e.who}`))) : h("li", null, h("span", { class: "muted" }, "No visits booked.")));

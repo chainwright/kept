@@ -56,7 +56,19 @@
 
   const chip = (text, cls = "", title) => h("span", { class: `chip ${cls}`.trim(), title }, text);
 
-  function localISO(d = new Date()) {
+  // The demo's calendar stands still on the recorded day. The server says which day that is (st.today) and what
+  // its clock reads (st.now), so "overdue", the cash chart and "2 h ago" all count from the demo's day, not the
+  // visitor's real one. Outside the demo both equal the real calendar.
+  let DEMO_DAY = null, SKEW = 0;
+  const nowMs = () => Date.now() + SKEW;
+  function syncClock(st) {
+    DEMO_DAY = st && st.today ? String(st.today).slice(0, 10) : null;
+    const n = st && st.now ? Date.parse(st.now) : NaN;
+    SKEW = isNaN(n) ? 0 : n - Date.now();
+  }
+  function localISO(d) {
+    if (!d && DEMO_DAY) return DEMO_DAY;
+    d = d || new Date();
     const z = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
   }
@@ -67,7 +79,7 @@
   function dayDiff(iso) {
     const a = isoToDate(iso);
     if (!a) return null;
-    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const t = isoToDate(localISO());
     return Math.round((a - t) / 86400000);
   }
   function fmtDay(iso, opts = { weekday: "short", month: "short", day: "numeric" }) {
@@ -80,7 +92,7 @@
   function ago(ts) {
     const d = parseTs(ts);
     if (!d) return "";
-    const sec = Math.round((Date.now() - d) / 1000);
+    const sec = Math.round((nowMs() - d) / 1000);
     if (sec < 45) return "just now";
     if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
     if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
@@ -127,7 +139,7 @@
   const shortModel = (m) => String(m || "").split("/").pop();
   const safeUrl = (u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : null; } catch { return null; } };
   const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
-  const tierName = (t) => ({ nano: "Nano", super: "Super", ultra: "Ultra" }[t] || t || "?");
+  const tierName = (t) => ({ nano: "Nano", super: "Super", ultra: "Ultra", vision: "Super VL" }[t] || t || "?");
   const slug = (c) => String(c || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const cap = (t) => { t = String(t || ""); return t.charAt(0).toUpperCase() + t.slice(1); };
   function mediaUrl(path) {
@@ -281,6 +293,7 @@
       const st = await api("GET", "/api/state");
       if (offline) { offline = false; toast("Connected to Kept again.", "good", 4000); }
       S = st;
+      syncClock(st);
       render(st);
     } catch (e) {
       if (!offline) { offline = true; toast(`Can't load Kept's state: ${e.message}. Retrying every 5 seconds.`, "err", 0); }
@@ -292,7 +305,9 @@
   // ------------------------------------------------------------------ render
   const openIndex = () => Object.fromEntries((S?.open || []).map((r) => [r.id, r]));
   const inboxIndex = () => Object.fromEntries((S?.inbox || []).map((m) => [m.id, m]));
-  const todayUTC = () => new Date().toISOString().slice(0, 10);
+  const todayUTC = () => DEMO_DAY || new Date().toISOString().slice(0, 10);
+  // the recorded morning's calls belong to the morning the demo shows, whatever UTC date they were stamped with
+  const callToday = (c) => !!c.recorded || String(c.ts).startsWith(todayUTC());
   const dirOf = (r) => (r.direction === "owed_to_me" ? "owed_to_me" : "i_owe");
 
   function render(st) {
@@ -332,7 +347,7 @@
     if (st.snapshot) {
       const d = new Date(st.snapshot.recorded_on + "T12:00:00");
       sn.textContent = `A real morning on Nemotron, recorded ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` +
-        (st.snapshot.shifted_days ? `, dates moved ${st.snapshot.shifted_days / 7} wk to today` : "") +
+        (st.snapshot.shifted_days ? `, dates moved ${st.snapshot.shifted_days / 7} wk to today` : ", the demo's calendar held on that day") +
         ". Press Run morning loop to do it live.";
     }
     const p = st.budget > 0 ? Math.min(100, (st.spend_today / st.budget) * 100) : 0;
@@ -345,9 +360,8 @@
     bar.classList.toggle("full", p >= 100);
     $("#spend-fill").style.width = `${Math.max(p, st.spend_today > 0 ? 2 : 0)}%`;
     setBusy(!!localJob || !!st.busy, st.busy && !localJob);
-    const t = todayUTC();
     const by = {};
-    for (const c of st.calls) if (String(c.ts).startsWith(t)) by[c.tier] = (by[c.tier] || 0) + (Number(c.usd) || 0);
+    for (const c of st.calls) if (callToday(c)) by[c.tier] = (by[c.tier] || 0) + (Number(c.usd) || 0);
     if (changed("tierchips", by)) fill($("#tier-chips"), ["nano", "super", "ultra"].map((k) =>
       h("a", { class: `tchip tchip-${k}`, href: "#models", title: st.tiers && st.tiers[k] ? st.tiers[k].model : "" },
         tierName(k).toUpperCase(), h("span", null, money(by[k] || 0)))));
@@ -365,8 +379,7 @@
     pn.textContent = st.pending.length;
     pn.classList.toggle("on", st.pending.length > 0);
     $("#p-held").textContent = st.abstained.length;
-    const t = todayUTC();
-    $("#p-calls").textContent = st.calls.filter((c) => String(c.ts).startsWith(t)).length;
+    $("#p-calls").textContent = st.calls.filter(callToday).length;
 
     const ov = st.calibration && st.calibration.overall;
     $("#p-word").textContent = ov && ov.total ? pct(ov.rate) : "–";
@@ -1325,12 +1338,17 @@
 
   // --- models
   function renderModels(st) {
-    const t = todayUTC();
-    const today = st.calls.filter((c) => String(c.ts).startsWith(t));
+    const today = st.calls.filter(callToday);
+    // what counts against today's budget: live calls paid on the real day (the demo's own calendar stands still)
+    const realDay = new Date().toISOString().slice(0, 10);
+    const paidToday = st.calls.filter((c) => !c.recorded && (c.paid_day || String(c.ts).slice(0, 10)) === realDay);
+    const paidBy = {};
+    for (const c of paidToday) paidBy[c.tier] = (paidBy[c.tier] || 0) + (Number(c.usd) || 0);
     const byTier = {};
     for (const c of today) { const b = (byTier[c.tier] ||= { n: 0, usd: 0 }); b.n++; b.usd += Number(c.usd) || 0; }
     const tasksFor = (tier) => Object.entries(st.routes || {}).filter(([, v]) => v === tier).map(([k]) => k);
-    fill($("#tiers"), ["nano", "super", "ultra"].filter((k) => st.tiers && st.tiers[k]).map((k) => {
+    // all four models Kept routes to, Super VL included: it reads the photos clients attach
+    fill($("#tiers"), ["nano", "super", "ultra", "vision"].filter((k) => st.tiers && st.tiers[k]).map((k) => {
       const tr = st.tiers[k];
       const use = byTier[k] || { n: 0, usd: 0 };
       return h("div", { class: `tier ${k}` },
@@ -1345,16 +1363,16 @@
     }));
 
     const p = st.budget > 0 ? Math.min(100, (st.spend_today / st.budget) * 100) : 0;
-    const total = today.reduce((sum, c) => sum + (Number(c.usd) || 0), 0) || 0;
+    const total = paidToday.reduce((sum, c) => sum + (Number(c.usd) || 0), 0) || 0;
     const split = h("span", { class: "split", style: `width:${Math.max(p, st.spend_today > 0 ? 2 : 0)}%` },
-      ["nano", "super", "ultra"].map((k) => {
-        const share = total > 0 ? ((byTier[k]?.usd || 0) / total) * 100 : 0;
-        return share > 0 ? h("span", { class: `seg-${k}`, style: `width:${share}%`, title: `${tierName(k)}: ${money(byTier[k].usd)}` }) : null;
+      ["nano", "super", "ultra", "vision"].map((k) => {
+        const share = total > 0 ? ((paidBy[k] || 0) / total) * 100 : 0;
+        return share > 0 ? h("span", { class: `seg-${k}`, style: `width:${share}%`, title: `${tierName(k)}: ${money(paidBy[k])}` }) : null;
       }));
     fill($("#budget"),
-      h("div", null, h("strong", null, money(st.spend_today)), ` of ${money(st.budget)} daily budget · ${plural(today.length, "call")} today`,
+      h("div", null, h("strong", null, money(st.spend_today)), ` of ${money(st.budget)} daily budget · ${plural(paidToday.length, "live call")} today`,
         p >= 100 ? h("span", null, " · ", chip("Budget reached: model calls paused until tomorrow", "chip-over")) : null),
-      h("div", { class: "bar", role: "img", "aria-label": `Spend by model size: ${["nano", "super", "ultra"].map((k) => `${tierName(k)} ${money(byTier[k]?.usd || 0)}`).join(", ")}` }, split));
+      h("div", { class: "bar", role: "img", "aria-label": `Spend by model size: ${["nano", "super", "ultra", "vision"].map((k) => `${tierName(k)} ${money(paidBy[k] || 0)}`).join(", ")}` }, split));
 
     const body = $("#calls-body");
     const empty = $("#calls-empty");
@@ -1732,7 +1750,7 @@
       const es = byDay[day];
       const site = es.find((e) => e.kind === "site");
       for (const v of es.filter((e) => e.kind === "visit").sort((a, b) => String(a.time).localeCompare(String(b.time))))
-        rows.push(h("li", { class: `c-visit${v.booked && (Date.now() - new Date(v.booked)) < 3600e3 ? " c-new" : ""}` },
+        rows.push(h("li", { class: `c-visit${v.booked && (nowMs() - new Date(v.booked)) < 3600e3 ? " c-new" : ""}` },
           h("span", { class: "c-day" }, `${fmtDay(day)} · ${twelve(v.time)}`), h("span", { class: "c-what" }, `Measuring visit: ${v.who}`, h("span", { class: "muted" }, ` — ${v.what || ""}`))));
       if (site) rows.push(h("li", null, h("span", { class: "c-day" }, fmtDay(day)), h("span", { class: "muted" }, site.what)));
     }

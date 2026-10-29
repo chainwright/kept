@@ -17,13 +17,19 @@ def test_shift_keeps_weekdays_and_formats():
     assert snapshot.shift_text(t, 0, rec) == t
 
 
-def test_restore_moves_files_and_dates(monkeypatch, tmp_path):
+def test_restore_keeps_dates_unless_asked_to_shift(monkeypatch, tmp_path):
     seed(force=True)
     store.write_json("brief.json", {"lines": [{"text": "Quote for Maria due 2026-10-30"}]})
     (store.data_dir() / "journal" / "2026-10-23.md").write_text("# 2026-10-23\n")
     monkeypatch.setattr(snapshot, "SNAP", tmp_path / "snap")
     snapshot.save(recorded_on=date(2026, 10, 24))
+    # the demo holds the recorded day: nothing moves, whatever the real date
     info = snapshot.restore(today=date(2026, 11, 9))
+    assert info["shifted_days"] == 0 and info["shown_as"] == "2026-10-24"
+    assert "2026-10-30" in json.dumps(store.read_json("brief.json", {}))
+    assert (store.data_dir() / "journal" / "2026-10-23.md").exists()
+    # moving a copy by whole weeks still works when asked for
+    info = snapshot.restore(today=date(2026, 11, 9), shift=True)
     assert info["shifted_days"] == 14 and info["shown_as"] == "2026-11-07"
     assert "2026-11-13" in json.dumps(store.read_json("brief.json", {}))
     assert (store.data_dir() / "journal" / "2026-11-06.md").exists()

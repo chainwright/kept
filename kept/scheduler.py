@@ -20,16 +20,29 @@ def _safe(name, fn):
     return run
 
 
+def _hold_demo_day() -> dict | None:
+    from . import snapshot
+    try:
+        info = snapshot.keep_current()
+    except Exception as e:
+        append_audit("job_failed", job="demo_day", error=f"{type(e).__name__}: {e}"[:300])
+        return None
+    if info and info.get("restored"):
+        append_audit("job", job="demo_day", status="ok", note=f"recorded morning of {info['shown_as']} put back")
+    return info
+
+
 def start() -> BackgroundScheduler:
     global _sched
     if _sched:
         return _sched
     _sched = BackgroundScheduler(timezone=settings.timezone)
     if settings.demo:
-        # The demo shows one recorded morning and its calendar stands still (democlock). Daily and hourly jobs
-        # would rewrite it against the real date, so the demo only checks once an hour whether a new week began.
-        from . import snapshot
-        _sched.add_job(_safe("demo_week", snapshot.keep_current), "interval", hours=1, id="demo_week")
+        # The demo shows one recorded morning and its calendar stands still on that day (democlock). Daily and
+        # hourly jobs would rewrite it against the real date, so they are off in the demo: no hourly mail sorting
+        # happens there. Once an hour it only checks the recorded morning is still in place, and writes to the
+        # activity log only when it had to put it back (an "ok" every hour crowded out everything else).
+        _sched.add_job(_hold_demo_day, "interval", hours=1, id="demo_day")
         _sched.start()
         return _sched
     _sched.add_job(_safe("day", agent.run_day), "cron", hour=7, minute=30, id="day")

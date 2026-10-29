@@ -1,9 +1,11 @@
 """A recorded morning, so a visitor sees Kept's work at once instead of waiting minutes for it.
 
 `save()` copies the data directory after a real run on Nemotron into demo_snapshot/.
-`restore()` puts it back, moving every date forward by whole weeks so the week still lines up
-with today: "by Friday" stays a Friday, and the snapshot is at most six days old. Nothing in it
-is edited by hand; the UI labels it as a recorded run and "Run morning loop" runs it live again.
+`restore()` puts it back exactly as recorded, and the demo's calendar is held on the recorded day
+(democlock), so a visitor in December sees the same Saturday, the same rent day and the same $116
+gap as the write-up. Nothing in it is edited by hand; the UI labels it as a recorded run and
+"Run morning loop" runs it live again. (`shift_text` can still move a copy by whole weeks; the
+demo no longer does.)
 """
 from __future__ import annotations
 
@@ -76,11 +78,12 @@ def shift_text(text: str, days: int, recorded: date) -> str:
     return _WORD.sub(word, _ISO.sub(iso, text))
 
 
-def restore(today: date | None = None) -> dict:
+def restore(today: date | None = None, *, shift: bool = False) -> dict:
+    """Put the recorded morning back. By default every date stays as recorded and the demo's "today" is the recorded
+    day, so nothing drifts week to week. `shift=True` moves it forward by whole weeks to `today` (kept for tools)."""
     from . import democlock
-    today = today or democlock.real_today()
     recorded = date.fromisoformat(json.loads((SNAP / META).read_text())["recorded_on"])
-    days = weeks_shift(recorded, today)
+    days = weeks_shift(recorded, today or democlock.real_today()) if shift else 0
     dst = data_dir()
     for p in dst.iterdir():
         shutil.rmtree(p) if p.is_dir() else p.unlink()
@@ -112,14 +115,15 @@ def restore(today: date | None = None) -> dict:
 
 
 def keep_current() -> dict | None:
-    """Demo only: the shown morning moves forward a whole week when the real calendar has; otherwise the demo's
-    calendar stays on the day the morning is shown on. Called at startup and hourly."""
+    """Demo only: hold the demo's calendar on the recorded day. If the data was wiped, or was laid down by an older
+    build that shifted dates by weeks, put the recorded morning back. Called at startup and hourly. The result says
+    whether anything had to be restored, so the hourly check stays out of the activity log when nothing changed."""
     from . import democlock
     m = meta()
     if not available():
         return None
-    recorded = date.fromisoformat(json.loads((SNAP / META).read_text())["recorded_on"])
-    if not m or m.get("shifted_days") != weeks_shift(recorded, democlock.real_today()):
-        return restore()
+    recorded = json.loads((SNAP / META).read_text())["recorded_on"]
+    if not m or m.get("shown_as") != recorded or m.get("shifted_days"):
+        return {**restore(), "restored": True}
     democlock.set_today(date.fromisoformat(m["shown_as"]))
-    return m
+    return {**m, "restored": False}

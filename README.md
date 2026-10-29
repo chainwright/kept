@@ -21,7 +21,7 @@ Alex's price guide, free measuring times from his calendar, and the reply, waiti
 **Measured on the live models, graded by code:** 40 messages contractors really get (kitchen jobs,
 other trades, four languages, off-topic chat, rudeness, haggling, an attempt to override the rules,
 returning clients), 3 runs in a row, 120 / 120 right and 404 / 404 checks; Alex's whole morning,
-51 runs, 1419 / 1420 checks (the one miss became a fix); 167 unit and regression tests.
+51 runs, 1419 / 1420 checks (the one miss became a fix); 179 unit and regression tests.
 
 ---
 
@@ -29,7 +29,7 @@ returning clients), 3 runs in a row, 120 / 120 right and 404 / 404 checks; Alex'
 
 | Personal AI asks for | In Kept |
 |---|---|
-| always-on | sorts new mail every hour; runs the whole morning (promises, money, offers, the brief) before the owner is up |
+| always-on | sorts new mail every hour (off in the hosted demo, which holds one recorded morning); runs the whole morning (promises, money, offers, the brief) before the owner is up |
 | private, data under your control | plain files on your own server; Token Factory with zero data retention; nothing leaves without your Yes |
 | persistent memory | the promise ledger (both ways), a daily journal, how late you and each client really are, the calendar |
 | reusable skills | `skills/*.md` rule sheets the owner can edit; rules Kept learns go into the owner's own copy after a Yes |
@@ -163,8 +163,9 @@ kind of work, and every call is logged with its tier, reason, tokens, latency an
 | reading a client's photo | **Nemotron 3.5 Super VL** (reasoning off) | the room, the damage, the style to match, rough sizes; about 8 s |
 | sorting free speech to Kept | **Nemotron 3 Nano** | picks what to read out; it can never approve anything |
 
-Model IDs are discovered from `/v1/models` at start-up. A daily budget (default $1.00) stops
-calls before they happen once it's reached.
+Model IDs are discovered from `/v1/models` at start-up. A daily budget stops calls before they
+happen once it's reached (`KEPT_DAILY_BUDGET_USD`, default $1.00; the hosted demo runs with $5.00). It resets
+with the real calendar day, even while the demo's own calendar is held still.
 
 A full demo morning is 46-59 calls and costs $0.065-0.11 (median $0.077), measured over dozens of runs
 by `eval/run_eval.py` on the live models. Answering one client email with a photo takes 15-35 seconds
@@ -205,11 +206,13 @@ rescue, growth, offers and news side by side, then the overload call and the bri
 shared files are serialised, and the one-message-per-person rule is enforced atomically. A full
 demo morning takes one to two and a half minutes.
 
-Demo mode (`KEPT_DEMO=1`, the default) opens on a recorded live morning (`demo_snapshot/`, dates
-moved forward by whole weeks) and lets a visitor write to Alex as a client. It loads a made-up week for Alex, a one-person kitchen contractor
+Demo mode (`KEPT_DEMO=1`, the default) opens on a recorded live morning (`demo_snapshot/`, Saturday
+Oct 24, 2026). The demo's calendar is held on that day, so every date in it stays as recorded: rent is due
+on Nov 1 and the forecast is $116 short, whenever you open it. The hourly and daily jobs are off in the
+demo (they would rewrite the recorded morning against the real date); "Run morning loop" runs it live. Demo mode lets a visitor write to Alex as a client. It loads a made-up week for Alex, a one-person kitchen contractor
 in Portland: nine emails, two signed agreements, a calendar, a money book, a price guide and eight
 weeks of history. Sample photos (`demo_media/`) were generated for the demo.
-Tests: `.venv/bin/python -m pytest -q` (167). Live evaluation on Nemotron (costs model credits, about
+Tests: `.venv/bin/python -m pytest -q` (179). Live evaluation on Nemotron (costs model credits, about
 $0.10 a run), every check written in code:
 
 ```bash
