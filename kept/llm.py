@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from .config import TIERS, settings
-from .store import append_audit, now, read_audit
+from .democlock import real_utc_day
+from .store import append_audit, read_audit
 
 # what kind of work goes to which size of model, and why
 ROUTES = {
@@ -159,10 +160,14 @@ class Router:
 
     @staticmethod
     def spent_today() -> float:
-        today = now().date().isoformat()
+        # The budget day is the real one. In the demo the calendar stands still (democlock), so every call's `ts`
+        # carries the recorded day; counting by `ts` would add up a whole week of calls against one "day".
+        # Each call also stores the real day it was paid on (`paid_day`); older lines fall back to `ts`.
+        today = real_utc_day()
         # calls in the recorded demo morning were paid for when it was recorded, not today
         return sum(r.get("usd", 0.0) for r in read_audit(5000)
-                   if r.get("kind") == "llm" and r.get("ts", "").startswith(today) and not r.get("recorded"))
+                   if r.get("kind") == "llm" and not r.get("recorded")
+                   and (r.get("paid_day") or r.get("ts", "")[:10]) == today)
 
     def ask(self, task: str, messages: list[dict], *, purpose: str, max_tokens: int = 800,
             temperature: float = 0.2, json_mode: bool = False, tier: str | None = None,
@@ -183,7 +188,7 @@ class Router:
         reasoning, finish = (out[3], out[4]) if len(out) >= 5 else ("", "stop")
         ms = int((time.time() - t0) * 1000)
         usd = pin / 1e6 * t.usd_in_per_m + pout / 1e6 * t.usd_out_per_m
-        append_audit("llm", task=task, tier=tier, model=model, why=t.why, purpose=purpose,
+        append_audit("llm", task=task, tier=tier, model=model, why=t.why, purpose=purpose, paid_day=real_utc_day(),
                      thinking=think, prompt_tokens=pin, completion_tokens=pout,
                      usd=round(usd, 6), ms=ms, finish=finish,
                      reasoning=reasoning[:1500] if task == "judge" else None)

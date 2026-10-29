@@ -30,6 +30,12 @@ def real_today() -> REAL_DATE:
     return REAL_DATE.today()
 
 
+def real_utc_day() -> str:
+    """The real calendar day in UTC, the day audit timestamps are written in. Spend is counted per real day, so
+    a frozen demo calendar never turns the daily model budget into a weekly one."""
+    return REAL_DATETIME.now(_dt.timezone.utc).date().isoformat()
+
+
 class DemoDate(REAL_DATE):
     @classmethod
     def today(cls):
