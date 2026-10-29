@@ -51,9 +51,12 @@ async def lifespan(app: FastAPI):
     from .seed import seed
 
     if settings.demo:
-        from . import snapshot
+        from . import democlock, snapshot
+        democlock.install()
         if snapshot.available() and not (data_dir_has_state()):
             snapshot.restore()
+        elif snapshot.available():
+            snapshot.keep_current()
         else:
             seed()
     start()

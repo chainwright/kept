@@ -77,7 +77,8 @@ def shift_text(text: str, days: int, recorded: date) -> str:
 
 
 def restore(today: date | None = None) -> dict:
-    today = today or date.today()
+    from . import democlock
+    today = today or democlock.real_today()
     recorded = date.fromisoformat(json.loads((SNAP / META).read_text())["recorded_on"])
     days = weeks_shift(recorded, today)
     dst = data_dir()
@@ -106,4 +107,19 @@ def restore(today: date | None = None) -> dict:
     info = {"recorded_on": recorded.isoformat(), "shown_as": (recorded + timedelta(days=days)).isoformat(),
             "shifted_days": days}
     (dst / META).write_text(json.dumps(info))
+    democlock.set_today(date.fromisoformat(info["shown_as"]))  # the demo's "today" is the morning it shows
     return info
+
+
+def keep_current() -> dict | None:
+    """Demo only: the shown morning moves forward a whole week when the real calendar has; otherwise the demo's
+    calendar stays on the day the morning is shown on. Called at startup and hourly."""
+    from . import democlock
+    m = meta()
+    if not available():
+        return None
+    recorded = date.fromisoformat(json.loads((SNAP / META).read_text())["recorded_on"])
+    if not m or m.get("shifted_days") != weeks_shift(recorded, democlock.real_today()):
+        return restore()
+    democlock.set_today(date.fromisoformat(m["shown_as"]))
+    return m
